@@ -1,0 +1,33 @@
+{
+  "name": "grbparser",
+  "version": "0.0.1",
+  "description": "A package to parse Gerber files.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --opts mocha.opts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghent360/grbparse.git"
+  },
+  "keywords": [
+    "Gerber"
+  ],
+  "author": "Venelin Efremov <ghent360@iqury.us>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ghent360/grbparse/issues"
+  },
+  "homepage": "https://github.com/ghent360/grbparse#readme",
+  "dependencies": {
+    "@types/node": "^8.0.28",
+    "node": "^8.3.0",
+    "ts-node": "^3.3.0",
+    "typescript": "^2.5.2"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.43",
+    "assert": "^1.4.1",
+    "mocha": "^3.5.0"
+  }
+}
