@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as gp from '../grbparser';
 
-describe("CommandParser tests", () => {
+describe("GerberParser tests", () => {
     it('G01', () => {
         let commands:string[] = [];
         let cmdParser = new gp.CommandParser();
@@ -68,33 +68,5 @@ G04 Create aperture*
                 cmdParser.pushConsumer((cmd) => {});
                 cmdParser.parseBlock(content);
             });
-    });
-    it('FS Command', () => {
-        let cmd = new gp.FSCommand("FSLAX26Y37*");
-        assert.equal(cmd.coordinateFormat.xNumIntPos, 2);
-        assert.equal(cmd.coordinateFormat.xNumDecPos, 6);
-        assert.equal(cmd.coordinateFormat.yNumIntPos, 3);
-        assert.equal(cmd.coordinateFormat.yNumDecPos, 7);
-        assert.deepEqual(cmd.formatOutput(), "%FSLAX26Y37*%")
-    });
-    it('G04 Command', () => {
-        let cmd = new gp.G04Command("G4");
-        assert.equal(cmd.comment, "");
-        assert.deepEqual(cmd.formatOutput(), "G04*")
-        cmd = new gp.G04Command("G000004 Create aperture macro");
-        assert.equal(cmd.comment, " Create aperture macro");
-        assert.deepEqual(cmd.formatOutput(), "G04 Create aperture macro*")
-    });
-    it('MO Command', () => {
-        let cmd = new gp.MOCommand("MOIN*");
-        assert.equal(cmd.units, gp.FileUnits.INCHES);
-        assert.deepEqual(cmd.formatOutput(), "%MOIN*%")
-        cmd = new gp.MOCommand("MOMM*");
-        assert.equal(cmd.units, gp.FileUnits.MILIMETERS);
-        assert.deepEqual(cmd.formatOutput(), "%MOMM*%")
-    });
-    it('AD Command', () => {
-        let cmd = new gp.ADCommand("ADD10Test*");
-        let out = cmd.formatOutput();
     });
 });
