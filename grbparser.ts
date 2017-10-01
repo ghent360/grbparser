@@ -1,17 +1,13 @@
-
 export class CommandParser {
     public lineNumber = 1;
     private nextTokenSeparator = '*';
-    private leftoverBuffer = "";
-    private consumerStack:Array<(cmd:string, line:number) => void> = [];
+    private consumer:(cmd:string, line:number) => void = CommandParser.emptyConsumer;
     private commandLineStart:number;
     private command = "";
     private errorHandler:(line:number, buffer:string, idx:number) => void = CommandParser.error;
 
-    parseBlock(block:string) {
-        let buffer = this.leftoverBuffer + block;
+    parseBlock(buffer:string) {
         let idx:number;
-        this.leftoverBuffer = "";
         for(idx = 0; idx < buffer.length; idx++) {
             let nextChar = buffer[idx];
             if (nextChar == '\n') {
@@ -19,25 +15,9 @@ export class CommandParser {
                 continue;
             } else if (nextChar == '\r') {
                 continue;
-            } else if (nextChar == '\\') {
-                if (buffer.length - idx < 6) {
-                    this.leftoverBuffer = buffer.substring(idx);
-                    break;
-                }
-                if (buffer[idx + 1] != 'u') {
-                    this.errorHandler(this.lineNumber, buffer, idx);
-                    idx++;
-                    continue;
-                }
-                let hexCode = buffer.substring(idx + 2, idx + 6);
-                let unicodeChar = String.fromCharCode(Number.parseInt(hexCode, 16));
-                this.append(unicodeChar);
-                idx += 5;
-                continue;
             } else if (nextChar == this.nextTokenSeparator) {
                 //console.log(`cmd: ${this.command}`);
-                this.consumerStack[this.consumerStack.length - 1](
-                    this.command, this.commandLineStart);
+                this.consumer(this.command, this.commandLineStart);
                 this.command = "";
                 this.nextTokenSeparator = '*';
                 continue;
@@ -66,12 +46,11 @@ export class CommandParser {
         console.log(`---${'-'.repeat(idx + 1)}^`);
     }
 
-    pushConsumer(consumer:(cmd:string, lineNo:number) => void) {
-        this.consumerStack.push(consumer);
+    private static emptyConsumer(cmd:string, line:number) {
     }
 
-    popConsumer() {
-        this.consumerStack.pop();
+    pushConsumer(consumer:(cmd:string, lineNo:number) => void) {
+        this.consumer = consumer;
     }
 
     setErrorHandler(handler:(lineNumber:number, buffer:string, idx:number)=>void)

@@ -30,25 +30,6 @@ describe("CommandParser tests", () => {
         assert.equal(commands[2], "FSLAX26Y26*");
         assert.equal(commands[3], "MOIN*");
     });
-    it ('Unicdode char', () => {
-        let commands:string[] = [];
-        let cmdParser = new gp.CommandParser();
-        cmdParser.pushConsumer((cmd) => commands.push(cmd));
-        cmdParser.parseBlock("\\");
-        cmdParser.parseBlock("u");
-        cmdParser.parseBlock("0");
-        cmdParser.parseBlock("0");
-        cmdParser.parseBlock("4");
-        cmdParser.parseBlock("7");
-        cmdParser.parseBlock("\\u00382*");
-        assert.equal(commands.length, 1);
-        assert.equal(commands[0], "G82");
-
-        let errors = 0;
-        cmdParser.setErrorHandler(() => {errors++;});
-        cmdParser.parseBlock("\\t1223*");
-        assert.equal(errors, 1);
-    });
     it('Complex extended commands', () => {
         let commands:string[] = [];
         let cmdParser = new gp.CommandParser();
