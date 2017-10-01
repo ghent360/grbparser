@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ghent360/grbparse.git"
+    "url": "git+https://github.com/ghent360/grbparser.git"
   },
   "keywords": [
     "Gerber"
@@ -16,9 +16,9 @@
   "author": "Venelin Efremov <ghent360@iqury.us>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ghent360/grbparse/issues"
+    "url": "https://github.com/ghent360/grbparser/issues"
   },
-  "homepage": "https://github.com/ghent360/grbparse#readme",
+  "homepage": "https://github.com/ghent360/grbparser#readme",
   "dependencies": {
     "@types/node": "^8.0.28",
     "node": "^8.3.0",
