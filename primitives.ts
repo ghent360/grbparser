@@ -141,3 +141,11 @@ export class GerberState {
         console.log(`Error parsing gerber file ${message}`);
     }
 }
+
+export class ApertureDefinition {
+    constructor(
+        readonly apertureId:number,
+        readonly templateName:string,
+        readonly modifiers:number[]) {
+    }
+}

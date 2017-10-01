@@ -31,5 +31,9 @@ describe("Commands tests", () => {
     it('AD Command', () => {
         let cmd = new cm.ADCommand("ADD10Test*");
         let out = cmd.formatOutput();
+        assert.equal(cmd.definition.apertureId, 10);
+        assert.equal(cmd.definition.templateName, "Test");
+        assert.equal(cmd.definition.modifiers.length, 0);
+        assert.equal(out, "%ADD10Test*%");
     });
 });

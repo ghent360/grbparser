@@ -1,4 +1,7 @@
-import {CoordinateFormatSpec, GerberParseException, FileUnits} from "./primitives";
+import {CoordinateFormatSpec,
+        GerberParseException,
+        FileUnits,
+        ApertureDefinition} from "./primitives";
 
 interface GerberCommand {
     readonly name:string;
@@ -17,12 +20,15 @@ export class FSCommand implements GerberCommand {
         let xNumDecPos = Number.parseInt(cmd.substr(6, 1));
         let yNumIntPos = Number.parseInt(cmd.substr(8, 1));
         let yNumDecPos = Number.parseInt(cmd.substr(9, 1));
-        this.coordinateFormat = new CoordinateFormatSpec(xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
+        this.coordinateFormat =
+            new CoordinateFormatSpec(xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
     }
 
     formatOutput():string {
-        return "%FSLAX" + this.coordinateFormat.xNumIntPos + this.coordinateFormat.xNumDecPos
-            + "Y" + this.coordinateFormat.yNumIntPos + this.coordinateFormat.yNumDecPos
+        return "%FSLAX" + this.coordinateFormat.xNumIntPos
+            + this.coordinateFormat.xNumDecPos
+            + "Y" + this.coordinateFormat.yNumIntPos
+            + this.coordinateFormat.yNumDecPos
             + "*%";
     }
 }
@@ -49,22 +55,20 @@ export class MOCommand implements GerberCommand {
 
 export class ADCommand implements GerberCommand {
     readonly name:string = "AD";
-    readonly apertureId:number;
-    readonly templateName:string;
-    readonly modifiers:number[];
+    readonly definition:ApertureDefinition;
 
     constructor(cmd:string) {
         let endId = skipIntCode(cmd, 4);
         let idStr = cmd.substring(3, endId);
-        this.apertureId = Number.parseInt(idStr);
-        if (this.apertureId < 10) {
-            throw new GerberParseException(`Invalid aperture ID ${this.apertureId}`);
+        let apertureId = Number.parseInt(idStr);
+        if (apertureId < 10) {
+            throw new GerberParseException(`Invalid aperture ID ${apertureId}`);
         }
         let commaIdx = cmd.indexOf(",");
         if (commaIdx < 0) {
             commaIdx = cmd.length - 1;
         }
-        this.templateName = cmd.substring(endId, commaIdx);
+        let templateName = cmd.substring(endId, commaIdx);
         let modifiers:number[] = [];
         let modifierStrStart = commaIdx + 1;
         while (modifierStrStart < cmd.length - 1) {
@@ -76,14 +80,14 @@ export class ADCommand implements GerberCommand {
             modifiers.push(Number.parseFloat(valueStr));
             modifierStrStart = xIdx + 1;
         }
-        this.modifiers = modifiers;
+        this.definition = new ApertureDefinition(apertureId, templateName, modifiers);
         this.checkStandardApertures();
     }
 
     formatOutput():string {
-        let result = "%ADD" + this.apertureId + this.templateName;
+        let result = "%ADD" + this.definition.apertureId + this.definition.templateName;
         let first = true;
-        for (let m of this.modifiers) {
+        for (let m of this.definition.modifiers) {
             if (first) {
                 first = false;
                 result += ",";
@@ -97,81 +101,95 @@ export class ADCommand implements GerberCommand {
     }
 
     private checkStandardApertures() {
-        if (this.templateName === "C") {
+        if (this.definition.templateName === "C") {
             this.checlCircleAperture();
-        } else if (this.templateName === "R") {
+        } else if (this.definition.templateName === "R") {
             this.checlRectangleAperture();
-        } else if (this.templateName === "O") {
+        } else if (this.definition.templateName === "O") {
             this.checlObroundAperture();
         }
     }
 
     private checlCircleAperture() {
-        if (this.modifiers.length < 1 || this.modifiers.length > 2) {
+        if (this.definition.modifiers.length < 1 || this.definition.modifiers.length > 2) {
             throw new GerberParseException(`Invalid circle aperture ${this.formatOutput()}`);
         }
-        if (this.modifiers[0] < 0) {
+        if (this.definition.modifiers[0] < 0) {
             throw new GerberParseException(
-                `Invalid circle aperture radius D${this.apertureId}: ${this.modifiers[0]}`);
+                `Invalid circle aperture radius D${this.definition.apertureId}:`
+                + ` ${this.definition.modifiers[0]}`);
         }
-        if (this.modifiers.length > 1
-            && (this.modifiers[1] <= 0 || this.modifiers[1] >= this.modifiers[0])) {
+        if (this.definition.modifiers.length > 1
+            && (this.definition.modifiers[1] <= 0
+                || this.definition.modifiers[1] >= this.definition.modifiers[0])) {
             throw new GerberParseException(
-                `Invalid circle aperture hole radius D${this.apertureId}: ${this.modifiers[1]}`);
+                `Invalid circle aperture hole radius D${this.definition.apertureId}:`
+                + ` ${this.definition.modifiers[1]}`);
         }
     }
 
     private checlRectangleAperture() {
-        if (this.modifiers.length < 2 || this.modifiers.length > 3) {
+        if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 3) {
             throw new GerberParseException(`Invalid rectangle aperture ${this.formatOutput()}`);
         }
-        if (this.modifiers[0] <= 0 || this.modifiers[1] <= 0) {
+        if (this.definition.modifiers[0] <= 0 || this.definition.modifiers[1] <= 0) {
             throw new GerberParseException(
-                `Invalid rectangle aperture size D${this.apertureId}: ${this.modifiers[0]}X${this.modifiers[1]}`);
+                `Invalid rectangle aperture size D${this.definition.apertureId}: `
+                + `${this.definition.modifiers[0]}X${this.definition.modifiers[1]}`);
         }
-        if (this.modifiers.length > 2) {
-            let radius = this.modifiers[2];
-            if (radius <= 0 || radius >= Math.min(this.modifiers[0], this.modifiers[1])) {
+        if (this.definition.modifiers.length > 2) {
+            let radius = this.definition.modifiers[2];
+            if (radius <= 0
+                || radius >= Math.min(this.definition.modifiers[0], this.definition.modifiers[1])) {
                 throw new GerberParseException(
-                    `Invalid rectangle aperture hole radius D${this.apertureId}: ${this.modifiers[2]}`);
+                    `Invalid rectangle aperture hole radius D${this.definition.apertureId}: `
+                    + `${this.definition.modifiers[2]}`);
             }
         }
     }
 
     private checlObroundAperture() {
-        if (this.modifiers.length < 2 || this.modifiers.length > 3) {
+        if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 3) {
             throw new GerberParseException(`Invalid obround aperture ${this.formatOutput()}`);
         }
-        if (this.modifiers[0] <= 0 || this.modifiers[1] <= 0) {
+        if (this.definition.modifiers[0] <= 0 || this.definition.modifiers[1] <= 0) {
             throw new GerberParseException(
-                `Invalid obround aperture size D${this.apertureId}: ${this.modifiers[0]}X${this.modifiers[1]}`);
+                `Invalid obround aperture size D${this.definition.apertureId}: `
+                + `${this.definition.modifiers[0]}X${this.definition.modifiers[1]}`);
         }
-        if (this.modifiers.length > 2) {
-            let radius = this.modifiers[2];
-            if (radius <= 0 || radius >= Math.min(this.modifiers[0], this.modifiers[1])) {
+        if (this.definition.modifiers.length > 2) {
+            let radius = this.definition.modifiers[2];
+            if (radius <= 0
+                || radius >= Math.min(this.definition.modifiers[0], this.definition.modifiers[1])) {
                 throw new GerberParseException(
-                    `Invalid obround aperture hole radius D${this.apertureId}: ${this.modifiers[2]}`);
+                    `Invalid obround aperture hole radius D${this.definition.apertureId}: `
+                    + `${this.definition.modifiers[2]}`);
             }
         }
     }
 
     private checlPolygonAperture() {
-        if (this.modifiers.length < 2 || this.modifiers.length > 4) {
+        if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new GerberParseException(`Invalid polygon aperture ${this.formatOutput()}`);
         }
-        if (this.modifiers[0] <= 0) {
+        if (this.definition.modifiers[0] <= 0) {
             throw new GerberParseException(
-                `Invalid polygon aperture radius D${this.apertureId}: ${this.modifiers[0]}`);
+                `Invalid polygon aperture radius D${this.definition.apertureId}: `
+                + `${this.definition.modifiers[0]}`);
         }
-        if (this.modifiers[1] < 3 || this.modifiers[1] > 12 || Math.floor(this.modifiers[1]) != this.modifiers[1]) {
+        if (this.definition.modifiers[1] < 3
+            || this.definition.modifiers[1] > 12
+            || Math.floor(this.definition.modifiers[1]) != this.definition.modifiers[1]) {
             throw new GerberParseException(
-                `Invalid polygon aperture number of vertices D${this.apertureId}: ${this.modifiers[1]}`);
+                `Invalid polygon aperture number of vertices D${this.definition.apertureId}: `
+                + `${this.definition.modifiers[1]}`);
         }
-        if (this.modifiers.length > 3) {
-            let radius = this.modifiers[3];
-            if (radius <= 0 || radius >= this.modifiers[0]) {
+        if (this.definition.modifiers.length > 3) {
+            let radius = this.definition.modifiers[3];
+            if (radius <= 0 || radius >= this.definition.modifiers[0]) {
                 throw new GerberParseException(
-                    `Invalid polygon aperture hole radius D${this.apertureId}: ${this.modifiers[3]}`);
+                    `Invalid polygon aperture hole radius D${this.definition.apertureId}: `
+                    + `${this.definition.modifiers[3]}`);
             }
         }
     }
