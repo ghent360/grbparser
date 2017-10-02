@@ -149,3 +149,22 @@ export class ApertureDefinition {
         readonly modifiers:number[]) {
     }
 }
+
+export class VariableDefinition {
+    constructor(readonly id:number, readonly expression:string) {
+    }
+}
+
+export class Primitive {
+    constructor(
+        readonly code:number,
+        readonly modifiers:string[]) {
+    }
+}
+
+export class ApertureMacro {
+    constructor(
+        readonly macroName:string,
+        readonly content:Array<VariableDefinition|Primitive>) {
+    }
+}

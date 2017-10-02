@@ -1,7 +1,10 @@
 import {CoordinateFormatSpec,
         GerberParseException,
         FileUnits,
-        ApertureDefinition} from "./primitives";
+        ApertureDefinition,
+        VariableDefinition,
+        Primitive,
+        ApertureMacro} from "./primitives";
 
 interface GerberCommand {
     readonly name:string;
@@ -216,5 +219,61 @@ export class G04Command implements GerberCommand {
 
     formatOutput():string {
         return "G04" + this.comment + "*";
+    }
+}
+
+export class AMCommand implements GerberCommand {
+    readonly name:string = "AM";
+    readonly macro:ApertureMacro;
+
+    constructor(cmd:string) {
+        let content = cmd.split("*");
+        let name = content[0].substring(2);
+        let macroContent:Array<VariableDefinition|Primitive> = [];
+        for (let idx = 1; idx < content.length - 1; idx++) {
+            let part = content[idx];
+            if (part[0] == "$") {
+                let numEndIdx = skipIntCode(part, 1);
+                let varId = Number.parseInt(part.substring(1, numEndIdx));
+                if (part[numEndIdx] != "=") {
+                    throw new GerberParseException(`Invalid variable definition ${part}`);
+                }
+                macroContent.push(new VariableDefinition(varId, part.substring(numEndIdx + 1)));
+            } else {
+                if (part.startsWith("0 ")) {
+                    macroContent.push(new Primitive(0, [part.substr(2)]));
+                } else {
+                    let primitiveParts = part.split(",");
+                    let primitiveId = Number.parseInt(primitiveParts[0]);
+                    primitiveParts.splice(0, 1);
+                    macroContent.push(new Primitive(primitiveId, primitiveParts));
+                }
+            }
+        }
+        this.macro = new ApertureMacro(name, macroContent);
+    }
+
+    formatOutput():string {
+        let result = "%AM" + this.macro.macroName + "*";
+        for (let part of this.macro.content) {
+            result += "\n";
+            if (part instanceof VariableDefinition) {
+                let varDef = part as VariableDefinition;
+                result += "$" + varDef.id + "=" + varDef.expression + "*";
+            } else {
+                let primitive = part as Primitive;
+                if (primitive.code == 0) {
+                    result += "0 " + primitive.modifiers[0] + "*";
+                } else {
+                    result += primitive.code;
+                    for (let modifier of primitive.modifiers) {
+                        result += "," + modifier;
+                    }
+                    result += "*";
+                }
+            }
+        }
+        result += "%";
+        return result;
     }
 }

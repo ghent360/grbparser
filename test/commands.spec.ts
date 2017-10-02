@@ -1,7 +1,8 @@
+import { AMCommand } from '../commands';
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as cm from '../commands';
-import * as pr from "../primitives";
+import * as pr from '../primitives';
 
 describe("Commands tests", () => {
     it('FS Command', () => {
@@ -35,5 +36,37 @@ describe("Commands tests", () => {
         assert.equal(cmd.definition.templateName, "Test");
         assert.equal(cmd.definition.modifiers.length, 0);
         assert.equal(out, "%ADD10Test*%");
+
+        cmd = new cm.ADCommand("ADD10C,0.555X0.123*");
+        out = cmd.formatOutput();
+        assert.equal(cmd.definition.apertureId, 10);
+        assert.equal(cmd.definition.templateName, "C");
+        assert.equal(cmd.definition.modifiers.length, 2);
+        assert.equal(cmd.definition.modifiers[0], 0.555);
+        assert.equal(cmd.definition.modifiers[1], 0.123);
+        assert.equal(out, "%ADD10C,0.555X0.123*%");
+    });
+    it('AM Command', () => {
+        let cmd = new cm.AMCommand("AMTest*$1=555*$2=$1 + 2*");
+        assert.equal(cmd.macro.macroName, "Test");
+        assert.equal(cmd.macro.content.length, 2);
+        cmd = new cm.AMCommand(
+              "AMRECTROUNDCORNERS*"
+            + "0 Rectangle with rounded corners*"
+            + "0 $1 width *"
+            + "0 $2 height *"
+            + "0 $3 corner radius *"
+            + "0 $4 flash origin X offset *"
+            + "0 $5 flash origin Y offset *"
+            + "0 $6 rotation angle *"
+            + "0 Create two overlapping rectangles that omit the rounded corner areas*"
+            + "20,1,$2-2x$3,$4-$1/2,$5,$4+$1/2,$5,$6*"
+            + "20,1,$2,$4,$5-$2/2,$4,$5+$2/2,$6*"
+            + "0 Add circles at the corners. *"
+            + "1,1,2x$3,$4+$1/2-$3,$5+$2/2-$3,$6*"
+            + "1,1,2x$3,$4-$1/2+$3,$5+$2/2-$3,$6*"
+            + "1,1,2x$3,$4-$1/2+$3,$5-$2/2+$3,$6*"
+            + "1,1,2x$3,$4+$1/2-$3,$5-$2/2+$3,$6*");
+        let out = cmd.formatOutput();
     });
 });
