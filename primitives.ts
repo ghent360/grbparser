@@ -1,3 +1,10 @@
+/**
+ * This file contains some classes that abstract primitives in the Gerber
+ * file format.
+ * 
+ * Some of these are for internal consumption.
+ */
+
 export enum FileUnits {
     INCHES,
     MILIMETERS

@@ -1,3 +1,19 @@
+/**
+ * This file contains classes that implement functionality for
+ * the individual gerber commands.
+ * 
+ * Each command class would parse the command from the input text and construct one or more
+ * primitives which hold the command data in consumable form.
+ * 
+ * Each command class would be able to construct a well formatted text representation of
+ * the command suitable for output in a gerber file.
+ * 
+ * Note that in the input text the command separators are stipped by the command tokenizer.
+ * 
+ * We do add those to the output text however. For example ths text passed to the parser for
+ * the MO command would be "MOIN*", but the formatted output would be "%MOIN*%".
+ */
+
 import {CoordinateFormatSpec,
         GerberParseException,
         FileUnits,
@@ -280,7 +296,11 @@ export class AMCommand implements GerberCommand {
 
 export class ABCommand implements GerberCommand {
     readonly name = "AB";
+    readonly blockId:number;
 
+    constructor(cmd:string) {
+
+    }
     formatOutput():string {
         return "TODO";
     }
