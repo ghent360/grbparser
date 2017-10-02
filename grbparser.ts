@@ -6,7 +6,7 @@ export class CommandParser {
     private consumer:(cmd:string, line:number) => void = CommandParser.emptyConsumer;
     private commandLineStart:number;
     private command = "";
-    private errorHandler:(line:number, buffer:string, idx:number) => void = CommandParser.error;
+    private errorHandler:(line:number, buffer:string, idx:number) => void = CommandParser.consoleError;
 
     parseBlock(buffer:string) {
         let idx:number;
@@ -42,7 +42,7 @@ export class CommandParser {
         this.command += chr;
     }
 
-    private static error(lineNumber:number, buffer:string, idx:number) {
+    private static consoleError(lineNumber:number, buffer:string, idx:number) {
         console.log(`Error at line ${lineNumber}`);
         console.log(`   ${buffer}`);
         console.log(`---${'-'.repeat(idx + 1)}^`);
@@ -51,8 +51,11 @@ export class CommandParser {
     private static emptyConsumer(cmd:string, line:number) {
     }
 
-    pushConsumer(consumer:(cmd:string, lineNo:number) => void) {
+    setConsumer(consumer:(cmd:string, lineNo:number) => void)
+        :(cmd:string, lineNo:number) => void {
+        let oldValue = this.consumer;
         this.consumer = consumer;
+        return oldValue;
     }
 
     setErrorHandler(handler:(lineNumber:number, buffer:string, idx:number)=>void)
@@ -68,7 +71,7 @@ export class GerberParser {
     private state:GerberState = new GerberState();
 
     constructor() {
-        this.commandParser.pushConsumer((cmd:string, lineNo:number) => this.parseCommand(cmd, lineNo));
+        this.commandParser.setConsumer((cmd:string, lineNo:number) => this.parseCommand(cmd, lineNo));
     }
 
     parseBlock(block:string) {

@@ -277,3 +277,11 @@ export class AMCommand implements GerberCommand {
         return result;
     }
 }
+
+export class ABCommand implements GerberCommand {
+    readonly name = "AB";
+
+    formatOutput():string {
+        return "TODO";
+    }
+}
