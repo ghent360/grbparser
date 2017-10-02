@@ -1,4 +1,5 @@
-import { AMCommand } from '../commands';
+import { GerberState } from '../primitives';
+import { AMCommand, DCommand } from '../commands';
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as cm from '../commands';
@@ -50,23 +51,34 @@ describe("Commands tests", () => {
         let cmd = new cm.AMCommand("AMTest*$1=555*$2=$1 + 2*");
         assert.equal(cmd.macro.macroName, "Test");
         assert.equal(cmd.macro.content.length, 2);
-        cmd = new cm.AMCommand(
-              "AMRECTROUNDCORNERS*"
-            + "0 Rectangle with rounded corners*"
-            + "0 $1 width *"
-            + "0 $2 height *"
-            + "0 $3 corner radius *"
-            + "0 $4 flash origin X offset *"
-            + "0 $5 flash origin Y offset *"
-            + "0 $6 rotation angle *"
-            + "0 Create two overlapping rectangles that omit the rounded corner areas*"
-            + "20,1,$2-2x$3,$4-$1/2,$5,$4+$1/2,$5,$6*"
-            + "20,1,$2,$4,$5-$2/2,$4,$5+$2/2,$6*"
-            + "0 Add circles at the corners. *"
-            + "1,1,2x$3,$4+$1/2-$3,$5+$2/2-$3,$6*"
-            + "1,1,2x$3,$4-$1/2+$3,$5+$2/2-$3,$6*"
-            + "1,1,2x$3,$4-$1/2+$3,$5-$2/2+$3,$6*"
-            + "1,1,2x$3,$4+$1/2-$3,$5-$2/2+$3,$6*");
+        let testCmd = "AMRECTROUNDCORNERS*"
+        + "0 Rectangle with rounded corners*"
+        + "0 $1 width *"
+        + "0 $2 height *"
+        + "0 $3 corner radius *"
+        + "0 $4 flash origin X offset *"
+        + "0 $5 flash origin Y offset *"
+        + "0 $6 rotation angle *"
+        + "0 Create two overlapping rectangles that omit the rounded corner areas*"
+        + "20,1,$2-2x$3,$4-$1/2,$5,$4+$1/2,$5,$6*"
+        + "20,1,$2,$4,$5-$2/2,$4,$5+$2/2,$6*"
+        + "0 Add circles at the corners. *"
+        + "1,1,2x$3,$4+$1/2-$3,$5+$2/2-$3,$6*"
+        + "1,1,2x$3,$4-$1/2+$3,$5+$2/2-$3,$6*"
+        + "1,1,2x$3,$4-$1/2+$3,$5-$2/2+$3,$6*"
+        + "1,1,2x$3,$4+$1/2-$3,$5-$2/2+$3,$6*";
+        cmd = new cm.AMCommand(testCmd);
         let out = cmd.formatOutput();
+        assert.equal(out.substring(1, out.length - 1).replace(/\n/g, ""), testCmd);
+    });
+    it('Dxx Command', () => {
+        let cmd = new cm.DCommand("D15*");
+        assert.equal(cmd.apertureId, 15);
+        assert.equal(cmd.formatOutput(), "D15*");
+    });
+    it('D01 Command', () => {
+        let state = new pr.GerberState();
+        state.coordinateFormatSpec = new pr.CoordinateFormatSpec(1, 3, 1, 3);
+        let cmd = new cm.D01Command("X0005D15*", state);
     });
 });

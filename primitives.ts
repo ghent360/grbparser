@@ -34,12 +34,17 @@ export enum ObjectMirroring {
 }
 
 export class CoordinateFormatSpec {
+    readonly xPow:number;  // The power of 1 to multiply the X coordinate by 10^(-xNumDecPos)
+    readonly yPow:number;  // The power of 1 to multiply the Y coordinate by 10^(-yNumDecPos)
+
     constructor(
         readonly xNumIntPos:number,
         readonly xNumDecPos:number,
         readonly yNumIntPos:number,
         readonly yNumDecPos:number) {
-    }
+            this.xPow = Math.pow(10, -this.xNumDecPos);
+            this.yPow = Math.pow(10, -this.yNumDecPos);
+        }
 }
 
 export class Point {

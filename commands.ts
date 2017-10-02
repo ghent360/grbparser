@@ -14,17 +14,21 @@
  * the MO command would be "MOIN*", but the formatted output would be "%MOIN*%".
  */
 
-import {CoordinateFormatSpec,
-        GerberParseException,
-        FileUnits,
-        ApertureDefinition,
-        VariableDefinition,
-        Primitive,
-        ApertureMacro} from "./primitives";
+import {
+    ApertureDefinition,
+    ApertureMacro,
+    CoordinateFormatSpec,
+    FileUnits,
+    GerberParseException,
+    GerberState,
+    InterpolationMode,
+    Primitive,
+    VariableDefinition,
+} from './primitives';
 
 interface GerberCommand {
     readonly name:string;
-    formatOutput():string;
+    formatOutput(state:GerberState):string;
 }
 
 export class FSCommand implements GerberCommand {
@@ -299,9 +303,108 @@ export class ABCommand implements GerberCommand {
     readonly blockId:number;
 
     constructor(cmd:string) {
-
+        if (cmd.length < 3) {
+            throw new GerberParseException(`Invalid AB command format ${cmd}`);
+        }
+        if (cmd[2] == "*") {
+            if (cmd.length != 3) {
+                throw new GerberParseException(`Invalid AB command format ${cmd}`);
+            }
+            this.blockId = -1;
+        } else {
+            if (cmd[2] != "D") {
+                throw new GerberParseException(`Invalid AB command format ${cmd}`);
+            }
+            let numEndIdx = skipIntCode(cmd, 3);
+            if (numEndIdx != cmd.length - 1) {
+                throw new GerberParseException(`Invalid AB command format ${cmd}`);
+            }
+            this.blockId = Number.parseInt(cmd.substring(3, numEndIdx));
+            if (this.blockId < 10) {
+                throw new GerberParseException(`Invalid AB command format ${cmd}`);
+            }
+        }
     }
+
     formatOutput():string {
+        let result = "%AB";
+        if (this.blockId > 0) {
+            result += "D" + this.blockId;
+        }
+        result += "*%";
+        return result;
+    }
+}
+
+/**
+ * This is the "set current aperture" command, not the D01, D02 or D03 command.
+ */
+export class DCommand implements GerberCommand {
+    readonly name = "D";
+    readonly apertureId:number;
+
+    constructor(cmd:string) {
+        let numEndIdx = skipIntCode(cmd, 3);
+        if (numEndIdx != cmd.length - 1) {
+            throw new GerberParseException(`Invalid D command format ${cmd}`);
+        }
+        this.apertureId = Number.parseInt(cmd.substring(1, numEndIdx));
+        if (this.apertureId < 10) {
+            throw new GerberParseException(`Invalid D command format ${cmd}`);
+        }
+    }
+
+    formatOutput():string {
+        return "D" + this.apertureId + "*";
+    }
+}
+
+function parseCoordinateX(coordinate:string, fmt:CoordinateFormatSpec) {
+    let num = Number.parseFloat(coordinate);
+    return num * fmt.xPow;
+}
+
+function parseCoordinateY(coordinate:string, fmt:CoordinateFormatSpec) {
+    let num = Number.parseFloat(coordinate);
+    return num * fmt.yPow;
+}
+
+export class D01Command implements GerberCommand {
+    readonly name = "D01";
+    readonly x?:number;
+    readonly y?:number;
+    readonly i?:number;
+    readonly j?:number;
+    readonly targetX:number;
+    readonly targetY:number;
+    
+    constructor(cmd:string, state:GerberState) {
+        let startIdx = 0;
+        if (cmd[startIdx] == "X") {
+            let numEndIdx = skipIntCode(cmd, startIdx + 1);
+            this.x = parseCoordinateX(cmd.substring(startIdx + 1, numEndIdx), state.coordinateFormatSpec);
+            startIdx = numEndIdx;
+        }
+        if (cmd[startIdx] == "Y") {
+            let numEndIdx = skipIntCode(cmd, startIdx + 1);
+            this.x = parseCoordinateY(cmd.substring(startIdx + 1, numEndIdx), state.coordinateFormatSpec);
+            startIdx = numEndIdx;
+        }
+        if (state.interpolationMode != InterpolationMode.LINEAR) {
+            if (cmd[startIdx] == "I") {
+                let numEndIdx = skipIntCode(cmd, startIdx + 1);
+                this.i = parseCoordinateX(cmd.substring(startIdx + 1, numEndIdx), state.coordinateFormatSpec);
+                startIdx = numEndIdx;
+            }
+            if (cmd[startIdx] == "J") {
+                let numEndIdx = skipIntCode(cmd, startIdx + 1);
+                this.j = parseCoordinateY(cmd.substring(startIdx + 1, numEndIdx), state.coordinateFormatSpec);
+                startIdx = numEndIdx;
+            }
+        }
+    }
+
+    formatOutput(state:GerberState):string {
         return "TODO";
     }
 }
