@@ -359,14 +359,27 @@ export class DCommand implements GerberCommand {
     }
 }
 
-function parseCoordinateX(coordinate:string, fmt:CoordinateFormatSpec) {
+function parseCoordinateX(coordinate:string, fmt:CoordinateFormatSpec):number {
     let num = Number.parseFloat(coordinate);
     return num * fmt.xPow;
 }
 
-function parseCoordinateY(coordinate:string, fmt:CoordinateFormatSpec) {
+function parseCoordinateY(coordinate:string, fmt:CoordinateFormatSpec):number {
     let num = Number.parseFloat(coordinate);
     return num * fmt.yPow;
+}
+
+function formatFixedNumber(value:number, precision:number):string {
+    let intValue = Math.round(value * Math.pow(10, precision));
+    return intValue.toString();
+}
+
+function formatCoordinateX(value:number, fmt:CoordinateFormatSpec):string {
+    return formatFixedNumber(value, fmt.xNumDecPos);
+}
+
+function formatCoordinateY(value:number, fmt:CoordinateFormatSpec):string {
+    return formatFixedNumber(value, fmt.yNumDecPos);
 }
 
 export class D01Command implements GerberCommand {
@@ -379,32 +392,55 @@ export class D01Command implements GerberCommand {
     readonly targetY:number;
     
     constructor(cmd:string, state:GerberState) {
-        let startIdx = 0;
-        if (cmd[startIdx] == "X") {
-            let numEndIdx = skipIntCode(cmd, startIdx + 1);
-            this.x = parseCoordinateX(cmd.substring(startIdx + 1, numEndIdx), state.coordinateFormatSpec);
-            startIdx = numEndIdx;
+        let parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?(I([+-]?\d+))?(J([+-]?\d+))?D01\*$/;
+        let match = parseRegex.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid D01 command: ${cmd}`);
         }
-        if (cmd[startIdx] == "Y") {
-            let numEndIdx = skipIntCode(cmd, startIdx + 1);
-            this.x = parseCoordinateY(cmd.substring(startIdx + 1, numEndIdx), state.coordinateFormatSpec);
-            startIdx = numEndIdx;
+        if (match[2] != undefined) {
+            this.x = parseCoordinateX(match[2], state.coordinateFormatSpec);
+            this.targetX = this.x;
+        } else {
+            this.targetX = state.currentPoint.x;
+        }
+        if (match[4] != undefined) {
+            this.y = parseCoordinateY(match[4], state.coordinateFormatSpec);
+            this.targetY = this.y;
+        } else {
+            this.targetY = state.currentPoint.y;
         }
         if (state.interpolationMode != InterpolationMode.LINEAR) {
-            if (cmd[startIdx] == "I") {
-                let numEndIdx = skipIntCode(cmd, startIdx + 1);
-                this.i = parseCoordinateX(cmd.substring(startIdx + 1, numEndIdx), state.coordinateFormatSpec);
-                startIdx = numEndIdx;
+            if (match[6] == undefined || match[8] == undefined) {
+                throw new GerberParseException(
+                    "Invalid D01 command (missing I and/or J "
+                    + `values in circular interpolation mode): ${cmd}`);
             }
-            if (cmd[startIdx] == "J") {
-                let numEndIdx = skipIntCode(cmd, startIdx + 1);
-                this.j = parseCoordinateY(cmd.substring(startIdx + 1, numEndIdx), state.coordinateFormatSpec);
-                startIdx = numEndIdx;
+            this.i = parseCoordinateX(match[6], state.coordinateFormatSpec);
+            this.j = parseCoordinateY(match[8], state.coordinateFormatSpec);
+        } else {
+            if (match[6] != undefined || match[8] != undefined) {
+                throw new GerberParseException(
+                    "Invalid D01 command (present I and/or J "
+                    + `values in linear interpolation mode): ${cmd}`);
             }
         }
     }
 
     formatOutput(state:GerberState):string {
-        return "TODO";
+        let result = "";
+        if (this.x != undefined) {
+            result += "X" + formatCoordinateX(this.x, state.coordinateFormatSpec);
+        }
+        if (this.y != undefined) {
+            result += "Y" + formatCoordinateY(this.y, state.coordinateFormatSpec);
+        }
+        if (this.i != undefined) {
+            result += "I" + formatCoordinateX(this.i, state.coordinateFormatSpec);
+        }
+        if (this.j != undefined) {
+            result += "J" + formatCoordinateY(this.j, state.coordinateFormatSpec);
+        }
+        result += "D01*";
+        return result;
     }
 }

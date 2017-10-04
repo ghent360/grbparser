@@ -79,6 +79,8 @@ describe("Commands tests", () => {
     it('D01 Command', () => {
         let state = new pr.GerberState();
         state.coordinateFormatSpec = new pr.CoordinateFormatSpec(1, 3, 1, 3);
-        let cmd = new cm.D01Command("X0005D15*", state);
+        state.interpolationMode = pr.InterpolationMode.LINEAR;
+        let cmd = new cm.D01Command("X0005Y1111D01*", state);
+        let out = cmd.formatOutput(state);
     });
 });
