@@ -63,7 +63,7 @@ export class Block {
 export class GerberState {
     private coordinateFormat_:CoordinateFormatSpec = undefined;
     private fileUnits_:FileUnits = undefined;
-    private currentPoint_:Point = undefined;
+    private currentPoint_:Point = new Point();
     private currentAppretureId_:number = undefined;
     private interpolationMode_:InterpolationMode = undefined;
     private quadrantMode_:QuadrantMode = undefined;
@@ -101,15 +101,26 @@ export class GerberState {
         this.fileUnits_ = value;        
     }
 
-    get currentPoint():Point {
-        if (this.currentPoint_ == undefined) {
-            this.error("Current point is not set.");
+    get currentPointX():number {
+        if (this.currentPoint_.x == undefined) {
+            this.error("Current point X is not set.");
         }
-        return this.currentPoint_;
+        return this.currentPoint_.x;
     }
 
-    set currentPoint(value:Point) {
-        this.currentPoint_ = value;        
+    set currentPointX(value:number) {
+        this.currentPoint_.x = value;        
+    }
+
+    get currentPointY():number {
+        if (this.currentPoint_.y == undefined) {
+            this.error("Current point Y is not set.");
+        }
+        return this.currentPoint_.y;
+    }
+
+    set currentPointY(value:number) {
+        this.currentPoint_.y = value;        
     }
 
     get currentAppretureId():number {

@@ -392,7 +392,7 @@ export class D01Command implements GerberCommand {
     readonly targetY:number;
     
     constructor(cmd:string, state:GerberState) {
-        let parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?(I([+-]?\d+))?(J([+-]?\d+))?D01\*$/;
+        let parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?(I([+-]?\d+))?(J([+-]?\d+))?D[0]*1\*$/;
         let match = parseRegex.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D01 command: ${cmd}`);
@@ -401,13 +401,13 @@ export class D01Command implements GerberCommand {
             this.x = parseCoordinateX(match[2], state.coordinateFormatSpec);
             this.targetX = this.x;
         } else {
-            this.targetX = state.currentPoint.x;
+            this.targetX = state.currentPointX;
         }
         if (match[4] != undefined) {
             this.y = parseCoordinateY(match[4], state.coordinateFormatSpec);
             this.targetY = this.y;
         } else {
-            this.targetY = state.currentPoint.y;
+            this.targetY = state.currentPointY;
         }
         if (state.interpolationMode != InterpolationMode.LINEAR) {
             if (match[6] == undefined || match[8] == undefined) {
@@ -441,6 +441,88 @@ export class D01Command implements GerberCommand {
             result += "J" + formatCoordinateY(this.j, state.coordinateFormatSpec);
         }
         result += "D01*";
+        return result;
+    }
+}
+
+export class D02Command implements GerberCommand {
+    readonly name = "D02";
+    readonly x?:number;
+    readonly y?:number;
+    readonly targetX:number;
+    readonly targetY:number;
+    
+    constructor(cmd:string, state:GerberState) {
+        let parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*2\*$/;
+        let match = parseRegex.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid D02 command: ${cmd}`);
+        }
+        if (match[2] != undefined) {
+            this.x = parseCoordinateX(match[2], state.coordinateFormatSpec);
+            this.targetX = this.x;
+            state.currentPointX = this.x;
+        } else {
+            this.targetX = state.currentPointX;
+        }
+        if (match[4] != undefined) {
+            this.y = parseCoordinateY(match[4], state.coordinateFormatSpec);
+            this.targetY = this.y;
+            state.currentPointY = this.y;
+        } else {
+            this.targetY = state.currentPointY;
+        }
+    }
+
+    formatOutput(state:GerberState):string {
+        let result = "";
+        if (this.x != undefined) {
+            result += "X" + formatCoordinateX(this.x, state.coordinateFormatSpec);
+        }
+        if (this.y != undefined) {
+            result += "Y" + formatCoordinateY(this.y, state.coordinateFormatSpec);
+        }
+        result += "D02*";
+        return result;
+    }
+}
+
+export class D03Command implements GerberCommand {
+    readonly name = "D03";
+    readonly x?:number;
+    readonly y?:number;
+    readonly targetX:number;
+    readonly targetY:number;
+    
+    constructor(cmd:string, state:GerberState) {
+        let parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*3\*$/;
+        let match = parseRegex.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid D03 command: ${cmd}`);
+        }
+        if (match[2] != undefined) {
+            this.x = parseCoordinateX(match[2], state.coordinateFormatSpec);
+            this.targetX = this.x;
+        } else {
+            this.targetX = state.currentPointX;
+        }
+        if (match[4] != undefined) {
+            this.y = parseCoordinateY(match[4], state.coordinateFormatSpec);
+            this.targetY = this.y;
+        } else {
+            this.targetY = state.currentPointY;
+        }
+    }
+
+    formatOutput(state:GerberState):string {
+        let result = "";
+        if (this.x != undefined) {
+            result += "X" + formatCoordinateX(this.x, state.coordinateFormatSpec);
+        }
+        if (this.y != undefined) {
+            result += "Y" + formatCoordinateY(this.y, state.coordinateFormatSpec);
+        }
+        result += "D03*";
         return result;
     }
 }

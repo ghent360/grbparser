@@ -1,5 +1,5 @@
 import { GerberState } from '../primitives';
-import { AMCommand, DCommand } from '../commands';
+import { AMCommand, D01Command, D02Command, D03Command, DCommand } from '../commands';
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as cm from '../commands';
@@ -76,11 +76,52 @@ describe("Commands tests", () => {
         assert.equal(cmd.apertureId, 15);
         assert.equal(cmd.formatOutput(), "D15*");
     });
-    it('D01 Command', () => {
+    it('D0x Command', () => {
         let state = new pr.GerberState();
+        let cmd:cm.D01Command|cm.D02Command|cm.D03Command;
+
         state.coordinateFormatSpec = new pr.CoordinateFormatSpec(1, 3, 1, 3);
         state.interpolationMode = pr.InterpolationMode.LINEAR;
-        let cmd = new cm.D01Command("X0005Y1111D01*", state);
+
+        cmd = new cm.D01Command("X0005Y1111D1*", state);
+        assert.equal(cmd.x, 0.005);
+        assert.equal(cmd.y, 1.111);
+        assert.equal(cmd.targetX, 0.005);
+        assert.equal(cmd.targetY, 1.111);
+        assert.equal(cmd.i, undefined);
+        assert.equal(cmd.j, undefined);
+
         let out = cmd.formatOutput(state);
+        assert.equal(out, "X5Y1111D01*");
+        
+        cmd = new cm.D02Command("X0Y0D2*", state);
+        assert.equal(state.currentPointX, 0);
+        assert.equal(state.currentPointY, 0);
+        assert.equal(cmd.x, 0);
+        assert.equal(cmd.y, 0);
+        assert.equal(cmd.targetX, 0);
+        assert.equal(cmd.targetY, 0);
+        out = cmd.formatOutput(state);
+        assert.equal(out, "X0Y0D02*");
+
+        cmd = new cm.D03Command("D3*", state);
+        assert.equal(cmd.targetX, 0);
+        assert.equal(cmd.targetY, 0);
+        assert.equal(cmd.x, undefined);
+        assert.equal(cmd.y, undefined);
+        out = cmd.formatOutput(state);
+        assert.equal(out, "D03*");
+
+        cmd = new cm.D02Command("Y1000D0002*", state);
+        assert.equal(cmd.targetX, 0);
+        assert.equal(cmd.targetY, 1);
+        assert.equal(cmd.x, undefined);
+        assert.equal(cmd.y, 1);
+        assert.equal(state.currentPointX, 0);
+        assert.equal(state.currentPointY, 1);
+
+        cmd = new cm.D03Command("D3*", state);
+        assert.equal(cmd.targetX, 0);
+        assert.equal(cmd.targetY, 1);
     });
 });
