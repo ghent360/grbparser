@@ -79,30 +79,31 @@ export class MOCommand implements GerberCommand {
 export class ADCommand implements GerberCommand {
     readonly name:string = "AD";
     readonly definition:ApertureDefinition;
-
+    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z0-9_.$]*)(,(?:[+-]?(?:\d+|\d*.\d+)(?:X[+-]?(?:\d+|\d*.\d+))*))?\*$/;
     constructor(cmd:string) {
-        let endId = skipIntCode(cmd, 4);
-        let idStr = cmd.substring(3, endId);
-        let apertureId = Number.parseInt(idStr);
+        let match = ADCommand.matchExp.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid aperture AD command ${cmd}`);
+        }
+        let apertureId = Number.parseInt(match[1]);
         if (apertureId < 10) {
             throw new GerberParseException(`Invalid aperture ID ${apertureId}`);
         }
-        let commaIdx = cmd.indexOf(",");
-        if (commaIdx < 0) {
-            commaIdx = cmd.length - 1;
-        }
-        let templateName = cmd.substring(endId, commaIdx);
+        let templateName = match[2];
         let modifiers:number[] = [];
-        let modifierStrStart = commaIdx + 1;
-        while (modifierStrStart < cmd.length - 1) {
-            let xIdx = cmd.indexOf('X', modifierStrStart);
-            if (xIdx < 0) {
-                xIdx = cmd.length - 1;
+        let modifiersTxt = match[3];
+        if (modifiersTxt != undefined) {
+            let modifierStrStart = 1;
+            while (modifierStrStart < modifiersTxt.length) {
+                let xIdx = modifiersTxt.indexOf('X', modifierStrStart);
+                if (xIdx < 0) {
+                    xIdx = modifiersTxt.length;
+                }
+                let valueStr = modifiersTxt.substring(modifierStrStart, xIdx);
+                modifiers.push(Number.parseFloat(valueStr));
+                modifierStrStart = xIdx + 1;
             }
-            let valueStr = cmd.substring(modifierStrStart, xIdx);
-            modifiers.push(Number.parseFloat(valueStr));
-            modifierStrStart = xIdx + 1;
-        }
+            }
         this.definition = new ApertureDefinition(apertureId, templateName, modifiers);
         this.checkStandardApertures();
     }
@@ -231,10 +232,14 @@ function skipIntCode(cmd:string, start:number = 1):number {
 export class G04Command implements GerberCommand {
     readonly name:string = "G04";
     readonly comment:string;
+    private static matchExp = /^G[0]*4(.*)\*$/;
 
     constructor(cmd:string) {
-        let startIdx = skipIntCode(cmd);
-        this.comment = cmd.substr(startIdx, cmd.length - startIdx);
+        let match = G04Command.matchExp.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid G04 command ${cmd}`);
+        }
+        this.comment = match[1];
     }
 
     formatOutput():string {
@@ -342,13 +347,14 @@ export class ABCommand implements GerberCommand {
 export class DCommand implements GerberCommand {
     readonly name = "D";
     readonly apertureId:number;
+    private static matchExp = /^D(\d+)\*$/;
 
     constructor(cmd:string) {
-        let numEndIdx = skipIntCode(cmd, 3);
-        if (numEndIdx != cmd.length - 1) {
+        let match = DCommand.matchExp.exec(cmd);
+        if (!match) {
             throw new GerberParseException(`Invalid D command format ${cmd}`);
         }
-        this.apertureId = Number.parseInt(cmd.substring(1, numEndIdx));
+        this.apertureId = Number.parseInt(match[1]);
         if (this.apertureId < 10) {
             throw new GerberParseException(`Invalid D command format ${cmd}`);
         }
@@ -390,10 +396,10 @@ export class D01Command implements GerberCommand {
     readonly j?:number;
     readonly targetX:number;
     readonly targetY:number;
-    
+    private static parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?(I([+-]?\d+))?(J([+-]?\d+))?D[0]*1\*$/;
+
     constructor(cmd:string, state:GerberState) {
-        let parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?(I([+-]?\d+))?(J([+-]?\d+))?D[0]*1\*$/;
-        let match = parseRegex.exec(cmd);
+        let match = D01Command.parseRegex.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D01 command: ${cmd}`);
         }
@@ -451,10 +457,10 @@ export class D02Command implements GerberCommand {
     readonly y?:number;
     readonly targetX:number;
     readonly targetY:number;
-    
+    private static parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*2\*$/;
+
     constructor(cmd:string, state:GerberState) {
-        let parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*2\*$/;
-        let match = parseRegex.exec(cmd);
+        let match = D02Command.parseRegex.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D02 command: ${cmd}`);
         }
@@ -493,10 +499,10 @@ export class D03Command implements GerberCommand {
     readonly y?:number;
     readonly targetX:number;
     readonly targetY:number;
-    
+    private static parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*3\*$/;
+
     constructor(cmd:string, state:GerberState) {
-        let parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*3\*$/;
-        let match = parseRegex.exec(cmd);
+        let match = D03Command.parseRegex.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D03 command: ${cmd}`);
         }

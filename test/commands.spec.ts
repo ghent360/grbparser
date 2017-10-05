@@ -15,10 +15,10 @@ describe("Commands tests", () => {
         assert.deepEqual(cmd.formatOutput(), "%FSLAX26Y37*%")
     });
     it('G04 Command', () => {
-        let cmd = new cm.G04Command("G4");
+        let cmd = new cm.G04Command("G4*");
         assert.equal(cmd.comment, "");
         assert.deepEqual(cmd.formatOutput(), "G04*")
-        cmd = new cm.G04Command("G000004 Create aperture macro");
+        cmd = new cm.G04Command("G000004 Create aperture macro*");
         assert.equal(cmd.comment, " Create aperture macro");
         assert.deepEqual(cmd.formatOutput(), "G04 Create aperture macro*")
     });
