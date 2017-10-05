@@ -306,25 +306,17 @@ export class AMCommand implements GerberCommand {
 export class ABCommand implements GerberCommand {
     readonly name = "AB";
     readonly blockId:number;
+    private static matchExp = /^AB(?:D(\d+))?\*$/;
 
     constructor(cmd:string) {
-        if (cmd.length < 3) {
+        let match = ABCommand.matchExp.exec(cmd);
+        if (!match) {
             throw new GerberParseException(`Invalid AB command format ${cmd}`);
         }
-        if (cmd[2] == "*") {
-            if (cmd.length != 3) {
-                throw new GerberParseException(`Invalid AB command format ${cmd}`);
-            }
+        if (match[1] == undefined) {
             this.blockId = -1;
         } else {
-            if (cmd[2] != "D") {
-                throw new GerberParseException(`Invalid AB command format ${cmd}`);
-            }
-            let numEndIdx = skipIntCode(cmd, 3);
-            if (numEndIdx != cmd.length - 1) {
-                throw new GerberParseException(`Invalid AB command format ${cmd}`);
-            }
-            this.blockId = Number.parseInt(cmd.substring(3, numEndIdx));
+            this.blockId = Number.parseInt(match[1]);
             if (this.blockId < 10) {
                 throw new GerberParseException(`Invalid AB command format ${cmd}`);
             }
