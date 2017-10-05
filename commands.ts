@@ -388,10 +388,10 @@ export class D01Command implements GerberCommand {
     readonly j?:number;
     readonly targetX:number;
     readonly targetY:number;
-    private static parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?(I([+-]?\d+))?(J([+-]?\d+))?D[0]*1\*$/;
+    private static matchExp = /^(X([+-]?\d+))?(Y([+-]?\d+))?(I([+-]?\d+))?(J([+-]?\d+))?D[0]*1\*$/;
 
     constructor(cmd:string, state:GerberState) {
-        let match = D01Command.parseRegex.exec(cmd);
+        let match = D01Command.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D01 command: ${cmd}`);
         }
@@ -449,10 +449,10 @@ export class D02Command implements GerberCommand {
     readonly y?:number;
     readonly targetX:number;
     readonly targetY:number;
-    private static parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*2\*$/;
+    private static matchExp = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*2\*$/;
 
     constructor(cmd:string, state:GerberState) {
-        let match = D02Command.parseRegex.exec(cmd);
+        let match = D02Command.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D02 command: ${cmd}`);
         }
@@ -491,10 +491,10 @@ export class D03Command implements GerberCommand {
     readonly y?:number;
     readonly targetX:number;
     readonly targetY:number;
-    private static parseRegex = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*3\*$/;
+    private static matchExp = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*3\*$/;
 
     constructor(cmd:string, state:GerberState) {
-        let match = D03Command.parseRegex.exec(cmd);
+        let match = D03Command.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D03 command: ${cmd}`);
         }
