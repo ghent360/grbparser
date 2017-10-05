@@ -1,4 +1,4 @@
-import { GerberState } from '../primitives';
+import { GerberParseException, GerberState } from '../primitives';
 import { AMCommand, D01Command, D02Command, D03Command, DCommand } from '../commands';
 import * as assert from 'assert';
 import * as fs from 'fs';
@@ -46,6 +46,8 @@ describe("Commands tests", () => {
         assert.equal(cmd.definition.modifiers[0], 0.555);
         assert.equal(cmd.definition.modifiers[1], 0.123);
         assert.equal(out, "%ADD10C,0.555X0.123*%");
+
+        assert.throws(() => new cm.ADCommand("ADD05C,0.5*"), GerberParseException);
     });
     it('AM Command', () => {
         let cmd = new cm.AMCommand("AMTest*$1=555*$2=$1 + 2*");
@@ -75,6 +77,7 @@ describe("Commands tests", () => {
         let cmd = new cm.DCommand("D15*");
         assert.equal(cmd.apertureId, 15);
         assert.equal(cmd.formatOutput(), "D15*");
+        assert.throws(() => new cm.DCommand("D05*"), GerberParseException);
     });
     it('D0x Command', () => {
         let state = new pr.GerberState();

@@ -22,6 +22,9 @@ import {
     GerberParseException,
     GerberState,
     InterpolationMode,
+    QuadrantMode,
+    ObjectPolarity,
+    ObjectMirroring,
     Primitive,
     VariableDefinition,
 } from './primitives';
@@ -522,5 +525,179 @@ export class D03Command implements GerberCommand {
         }
         result += "D03*";
         return result;
+    }
+}
+
+class BaseGCodeCommand {
+    readonly codeId:number;
+    private static matchExp = /^G(\d+)\*$/;
+
+    constructor(cmd:string, cmdCode?:number) {
+        let match = BaseGCodeCommand.matchExp.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid G command format ${cmd}`);
+        }
+        this.codeId = Number.parseInt(match[1]);
+        if (cmdCode != undefined && this.codeId != cmdCode) {
+            throw new GerberParseException(
+                `G code mismatch expected ${cmdCode} got ${this.codeId}`);
+        }
+    }
+
+    formatOutput():string {
+        let result = "G";
+        if (this.codeId < 10) {
+            result += "0";
+        }
+        result += this.codeId;
+        result += "*";
+        return result;
+    }
+}
+
+export class G01Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G01";
+    constructor(cmd:string, state:GerberState) {
+        super(cmd, 1);
+        state.interpolationMode = InterpolationMode.LINEAR;
+    }
+}
+
+export class G02Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G02";
+    constructor(cmd:string, state:GerberState) {
+        super(cmd, 2);
+        state.interpolationMode = InterpolationMode.CLOCKWISE;
+    }
+}
+
+export class G03Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G03";
+    constructor(cmd:string, state:GerberState) {
+        super(cmd, 3);
+        state.interpolationMode = InterpolationMode.COUNTER_CLOCKWISE;
+    }
+}
+
+export class G74Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G74";
+    constructor(cmd:string, state:GerberState) {
+        super(cmd, 74);
+        state.quadrantMode = QuadrantMode.SINGLE;
+    }
+}
+
+export class G75Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G75";
+    constructor(cmd:string, state:GerberState) {
+        super(cmd, 75);
+        state.quadrantMode = QuadrantMode.MULTI;
+    }
+}
+
+export class LPCommand implements GerberCommand {
+    readonly name = "LP";
+    readonly polarity:ObjectPolarity;
+    private static matchExp = /^LP(C|D)\*$/;
+
+    constructor(cmd:string, state:GerberState) {
+        let match = LPCommand.matchExp.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid LP command format ${cmd}`);
+        }
+        this.polarity = (match[1] == "C") ? ObjectPolarity.LIGHT : ObjectPolarity.DARK;
+        state.objectPolarity = this.polarity;
+    }
+
+    formatOutput():string {
+        return "LP" + ((this.polarity == ObjectPolarity.LIGHT) ? "C" : "D") + "*";
+    }
+}
+
+export class LMCommand implements GerberCommand {
+    readonly name = "LM";
+    readonly miroring:ObjectMirroring;
+    private static matchExp = /^LM(N|X|Y|XY)\*$/;
+
+    constructor(cmd:string, state:GerberState) {
+        let match = LMCommand.matchExp.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid LM command format ${cmd}`);
+        }
+        let code = match[1];
+        if (code == "N") {
+            this.miroring = ObjectMirroring.NONE;
+        } else if (code == "X") {
+            this.miroring = ObjectMirroring.X_AXIS;
+        } else if (code == "Y") {
+            this.miroring = ObjectMirroring.Y_AXIS;
+        } else if (code == "XY") {
+            this.miroring = ObjectMirroring.XY_AXIS;
+        }
+        state.objectMirroring = this.miroring;
+    }
+
+    formatOutput():string {
+        let result = "LM";
+        switch (this.miroring) {
+            case ObjectMirroring.NONE: result += "N";break;
+            case ObjectMirroring.X_AXIS: result += "X";break;
+            case ObjectMirroring.Y_AXIS: result += "Y";break;
+            case ObjectMirroring.XY_AXIS: result += "XY";break;
+        }
+        result += "*";
+        return result;
+    }
+}
+
+export class LRCommand implements GerberCommand {
+    readonly name = "LR";
+    readonly rotation:number;
+    private static matchExp = /^LR([+-]?(?:\d+|\d*\.\d+))\*$/;
+
+    constructor(cmd:string, state:GerberState) {
+        let match = LRCommand.matchExp.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid LR command format ${cmd}`);
+        }
+        this.rotation = Number.parseFloat(match[1]);
+        state.objectRotation = this.rotation;
+    }
+
+    formatOutput():string {
+        return "LP" + this.rotation + "*";
+    }
+}
+
+export class LSCommand implements GerberCommand {
+    readonly name = "LS";
+    readonly scale:number;
+    private static matchExp = /^LS([+-]?(?:\d+|\d*\.\d+))\*$/;
+
+    constructor(cmd:string, state:GerberState) {
+        let match = LSCommand.matchExp.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid LS command format ${cmd}`);
+        }
+        this.scale = Number.parseFloat(match[1]);
+        state.objectScaling = this.scale;
+    }
+
+    formatOutput():string {
+        return "LS" + this.scale + "*";
+    }
+}
+
+export class G36Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G36";
+    constructor(cmd:string, state:GerberState) {
+        super(cmd, 36);
+    }
+}
+
+export class G37Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G37";
+    constructor(cmd:string, state:GerberState) {
+        super(cmd, 37);
     }
 }
