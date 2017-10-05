@@ -701,3 +701,41 @@ export class G37Command extends BaseGCodeCommand implements GerberCommand {
         super(cmd, 37);
     }
 }
+
+export class SRCommand implements GerberCommand {
+    readonly name = "SR";
+    readonly x?:number;
+    readonly y?:number;
+    readonly i?:number;
+    readonly j?:number;
+    private static matchExp = /^SR(?:X(\d+)Y(\d+)I(\d+|(?:\d*\.\d+))J(\d+|(?:\d*\.\d+)))?\*$/;
+
+    constructor(cmd:string, state:GerberState) {
+        let match = SRCommand.matchExp.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid SR command: ${cmd}`);
+        }
+        if (match[1] != undefined) {
+            this.x = Number.parseInt(match[1]);
+            this.y = Number.parseInt(match[2]);
+            this.i = Number.parseFloat(match[3]);
+            this.j = Number.parseFloat(match[4]);
+
+            if (this.x < 1 || this.y < 1) {
+                throw new GerberParseException(`Invalid X or Y step ${this.x}, ${this.y}`);
+            }
+        }
+    }
+
+    formatOutput(state:GerberState):string {
+        let result = "SR";
+        if (this.x != undefined) {
+            result += "X" + this.x.toString();
+            result += "Y" + this.y.toString();
+            result += "I" + this.i.toPrecision();
+            result += "J" + this.j.toPrecision();
+        }
+        result += "*";
+        return result;
+    }
+}
