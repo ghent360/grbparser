@@ -7,7 +7,8 @@ import * as pr from '../primitives';
 
 describe("Commands tests", () => {
     it('FS Command', () => {
-        let cmd = new cm.FSCommand("FSLAX26Y37*");
+        let state = new pr.GerberState();
+        let cmd = new cm.FSCommand("FSLAX26Y37*", state);
         assert.equal(cmd.coordinateFormat.xNumIntPos, 2);
         assert.equal(cmd.coordinateFormat.xNumDecPos, 6);
         assert.equal(cmd.coordinateFormat.yNumIntPos, 3);
@@ -23,10 +24,11 @@ describe("Commands tests", () => {
         assert.deepEqual(cmd.formatOutput(), "G04 Create aperture macro*")
     });
     it('MO Command', () => {
-        let cmd = new cm.MOCommand("MOIN*");
+        let state = new pr.GerberState();
+        let cmd = new cm.MOCommand("MOIN*", state);
         assert.equal(cmd.units, pr.FileUnits.INCHES);
         assert.deepEqual(cmd.formatOutput(), "%MOIN*%")
-        cmd = new cm.MOCommand("MOMM*");
+        cmd = new cm.MOCommand("MOMM*", state);
         assert.equal(cmd.units, pr.FileUnits.MILIMETERS);
         assert.deepEqual(cmd.formatOutput(), "%MOMM*%")
     });
@@ -126,5 +128,36 @@ describe("Commands tests", () => {
         cmd = new cm.D03Command("D3*", state);
         assert.equal(cmd.targetX, 0);
         assert.equal(cmd.targetY, 1);
+
+        cmd = new cm.D02Command("X5000Y2000D02*", state);
+        assert.equal(state.currentPointX, 5);
+        assert.equal(state.currentPointY, 2);
+
+        cmd = new cm.D01Command("X1000D01*", state);
+        assert.equal(cmd.targetX, 1);
+        assert.equal(cmd.targetY, 2);
+
+        cmd = new cm.D01Command("Y1000D01*", state);
+        assert.equal(cmd.targetX, 5);
+        assert.equal(cmd.targetY, 1);
+
+        cmd = new cm.D01Command("D01*", state);
+        assert.equal(cmd.targetX, 5);
+        assert.equal(cmd.targetY, 2);
     });
+    it("Gxx codes", () => {
+        let state = new pr.GerberState();
+        let cmd:cm.GerberCommand = new cm.G01Command("G1*", state);
+        assert.equal(state.interpolationMode, pr.InterpolationMode.LINEAR);
+        assert.throws(() => new cm.G01Command("G02*", state), GerberParseException);
+        cmd = new cm.G02Command("G002*", state);
+        assert.equal(state.interpolationMode, pr.InterpolationMode.CLOCKWISE);
+        cmd = new cm.G03Command("G03*", state);
+        assert.equal(state.interpolationMode, pr.InterpolationMode.COUNTER_CLOCKWISE);
+        cmd = new cm.G74Command("G74*", state);
+        assert.equal(state.quadrantMode, pr.QuadrantMode.SINGLE);
+        cmd = new cm.G75Command("G75*", state);
+        assert.equal(state.quadrantMode, pr.QuadrantMode.MULTI);
+    });
+    it("Lx commands");
 });

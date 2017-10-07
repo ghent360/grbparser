@@ -29,16 +29,16 @@ import {
     VariableDefinition,
 } from './primitives';
 
-interface GerberCommand {
+export interface GerberCommand {
     readonly name:string;
     formatOutput(state:GerberState):string;
 }
 
 export class FSCommand implements GerberCommand {
-    readonly coordinateFormat:CoordinateFormatSpec;
     readonly name:string = "FS";
+    readonly coordinateFormat:CoordinateFormatSpec;
 
-    constructor(cmd:string) {
+    constructor(cmd:string, state:GerberState) {
         if (cmd.length < 10 || !cmd.startsWith("FSLAX") || cmd[7] != "Y") {
             throw new GerberParseException(`Unsuported FS command ${cmd}`);
         }
@@ -48,6 +48,7 @@ export class FSCommand implements GerberCommand {
         let yNumDecPos = Number.parseInt(cmd.substr(9, 1));
         this.coordinateFormat =
             new CoordinateFormatSpec(xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
+        state.coordinateFormatSpec = this.coordinateFormat;
     }
 
     formatOutput():string {
@@ -60,10 +61,10 @@ export class FSCommand implements GerberCommand {
 }
 
 export class MOCommand implements GerberCommand {
-    readonly units:FileUnits;
     readonly name:string = "MO";
+    readonly units:FileUnits;
 
-    constructor(cmd:string) {
+    constructor(cmd:string, state:GerberState) {
         let mode = cmd.substr(2, 2);
         if (mode === "MM") {
             this.units = FileUnits.MILIMETERS;
@@ -72,6 +73,7 @@ export class MOCommand implements GerberCommand {
         } else {
             throw new GerberParseException(`Invalid file units command ${cmd}`);
         }
+        state.fileUnits = this.units;
     }
 
     formatOutput():string {
@@ -83,6 +85,7 @@ export class ADCommand implements GerberCommand {
     readonly name:string = "AD";
     readonly definition:ApertureDefinition;
     private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z0-9_.$]*)(,(?:[+-]?(?:\d+|\d*.\d+)(?:X[+-]?(?:\d+|\d*.\d+))*))?\*$/;
+
     constructor(cmd:string) {
         let match = ADCommand.matchExp.exec(cmd);
         if (!match) {
@@ -737,5 +740,19 @@ export class SRCommand implements GerberCommand {
         }
         result += "*";
         return result;
+    }
+}
+
+export class M02Command implements GerberCommand {
+    readonly name:string = "M02";
+
+    constructor(cmd:string) {
+        if (cmd != "M12*") {
+            throw new GerberParseException(`Invalid M12 command ${cmd}`);
+        }
+    }
+
+    formatOutput():string {
+        return "M12*";
     }
 }
