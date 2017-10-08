@@ -60,6 +60,33 @@ export class GerberParseException {
 export class Block {
 }
 
+export class ApertureDefinition {
+    constructor(
+        readonly apertureId:number,
+        readonly templateName:string,
+        readonly modifiers:number[]) {
+    }
+}
+
+export class VariableDefinition {
+    constructor(readonly id:number, readonly expression:string) {
+    }
+}
+
+export class Primitive {
+    constructor(
+        readonly code:number,
+        readonly modifiers:string[]) {
+    }
+}
+
+export class ApertureMacro {
+    constructor(
+        readonly macroName:string,
+        readonly content:Array<VariableDefinition|Primitive>) {
+    }
+}
+
 export class GerberState {
     private coordinateFormat_:CoordinateFormatSpec = undefined;
     private fileUnits_:FileUnits = undefined;
@@ -72,7 +99,9 @@ export class GerberState {
     public objectRotation:number = 0;
     public objectScaling:number = 1.0;
     private lineNo:number;
-
+    private apertures:{[id:number]:ApertureDefinition} = {};
+    private apertureMacros:{[name:string]:ApertureMacro} = {};
+    
     get coordinateFormatSpec():CoordinateFormatSpec {
         if (this.coordinateFormat_ == undefined) {
             this.error("File coordinate format is not set.");
@@ -156,38 +185,43 @@ export class GerberState {
         this.quadrantMode_ = value;        
     }
 
+    getAperture(id:number):ApertureDefinition {
+        if (id < 10) {
+            this.error(`Invalid aprture ID ${id}`);
+        }
+        if (this.apertures[id] == undefined) {
+            this.error(`Aprture ID ${id} is not defined yet`);
+        }
+        return this.apertures[id];
+    }
+
+    setAperture(ap:ApertureDefinition) {
+        if (this.apertures[ap.apertureId] != undefined) {
+            this.error(`Overriding aperture ${ap.apertureId}`);
+        }
+        this.apertures[ap.apertureId] = ap;
+    }
+
+    getApertureMacro(name:number):ApertureMacro {
+        if (this.apertureMacros[name] == undefined) {
+            this.error(`Aprture macro name ${name} is not defined yet`);
+        }
+        return this.apertureMacros[name];
+    }
+
+    setApertureMacro(apm:ApertureMacro) {
+        if (this.apertureMacros[apm.macroName] != undefined) {
+            this.error(`Overriding aperture macro ${apm.macroName}`);
+        }
+        this.apertureMacros[apm.macroName] = apm;
+    }
+
     setLineNo(lineNo:number) {
         this.lineNo = lineNo;
     }
 
     private error(message:string) {
         console.log(`Error parsing gerber file ${message}`);
-    }
-}
-
-export class ApertureDefinition {
-    constructor(
-        readonly apertureId:number,
-        readonly templateName:string,
-        readonly modifiers:number[]) {
-    }
-}
-
-export class VariableDefinition {
-    constructor(readonly id:number, readonly expression:string) {
-    }
-}
-
-export class Primitive {
-    constructor(
-        readonly code:number,
-        readonly modifiers:string[]) {
-    }
-}
-
-export class ApertureMacro {
-    constructor(
-        readonly macroName:string,
-        readonly content:Array<VariableDefinition|Primitive>) {
+        throw new Error(message);
     }
 }

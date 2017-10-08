@@ -86,7 +86,7 @@ export class ADCommand implements GerberCommand {
     readonly definition:ApertureDefinition;
     private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z0-9_.$]*)(,(?:[+-]?(?:\d+|\d*.\d+)(?:X[+-]?(?:\d+|\d*.\d+))*))?\*$/;
 
-    constructor(cmd:string) {
+    constructor(cmd:string, state:GerberState) {
         let match = ADCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid aperture AD command ${cmd}`);
@@ -112,6 +112,7 @@ export class ADCommand implements GerberCommand {
             }
         this.definition = new ApertureDefinition(apertureId, templateName, modifiers);
         this.checkStandardApertures();
+        state.setAperture(this.definition);
     }
 
     formatOutput():string {
@@ -257,7 +258,7 @@ export class AMCommand implements GerberCommand {
     readonly name:string = "AM";
     readonly macro:ApertureMacro;
 
-    constructor(cmd:string) {
+    constructor(cmd:string, state:GerberState) {
         let content = cmd.split("*");
         let name = content[0].substring(2);
         let macroContent:Array<VariableDefinition|Primitive> = [];
@@ -282,6 +283,7 @@ export class AMCommand implements GerberCommand {
             }
         }
         this.macro = new ApertureMacro(name, macroContent);
+        state.setApertureMacro(this.macro);
     }
 
     formatOutput():string {
@@ -314,7 +316,7 @@ export class ABCommand implements GerberCommand {
     readonly blockId:number;
     private static matchExp = /^AB(?:D(\d+))?\*$/;
 
-    constructor(cmd:string) {
+    constructor(cmd:string, state:GerberState) {
         let match = ABCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid AB command format ${cmd}`);

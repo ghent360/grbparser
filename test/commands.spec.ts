@@ -27,32 +27,35 @@ describe("Commands tests", () => {
         let state = new pr.GerberState();
         let cmd = new cm.MOCommand("MOIN*", state);
         assert.equal(cmd.units, pr.FileUnits.INCHES);
-        assert.deepEqual(cmd.formatOutput(), "%MOIN*%")
+        assert.deepEqual(cmd.formatOutput(), "%MOIN*%");
+        state = new pr.GerberState();
         cmd = new cm.MOCommand("MOMM*", state);
         assert.equal(cmd.units, pr.FileUnits.MILIMETERS);
-        assert.deepEqual(cmd.formatOutput(), "%MOMM*%")
+        assert.deepEqual(cmd.formatOutput(), "%MOMM*%");
     });
     it('AD Command', () => {
-        let cmd = new cm.ADCommand("ADD10Test*");
+        let state = new pr.GerberState();
+        let cmd = new cm.ADCommand("ADD10Test*", state);
         let out = cmd.formatOutput();
         assert.equal(cmd.definition.apertureId, 10);
         assert.equal(cmd.definition.templateName, "Test");
         assert.equal(cmd.definition.modifiers.length, 0);
         assert.equal(out, "%ADD10Test*%");
 
-        cmd = new cm.ADCommand("ADD10C,0.555X0.123*");
+        cmd = new cm.ADCommand("ADD11C,0.555X0.123*", state);
         out = cmd.formatOutput();
-        assert.equal(cmd.definition.apertureId, 10);
+        assert.equal(cmd.definition.apertureId, 11);
         assert.equal(cmd.definition.templateName, "C");
         assert.equal(cmd.definition.modifiers.length, 2);
         assert.equal(cmd.definition.modifiers[0], 0.555);
         assert.equal(cmd.definition.modifiers[1], 0.123);
-        assert.equal(out, "%ADD10C,0.555X0.123*%");
+        assert.equal(out, "%ADD11C,0.555X0.123*%");
 
-        assert.throws(() => new cm.ADCommand("ADD05C,0.5*"), GerberParseException);
+        assert.throws(() => new cm.ADCommand("ADD05C,0.5*", state), GerberParseException);
     });
     it('AM Command', () => {
-        let cmd = new cm.AMCommand("AMTest*$1=555*$2=$1 + 2*");
+        let state = new pr.GerberState();
+        let cmd = new cm.AMCommand("AMTest*$1=555*$2=$1 + 2*", state);
         assert.equal(cmd.macro.macroName, "Test");
         assert.equal(cmd.macro.content.length, 2);
         let testCmd = "AMRECTROUNDCORNERS*"
@@ -71,7 +74,7 @@ describe("Commands tests", () => {
         + "1,1,2x$3,$4-$1/2+$3,$5+$2/2-$3,$6*"
         + "1,1,2x$3,$4-$1/2+$3,$5-$2/2+$3,$6*"
         + "1,1,2x$3,$4+$1/2-$3,$5-$2/2+$3,$6*";
-        cmd = new cm.AMCommand(testCmd);
+        cmd = new cm.AMCommand(testCmd, state);
         let out = cmd.formatOutput();
         assert.equal(out.substring(1, out.length - 1).replace(/\n/g, ""), testCmd);
     });
@@ -159,5 +162,7 @@ describe("Commands tests", () => {
         cmd = new cm.G75Command("G75*", state);
         assert.equal(state.quadrantMode, pr.QuadrantMode.MULTI);
     });
-    it("Lx commands");
+    it("Lx commands", () => {
+
+    });
 });
