@@ -163,6 +163,7 @@ describe("Commands tests", () => {
         assert.equal(state.quadrantMode, pr.QuadrantMode.MULTI);
     });
     it("Lx commands", () => {
-
+        let state = new pr.GerberState();
+        let cmd:cm.GerberCommand = new cm.G01Command("G1*", state);
     });
 });

@@ -26,6 +26,8 @@ import {
     ObjectPolarity,
     ObjectMirroring,
     Primitive,
+    Attribute,
+    AttributeType,
     VariableDefinition,
 } from './primitives';
 
@@ -499,7 +501,7 @@ export class D03Command implements GerberCommand {
     readonly y?:number;
     readonly targetX:number;
     readonly targetY:number;
-    private static matchExp = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*3\*$/;
+    private static matchExp = /^(X([\+\-]?\d+))?(Y([+-]?\d+))?D[0]*3\*$/;
 
     constructor(cmd:string, state:GerberState) {
         let match = D03Command.matchExp.exec(cmd);
@@ -752,6 +754,31 @@ export class M02Command implements GerberCommand {
         if (cmd != "M12*") {
             throw new GerberParseException(`Invalid M12 command ${cmd}`);
         }
+    }
+
+    formatOutput():string {
+        return "M12*";
+    }
+}
+
+export class TCommand implements GerberCommand {
+    readonly attribute:Attribute;
+    private static matchExp = /^T(A|F|O)([a-zA-Z_.$][a-zA-Z0-9_.$]*)((?:,[\+\-a-zA-Z0-9.$]+)*)\*$/;
+    
+    constructor(cmd:string) {
+        let match = TCommand.matchExp.exec(cmd);
+        if (!match) {
+            throw new GerberParseException(`Invalid LP command format ${cmd}`);
+        }
+    }
+
+    get name():string {
+        switch (this.attribute.type) {
+            case AttributeType.APERTURE: return "TA";
+            case AttributeType.FILE: return "TF";
+            case AttributeType.OBJECT: return "TO";
+        }
+        throw new Error(`Unsuported attribute type ${this.attribute.type}`);
     }
 
     formatOutput():string {

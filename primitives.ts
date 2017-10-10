@@ -33,6 +33,12 @@ export enum ObjectMirroring {
     XY_AXIS
 }
 
+export enum AttributeType {
+    FILE,
+    APERTURE,
+    OBJECT
+}
+
 export class CoordinateFormatSpec {
     readonly xPow:number;  // The power of 1 to multiply the X coordinate by 10^(-xNumDecPos)
     readonly yPow:number;  // The power of 1 to multiply the Y coordinate by 10^(-yNumDecPos)
@@ -84,6 +90,14 @@ export class ApertureMacro {
     constructor(
         readonly macroName:string,
         readonly content:Array<VariableDefinition|Primitive>) {
+    }
+}
+
+export class Attribute {
+    constructor(
+        readonly type:AttributeType,
+        readonly name:string,
+        readonly fields:string[]) {
     }
 }
 
