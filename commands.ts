@@ -9,9 +9,6 @@
  * the command suitable for output in a gerber file.
  * 
  * Note that in the input text the command separators are stipped by the command tokenizer.
- * 
- * We do add those to the output text however. For example ths text passed to the parser for
- * the MO command would be "MOIN*", but the formatted output would be "%MOIN*%".
  */
 
 import {
@@ -20,7 +17,6 @@ import {
     CoordinateFormatSpec,
     FileUnits,
     GerberParseException,
-    GerberState,
     InterpolationMode,
     QuadrantMode,
     ObjectPolarity,
@@ -33,14 +29,16 @@ import {
 
 export interface GerberCommand {
     readonly name:string;
-    formatOutput(state:GerberState):string;
+    readonly isAdvanced:boolean;
+    formatOutput(fmt:CoordinateFormatSpec):string;
 }
 
 export class FSCommand implements GerberCommand {
     readonly name:string = "FS";
+    readonly isAdvanced:true;
     readonly coordinateFormat:CoordinateFormatSpec;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         if (cmd.length < 10 || !cmd.startsWith("FSLAX") || cmd[7] != "Y") {
             throw new GerberParseException(`Unsuported FS command ${cmd}`);
         }
@@ -50,23 +48,23 @@ export class FSCommand implements GerberCommand {
         let yNumDecPos = Number.parseInt(cmd.substr(9, 1));
         this.coordinateFormat =
             new CoordinateFormatSpec(xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
-        state.coordinateFormatSpec = this.coordinateFormat;
     }
 
     formatOutput():string {
-        return "%FSLAX" + this.coordinateFormat.xNumIntPos
+        return "FSLAX" + this.coordinateFormat.xNumIntPos
             + this.coordinateFormat.xNumDecPos
             + "Y" + this.coordinateFormat.yNumIntPos
             + this.coordinateFormat.yNumDecPos
-            + "*%";
+            + "*";
     }
 }
 
 export class MOCommand implements GerberCommand {
     readonly name:string = "MO";
+    readonly isAdvanced:true;
     readonly units:FileUnits;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         let mode = cmd.substr(2, 2);
         if (mode === "MM") {
             this.units = FileUnits.MILIMETERS;
@@ -75,20 +73,20 @@ export class MOCommand implements GerberCommand {
         } else {
             throw new GerberParseException(`Invalid file units command ${cmd}`);
         }
-        state.fileUnits = this.units;
     }
 
     formatOutput():string {
-        return "%MO" + (this.units == FileUnits.MILIMETERS ? "MM" : "IN") + "*%";
+        return "MO" + (this.units == FileUnits.MILIMETERS ? "MM" : "IN") + "*";
     }
 }
 
 export class ADCommand implements GerberCommand {
     readonly name:string = "AD";
+    readonly isAdvanced:true;
     readonly definition:ApertureDefinition;
-    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z0-9_.$]*)(,(?:[+-]?(?:\d+|\d*.\d+)(?:X[+-]?(?:\d+|\d*.\d+))*))?\*$/;
+    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z0-9_.$]*)(,(?:[\+\-]?(?:\d+|\d*.\d+)(?:X[\+\-]?(?:\d+|\d*.\d+))*))?\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         let match = ADCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid aperture AD command ${cmd}`);
@@ -114,11 +112,10 @@ export class ADCommand implements GerberCommand {
             }
         this.definition = new ApertureDefinition(apertureId, templateName, modifiers);
         this.checkStandardApertures();
-        state.setAperture(this.definition);
     }
 
     formatOutput():string {
-        let result = "%ADD" + this.definition.apertureId + this.definition.templateName;
+        let result = "ADD" + this.definition.apertureId + this.definition.templateName;
         let first = true;
         for (let m of this.definition.modifiers) {
             if (first) {
@@ -129,7 +126,7 @@ export class ADCommand implements GerberCommand {
             }
             result += m.toPrecision();
         }
-        result += "*%";
+        result += "*";
         return result;
     }
 
@@ -240,6 +237,7 @@ function skipIntCode(cmd:string, start:number = 1):number {
 
 export class G04Command implements GerberCommand {
     readonly name:string = "G04";
+    readonly isAdvanced:false;
     readonly comment:string;
     private static matchExp = /^G[0]*4(.*)\*$/;
 
@@ -258,9 +256,10 @@ export class G04Command implements GerberCommand {
 
 export class AMCommand implements GerberCommand {
     readonly name:string = "AM";
+    readonly isAdvanced:true;
     readonly macro:ApertureMacro;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         let content = cmd.split("*");
         let name = content[0].substring(2);
         let macroContent:Array<VariableDefinition|Primitive> = [];
@@ -285,11 +284,10 @@ export class AMCommand implements GerberCommand {
             }
         }
         this.macro = new ApertureMacro(name, macroContent);
-        state.setApertureMacro(this.macro);
     }
 
     formatOutput():string {
-        let result = "%AM" + this.macro.macroName + "*";
+        let result = "AM" + this.macro.macroName + "*";
         for (let part of this.macro.content) {
             result += "\n";
             if (part instanceof VariableDefinition) {
@@ -308,17 +306,17 @@ export class AMCommand implements GerberCommand {
                 }
             }
         }
-        result += "%";
         return result;
     }
 }
 
 export class ABCommand implements GerberCommand {
     readonly name = "AB";
+    readonly isAdvanced:true;
     readonly blockId:number;
     private static matchExp = /^AB(?:D(\d+))?\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         let match = ABCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid AB command format ${cmd}`);
@@ -334,11 +332,11 @@ export class ABCommand implements GerberCommand {
     }
 
     formatOutput():string {
-        let result = "%AB";
+        let result = "AB";
         if (this.blockId > 0) {
             result += "D" + this.blockId;
         }
-        result += "*%";
+        result += "*";
         return result;
     }
 }
@@ -348,6 +346,7 @@ export class ABCommand implements GerberCommand {
  */
 export class DCommand implements GerberCommand {
     readonly name = "D";
+    readonly isAdvanced:false;
     readonly apertureId:number;
     private static matchExp = /^D(\d+)\*$/;
 
@@ -392,61 +391,53 @@ function formatCoordinateY(value:number, fmt:CoordinateFormatSpec):string {
 
 export class D01Command implements GerberCommand {
     readonly name = "D01";
+    readonly isAdvanced:false;
     readonly x?:number;
     readonly y?:number;
     readonly i?:number;
     readonly j?:number;
-    readonly targetX:number;
-    readonly targetY:number;
-    private static matchExp = /^(X([+-]?\d+))?(Y([+-]?\d+))?(I([+-]?\d+))?(J([+-]?\d+))?D[0]*1\*$/;
+    private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(I([\+\-]?\d+))?(J([\+\-]?\d+))?D[0]*1\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string, fmt:CoordinateFormatSpec) {
         let match = D01Command.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D01 command: ${cmd}`);
         }
         if (match[2] != undefined) {
-            this.x = parseCoordinateX(match[2], state.coordinateFormatSpec);
-            this.targetX = this.x;
+            this.x = parseCoordinateX(match[2], fmt);
         } else {
-            this.targetX = state.currentPointX;
+            this.x = undefined;
         }
         if (match[4] != undefined) {
-            this.y = parseCoordinateY(match[4], state.coordinateFormatSpec);
-            this.targetY = this.y;
+            this.y = parseCoordinateY(match[4], fmt);
         } else {
-            this.targetY = state.currentPointY;
+            this.y = undefined;
         }
-        if (state.interpolationMode != InterpolationMode.LINEAR) {
-            if (match[6] == undefined || match[8] == undefined) {
-                throw new GerberParseException(
-                    "Invalid D01 command (missing I and/or J "
-                    + `values in circular interpolation mode): ${cmd}`);
-            }
-            this.i = parseCoordinateX(match[6], state.coordinateFormatSpec);
-            this.j = parseCoordinateY(match[8], state.coordinateFormatSpec);
+        if (match[6] != undefined) {
+            this.i = parseCoordinateX(match[6], fmt);
         } else {
-            if (match[6] != undefined || match[8] != undefined) {
-                throw new GerberParseException(
-                    "Invalid D01 command (present I and/or J "
-                    + `values in linear interpolation mode): ${cmd}`);
-            }
+            this.i = undefined;
+        }
+        if (match[8] != undefined) {
+            this.j = parseCoordinateY(match[8], fmt);
+        } else {
+            this.j = undefined;
         }
     }
 
-    formatOutput(state:GerberState):string {
+    formatOutput(fmt:CoordinateFormatSpec):string {
         let result = "";
         if (this.x != undefined) {
-            result += "X" + formatCoordinateX(this.x, state.coordinateFormatSpec);
+            result += "X" + formatCoordinateX(this.x, fmt);
         }
         if (this.y != undefined) {
-            result += "Y" + formatCoordinateY(this.y, state.coordinateFormatSpec);
+            result += "Y" + formatCoordinateY(this.y, fmt);
         }
         if (this.i != undefined) {
-            result += "I" + formatCoordinateX(this.i, state.coordinateFormatSpec);
+            result += "I" + formatCoordinateX(this.i, fmt);
         }
         if (this.j != undefined) {
-            result += "J" + formatCoordinateY(this.j, state.coordinateFormatSpec);
+            result += "J" + formatCoordinateY(this.j, fmt);
         }
         result += "D01*";
         return result;
@@ -455,40 +446,35 @@ export class D01Command implements GerberCommand {
 
 export class D02Command implements GerberCommand {
     readonly name = "D02";
+    readonly isAdvanced:false;
     readonly x?:number;
     readonly y?:number;
-    readonly targetX:number;
-    readonly targetY:number;
-    private static matchExp = /^(X([+-]?\d+))?(Y([+-]?\d+))?D[0]*2\*$/;
+    private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?D[0]*2\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string, fmt:CoordinateFormatSpec) {
         let match = D02Command.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D02 command: ${cmd}`);
         }
         if (match[2] != undefined) {
-            this.x = parseCoordinateX(match[2], state.coordinateFormatSpec);
-            this.targetX = this.x;
-            state.currentPointX = this.x;
+            this.x = parseCoordinateX(match[2], fmt);
         } else {
-            this.targetX = state.currentPointX;
+            this.x = undefined;
         }
         if (match[4] != undefined) {
-            this.y = parseCoordinateY(match[4], state.coordinateFormatSpec);
-            this.targetY = this.y;
-            state.currentPointY = this.y;
+            this.y = parseCoordinateY(match[4], fmt);
         } else {
-            this.targetY = state.currentPointY;
+            this.y = undefined;
         }
     }
 
-    formatOutput(state:GerberState):string {
+    formatOutput(fmt:CoordinateFormatSpec):string {
         let result = "";
         if (this.x != undefined) {
-            result += "X" + formatCoordinateX(this.x, state.coordinateFormatSpec);
+            result += "X" + formatCoordinateX(this.x, fmt);
         }
         if (this.y != undefined) {
-            result += "Y" + formatCoordinateY(this.y, state.coordinateFormatSpec);
+            result += "Y" + formatCoordinateY(this.y, fmt);
         }
         result += "D02*";
         return result;
@@ -497,38 +483,35 @@ export class D02Command implements GerberCommand {
 
 export class D03Command implements GerberCommand {
     readonly name = "D03";
+    readonly isAdvanced:false;
     readonly x?:number;
     readonly y?:number;
-    readonly targetX:number;
-    readonly targetY:number;
-    private static matchExp = /^(X([\+\-]?\d+))?(Y([+-]?\d+))?D[0]*3\*$/;
+    private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?D[0]*3\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string, fmt:CoordinateFormatSpec) {
         let match = D03Command.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid D03 command: ${cmd}`);
         }
         if (match[2] != undefined) {
-            this.x = parseCoordinateX(match[2], state.coordinateFormatSpec);
-            this.targetX = this.x;
+            this.x = parseCoordinateX(match[2], fmt);
         } else {
-            this.targetX = state.currentPointX;
+            this.x = undefined;
         }
         if (match[4] != undefined) {
-            this.y = parseCoordinateY(match[4], state.coordinateFormatSpec);
-            this.targetY = this.y;
+            this.y = parseCoordinateY(match[4], fmt);
         } else {
-            this.targetY = state.currentPointY;
+            this.y = undefined;
         }
     }
 
-    formatOutput(state:GerberState):string {
+    formatOutput(fmt:CoordinateFormatSpec):string {
         let result = "";
         if (this.x != undefined) {
-            result += "X" + formatCoordinateX(this.x, state.coordinateFormatSpec);
+            result += "X" + formatCoordinateX(this.x, fmt);
         }
         if (this.y != undefined) {
-            result += "Y" + formatCoordinateY(this.y, state.coordinateFormatSpec);
+            result += "Y" + formatCoordinateY(this.y, fmt);
         }
         result += "D03*";
         return result;
@@ -537,6 +520,7 @@ export class D03Command implements GerberCommand {
 
 class BaseGCodeCommand {
     readonly codeId:number;
+    readonly isAdvanced:false;
     private static matchExp = /^G(\d+)\*$/;
 
     constructor(cmd:string, cmdCode?:number) {
@@ -564,56 +548,51 @@ class BaseGCodeCommand {
 
 export class G01Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G01";
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         super(cmd, 1);
-        state.interpolationMode = InterpolationMode.LINEAR;
     }
 }
 
 export class G02Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G02";
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         super(cmd, 2);
-        state.interpolationMode = InterpolationMode.CLOCKWISE;
     }
 }
 
 export class G03Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G03";
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         super(cmd, 3);
-        state.interpolationMode = InterpolationMode.COUNTER_CLOCKWISE;
     }
 }
 
 export class G74Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G74";
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         super(cmd, 74);
-        state.quadrantMode = QuadrantMode.SINGLE;
     }
 }
 
 export class G75Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G75";
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         super(cmd, 75);
-        state.quadrantMode = QuadrantMode.MULTI;
     }
 }
 
 export class LPCommand implements GerberCommand {
     readonly name = "LP";
+    readonly isAdvanced:false;
     readonly polarity:ObjectPolarity;
     private static matchExp = /^LP(C|D)\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         let match = LPCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid LP command format ${cmd}`);
         }
         this.polarity = (match[1] == "C") ? ObjectPolarity.LIGHT : ObjectPolarity.DARK;
-        state.objectPolarity = this.polarity;
     }
 
     formatOutput():string {
@@ -623,10 +602,11 @@ export class LPCommand implements GerberCommand {
 
 export class LMCommand implements GerberCommand {
     readonly name = "LM";
+    readonly isAdvanced:false;
     readonly miroring:ObjectMirroring;
     private static matchExp = /^LM(N|X|Y|XY)\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         let match = LMCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid LM command format ${cmd}`);
@@ -641,7 +621,6 @@ export class LMCommand implements GerberCommand {
         } else if (code == "XY") {
             this.miroring = ObjectMirroring.XY_AXIS;
         }
-        state.objectMirroring = this.miroring;
     }
 
     formatOutput():string {
@@ -659,16 +638,16 @@ export class LMCommand implements GerberCommand {
 
 export class LRCommand implements GerberCommand {
     readonly name = "LR";
+    readonly isAdvanced:false;
     readonly rotation:number;
-    private static matchExp = /^LR([+-]?(?:\d+|\d*\.\d+))\*$/;
+    private static matchExp = /^LR([\+\-]?(?:\d+|\d*\.\d+))\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         let match = LRCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid LR command format ${cmd}`);
         }
         this.rotation = Number.parseFloat(match[1]);
-        state.objectRotation = this.rotation;
     }
 
     formatOutput():string {
@@ -678,16 +657,16 @@ export class LRCommand implements GerberCommand {
 
 export class LSCommand implements GerberCommand {
     readonly name = "LS";
+    readonly isAdvanced:false;
     readonly scale:number;
-    private static matchExp = /^LS([+-]?(?:\d+|\d*\.\d+))\*$/;
+    private static matchExp = /^LS([\+\-]?(?:\d+|\d*\.\d+))\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         let match = LSCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid LS command format ${cmd}`);
         }
         this.scale = Number.parseFloat(match[1]);
-        state.objectScaling = this.scale;
     }
 
     formatOutput():string {
@@ -697,27 +676,28 @@ export class LSCommand implements GerberCommand {
 
 export class G36Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G36";
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         super(cmd, 36);
     }
 }
 
 export class G37Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G37";
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         super(cmd, 37);
     }
 }
 
 export class SRCommand implements GerberCommand {
     readonly name = "SR";
+    readonly isAdvanced:false;
     readonly x?:number;
     readonly y?:number;
     readonly i?:number;
     readonly j?:number;
     private static matchExp = /^SR(?:X(\d+)Y(\d+)I(\d+|(?:\d*\.\d+))J(\d+|(?:\d*\.\d+)))?\*$/;
 
-    constructor(cmd:string, state:GerberState) {
+    constructor(cmd:string) {
         let match = SRCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid SR command: ${cmd}`);
@@ -734,7 +714,7 @@ export class SRCommand implements GerberCommand {
         }
     }
 
-    formatOutput(state:GerberState):string {
+    formatOutput():string {
         let result = "SR";
         if (this.x != undefined) {
             result += "X" + this.x.toString();
@@ -748,6 +728,7 @@ export class SRCommand implements GerberCommand {
 }
 
 export class M02Command implements GerberCommand {
+    readonly isAdvanced:false;
     readonly name:string = "M02";
 
     constructor(cmd:string) {
@@ -763,6 +744,7 @@ export class M02Command implements GerberCommand {
 
 export class TCommand implements GerberCommand {
     readonly attribute:Attribute;
+    readonly isAdvanced:true;
     private static matchExp = /^T(A|F|O)([a-zA-Z_.$][a-zA-Z0-9_.$]*)((?:,[\+\-a-zA-Z0-9.$]+)*)\*$/;
     
     constructor(cmd:string) {
@@ -770,6 +752,17 @@ export class TCommand implements GerberCommand {
         if (!match) {
             throw new GerberParseException(`Invalid LP command format ${cmd}`);
         }
+        let cmdName = match[1];
+        let attributeType:AttributeType;
+        switch (cmdName) {
+            case "A": attributeType = AttributeType.APERTURE; break;
+            case "F": attributeType = AttributeType.FILE; break;
+            case "O": attributeType = AttributeType.OBJECT; break;
+            default: throw new GerberParseException(`Unknown attribute command ${cmd}`);
+        }
+        let attrinuteName = match[2];
+        let fields = match[3].split(',');
+        this.attribute = new Attribute(attributeType, attrinuteName, fields);
     }
 
     get name():string {
@@ -782,6 +775,12 @@ export class TCommand implements GerberCommand {
     }
 
     formatOutput():string {
-        return "M12*";
+        let result = this.name + this.attribute.name;
+        for (let field of this.attribute.fields) {
+            result += ",";
+            result += field;
+        }
+        result += "*";
+        return result;
     }
 }
