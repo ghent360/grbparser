@@ -63,10 +63,11 @@ G04 Create aperture*
         fs.readdirSync(folder)
             .filter(fileName => fileName.indexOf(".gbr") >= 0)
             .forEach(fileName => {
-                let content = fs.readFileSync(folder + "/" + fileName).toString();
-                let cmdParser = new gp.CommandParser();
-                cmdParser.setConsumer((cmd) => {});
-                cmdParser.parseBlock(content);
+                let fullFileName = folder + "/" + fileName;
+                let content = fs.readFileSync(fullFileName).toString();
+                let parser = new gp.GerberParser();
+                console.log(`Parsing ${fullFileName}`);
+                parser.parseBlock(content);
             });
     });
 });

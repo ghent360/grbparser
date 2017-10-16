@@ -1,4 +1,9 @@
-import {GerberState} from "./primitives";
+import {
+    GerberState,
+    GerberCommand,
+    CoordinateFormatSpec,
+    GerberParseException} from "./primitives";
+import * as cmds from "./commands";
 
 /**
  * This is an internal class to "tokenize" the gerber commands from the stream.
@@ -11,10 +16,12 @@ import {GerberState} from "./primitives";
 export class CommandParser {
     public lineNumber = 1;
     private nextTokenSeparator = '*';
-    private consumer:(cmd:string, line:number) => void = CommandParser.emptyConsumer;
+    private consumer:(cmd:string, line:number) => void
+        = CommandParser.emptyConsumer;
     private commandLineStart:number;
     private command = "";
-    private errorHandler:(line:number, buffer:string, idx:number) => void = CommandParser.consoleError;
+    private errorHandler:(line:number, buffer:string, idx:number) => void
+        = CommandParser.consoleError;
 
     parseBlock(buffer:string) {
         let idx:number;
@@ -24,6 +31,8 @@ export class CommandParser {
                 this.lineNumber++;
                 continue;
             } else if (nextChar == '\r') {
+                continue;
+            } else if (nextChar == '\t') {
                 continue;
             } else if (nextChar == this.nextTokenSeparator) {
                 //console.log(`cmd: ${this.command}`);
@@ -74,14 +83,47 @@ export class CommandParser {
     }
 }
 
+class ParserCommand {
+    constructor(readonly cmd:GerberCommand, readonly lineNo:number) {
+    }
+}
+
 /**
- * The main parser class.
+ * The main gerber parser class.
  * 
  * Usage TBD.
  */
 export class GerberParser {
     private commandParser:CommandParser = new CommandParser();
-    private state:GerberState = new GerberState();
+    private fmt:CoordinateFormatSpec;
+    private commandDispatcher:Array<[RegExp, (cmd:string) => GerberCommand]> = [
+        [/^FS/, (cmd) => new cmds.FSCommand(cmd)],
+        [/^MO/, (cmd) => new cmds.MOCommand(cmd)],
+        [/^ADD/, (cmd) => new cmds.ADCommand(cmd)],
+        [/^AM/, (cmd) => new cmds.AMCommand(cmd)],
+        [/^AB/, (cmd) => new cmds.ABCommand(cmd)],
+        [/D[0]*1$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
+        [/D[0]*2$/, (cmd) => new cmds.D02Command(cmd, this.fmt)],
+        [/D[0]*3$/, (cmd) => new cmds.D03Command(cmd, this.fmt)],
+        [/^D(\d+)$/, (cmd) => new cmds.DCommand(cmd)],
+        [/^G[0]*1$/, (cmd) => new cmds.G01Command(cmd)],
+        [/^G[0]*2$/, (cmd) => new cmds.G02Command(cmd)],
+        [/^G[0]*3$/, (cmd) => new cmds.G03Command(cmd)],
+        [/^G[0]*4/, (cmd) => new cmds.G04Command(cmd)],
+        [/^G[0]*36$/, (cmd) => new cmds.G36Command(cmd)],
+        [/^G[0]*37$/, (cmd) => new cmds.G37Command(cmd)],
+        [/^G[0]*74$/, (cmd) => new cmds.G74Command(cmd)],
+        [/^G[0]*75$/, (cmd) => new cmds.G75Command(cmd)],
+        [/^LP/, (cmd) => new cmds.LPCommand(cmd)],
+        [/^LM/, (cmd) => new cmds.LMCommand(cmd)],
+        [/^LR/, (cmd) => new cmds.LRCommand(cmd)],
+        [/^LS/, (cmd) => new cmds.LSCommand(cmd)],
+        [/^SR/, (cmd) => new cmds.SRCommand(cmd)],
+        [/^M02/, (cmd) => new cmds.M02Command(cmd)],
+        [/^T(A|F|O)/, (cmd) => new cmds.TCommand(cmd)],
+        [/^TD/, (cmd) => new cmds.TDCommand(cmd)]
+    ];
+    private commands:Array<ParserCommand> = [];
 
     constructor() {
         this.commandParser.setConsumer((cmd:string, lineNo:number) => this.parseCommand(cmd, lineNo));
@@ -92,6 +134,25 @@ export class GerberParser {
     }
 
     private parseCommand(cmd:string, lineNo:number) {
-        this.state.setLineNo(lineNo);
+        try {
+            let dispatcher = this.commandDispatcher.find(d => d[0].test(cmd));
+            if (dispatcher == undefined) {
+                throw new GerberParseException(`Invalid command ${cmd}`);
+            }
+            let command = dispatcher[1](cmd);
+            this.commands.push(new ParserCommand(command, lineNo));
+            if (command.name === "FS") {
+                let fsCmd = command as cmds.FSCommand;
+                if (this.fmt != undefined) {
+                    throw new GerberParseException("Format is already defined");
+                }
+                this.fmt = fsCmd.coordinateFormat;
+            }
+        } catch (e) {
+            console.log(`Error parsing gerber file at line ${lineNo}.`);
+            console.log(`Offending command: ${cmd}`);
+            console.log(`Error: ${e}`);
+            throw e;
+        }
     }
 }

@@ -112,7 +112,6 @@ export class GerberState {
     public objectMirroring:ObjectMirroring = ObjectMirroring.NONE;
     public objectRotation:number = 0;
     public objectScaling:number = 1.0;
-    private lineNo:number;
     private apertures:{[id:number]:ApertureDefinition} = {};
     private apertureMacros:{[name:string]:ApertureMacro} = {};
     
@@ -230,12 +229,13 @@ export class GerberState {
         this.apertureMacros[apm.macroName] = apm;
     }
 
-    setLineNo(lineNo:number) {
-        this.lineNo = lineNo;
-    }
-
     private error(message:string) {
-        console.log(`Error parsing gerber file ${message}`);
-        throw new Error(message);
+        throw new GerberParseException(message);
     }
+}
+
+export interface GerberCommand {
+    readonly name:string;
+    readonly isAdvanced:boolean;
+    formatOutput(fmt:CoordinateFormatSpec):string;
 }

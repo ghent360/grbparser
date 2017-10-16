@@ -15,12 +15,12 @@ describe("Commands tests", () => {
         assert.deepEqual(cmd.formatOutput(), "FSLAX26Y37*")
     });
     it('G04 Command', () => {
-        let cmd = new cm.G04Command("G4*");
+        let cmd = new cm.G04Command("G4");
         assert.equal(cmd.comment, "");
-        assert.deepEqual(cmd.formatOutput(), "G04*")
-        cmd = new cm.G04Command("G000004 Create aperture macro*");
+        assert.deepEqual(cmd.formatOutput(), "G04")
+        cmd = new cm.G04Command("G000004 Create aperture macro");
         assert.equal(cmd.comment, " Create aperture macro");
-        assert.deepEqual(cmd.formatOutput(), "G04 Create aperture macro*")
+        assert.deepEqual(cmd.formatOutput(), "G04 Create aperture macro")
     });
     it('MO Command', () => {
         let cmd = new cm.MOCommand("MOIN*");
@@ -74,50 +74,50 @@ describe("Commands tests", () => {
         assert.equal(out.replace(/\n/g, ""), testCmd);
     });
     it('Dxx Command', () => {
-        let cmd = new cm.DCommand("D15*");
+        let cmd = new cm.DCommand("D15");
         assert.equal(cmd.apertureId, 15);
-        assert.equal(cmd.formatOutput(), "D15*");
-        assert.throws(() => new cm.DCommand("D05*"), GerberParseException);
+        assert.equal(cmd.formatOutput(), "D15");
+        assert.throws(() => new cm.DCommand("D05"), GerberParseException);
     });
     it('D0x Command', () => {
         let cmd:cm.D01Command|cm.D02Command|cm.D03Command;
 
         let fmt = new pr.CoordinateFormatSpec(1, 3, 1, 3);
 
-        cmd = new cm.D01Command("X0005Y1111D1*", fmt);
+        cmd = new cm.D01Command("X0005Y1111D1", fmt);
         assert.equal(cmd.x, 0.005);
         assert.equal(cmd.y, 1.111);
         assert.equal(cmd.i, undefined);
         assert.equal(cmd.j, undefined);
 
         let out = cmd.formatOutput(fmt);
-        assert.equal(out, "X5Y1111D01*");
+        assert.equal(out, "X5Y1111D01");
         
-        cmd = new cm.D02Command("X0Y0D2*", fmt);
+        cmd = new cm.D02Command("X0Y0D2", fmt);
         assert.equal(cmd.x, 0);
         assert.equal(cmd.y, 0);
         out = cmd.formatOutput(fmt);
-        assert.equal(out, "X0Y0D02*");
+        assert.equal(out, "X0Y0D02");
 
-        cmd = new cm.D03Command("D3*", fmt);
+        cmd = new cm.D03Command("D3", fmt);
         assert.equal(cmd.x, undefined);
         assert.equal(cmd.y, undefined);
         out = cmd.formatOutput(fmt);
-        assert.equal(out, "D03*");
+        assert.equal(out, "D03");
 
-        cmd = new cm.D02Command("Y1000D0002*", fmt);
+        cmd = new cm.D02Command("Y1000D0002", fmt);
         assert.equal(cmd.x, undefined);
         assert.equal(cmd.y, 1);
     });
     it("Gxx codes", () => {
-        let cmd:cm.GerberCommand = new cm.G01Command("G1*");
-        assert.throws(() => new cm.G01Command("G02*"), GerberParseException);
-        cmd = new cm.G02Command("G002*");
-        cmd = new cm.G03Command("G03*");
-        cmd = new cm.G74Command("G74*");
-        cmd = new cm.G75Command("G75*");
+        let cmd:pr.GerberCommand = new cm.G01Command("G1");
+        assert.throws(() => new cm.G01Command("G02"), GerberParseException);
+        cmd = new cm.G02Command("G002");
+        cmd = new cm.G03Command("G03");
+        cmd = new cm.G74Command("G74");
+        cmd = new cm.G75Command("G75");
     });
     it("Lx commands", () => {
-        let cmd:cm.GerberCommand = new cm.G01Command("G1*");
+        let cmd = new cm.G01Command("G1");
     });
 });
