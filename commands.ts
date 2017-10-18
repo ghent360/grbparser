@@ -30,7 +30,7 @@ import {
 
 export class FSCommand implements GerberCommand {
     readonly name:string = "FS";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly coordinateFormat:CoordinateFormatSpec;
 
     constructor(cmd:string) {
@@ -56,7 +56,7 @@ export class FSCommand implements GerberCommand {
 
 export class MOCommand implements GerberCommand {
     readonly name:string = "MO";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly units:FileUnits;
 
     constructor(cmd:string) {
@@ -77,7 +77,7 @@ export class MOCommand implements GerberCommand {
 
 export class ADCommand implements GerberCommand {
     readonly name:string = "AD";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly definition:ApertureDefinition;
     private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z0-9_.$]*)(,(?:[\+\-]?(?:\d+|\d*.\d+)(?:X[\+\-]?(?:\d+|\d*.\d+))*))?\*$/;
 
@@ -232,7 +232,7 @@ function skipIntCode(cmd:string, start:number = 1):number {
 
 export class G04Command implements GerberCommand {
     readonly name:string = "G04";
-    readonly isAdvanced:false;
+    readonly isAdvanced = false;
     readonly comment:string;
     private static matchExp = /^G[0]*4(.*)$/;
 
@@ -251,7 +251,7 @@ export class G04Command implements GerberCommand {
 
 export class AMCommand implements GerberCommand {
     readonly name:string = "AM";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly macro:ApertureMacro;
 
     constructor(cmd:string) {
@@ -307,7 +307,7 @@ export class AMCommand implements GerberCommand {
 
 export class ABCommand implements GerberCommand {
     readonly name = "AB";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly blockId:number;
     private static matchExp = /^AB(?:D(\d+))?\*$/;
 
@@ -341,7 +341,7 @@ export class ABCommand implements GerberCommand {
  */
 export class DCommand implements GerberCommand {
     readonly name = "D";
-    readonly isAdvanced:false;
+    readonly isAdvanced = false;
     readonly apertureId:number;
     private static matchExp = /^D(\d+)$/;
 
@@ -386,7 +386,7 @@ function formatCoordinateY(value:number, fmt:CoordinateFormatSpec):string {
 
 export class D01Command implements GerberCommand {
     readonly name = "D01";
-    readonly isAdvanced:false;
+    readonly isAdvanced = false;
     readonly x?:number;
     readonly y?:number;
     readonly i?:number;
@@ -441,7 +441,7 @@ export class D01Command implements GerberCommand {
 
 export class D02Command implements GerberCommand {
     readonly name = "D02";
-    readonly isAdvanced:false;
+    readonly isAdvanced = false;
     readonly x?:number;
     readonly y?:number;
     private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?D[0]*2$/;
@@ -478,7 +478,7 @@ export class D02Command implements GerberCommand {
 
 export class D03Command implements GerberCommand {
     readonly name = "D03";
-    readonly isAdvanced:false;
+    readonly isAdvanced = false;
     readonly x?:number;
     readonly y?:number;
     private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?D[0]*3$/;
@@ -515,7 +515,7 @@ export class D03Command implements GerberCommand {
 
 class BaseGCodeCommand {
     readonly codeId:number;
-    readonly isAdvanced:false;
+    readonly isAdvanced = false;
     private static matchExp = /^G(\d+)$/;
 
     constructor(cmd:string, cmdCode?:number) {
@@ -577,7 +577,7 @@ export class G75Command extends BaseGCodeCommand implements GerberCommand {
 
 export class LPCommand implements GerberCommand {
     readonly name = "LP";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly polarity:ObjectPolarity;
     private static matchExp = /^LP(C|D)\*$/;
 
@@ -596,7 +596,7 @@ export class LPCommand implements GerberCommand {
 
 export class LMCommand implements GerberCommand {
     readonly name = "LM";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly miroring:ObjectMirroring;
     private static matchExp = /^LM(N|X|Y|XY)\*$/;
 
@@ -632,7 +632,7 @@ export class LMCommand implements GerberCommand {
 
 export class LRCommand implements GerberCommand {
     readonly name = "LR";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly rotation:number;
     private static matchExp = /^LR([\+\-]?(?:\d+|\d*\.\d+))\*$/;
 
@@ -645,13 +645,13 @@ export class LRCommand implements GerberCommand {
     }
 
     formatOutput():string {
-        return "LP" + this.rotation + "*";
+        return "LR" + this.rotation + "*";
     }
 }
 
 export class LSCommand implements GerberCommand {
     readonly name = "LS";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly scale:number;
     private static matchExp = /^LS([\+\-]?(?:\d+|\d*\.\d+))\*$/;
 
@@ -684,7 +684,7 @@ export class G37Command extends BaseGCodeCommand implements GerberCommand {
 
 export class SRCommand implements GerberCommand {
     readonly name = "SR";
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly x?:number;
     readonly y?:number;
     readonly i?:number;
@@ -722,7 +722,7 @@ export class SRCommand implements GerberCommand {
 }
 
 export class M02Command implements GerberCommand {
-    readonly isAdvanced:false;
+    readonly isAdvanced = false;
     readonly name:string = "M02";
 
     constructor(cmd:string) {
@@ -738,7 +738,7 @@ export class M02Command implements GerberCommand {
 
 export class TCommand implements GerberCommand {
     readonly attribute:Attribute;
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     private static matchExp = /^T(A|F|O)([a-zA-Z_.$][a-zA-Z0-9_.$]*)((?:,[^,]+)*)\*$/;
     
     constructor(cmd:string) {
@@ -755,7 +755,12 @@ export class TCommand implements GerberCommand {
             default: throw new GerberParseException(`Unknown attribute command ${cmd}`);
         }
         let attrinuteName = match[2];
-        let fields = match[3].split(',');
+        let fields:Array<string>;
+        if (match[3]) {
+            fields = match[3].substring(1).split(',');
+        } else {
+            fields = [];
+        }
         this.attribute = new Attribute(attributeType, attrinuteName, fields);
     }
 
@@ -781,7 +786,7 @@ export class TCommand implements GerberCommand {
 
 export class TDCommand implements GerberCommand {
     readonly attributeName:string;
-    readonly isAdvanced:true;
+    readonly isAdvanced = true;
     readonly name = "TD";
     private static matchExp = /^TD([a-zA-Z_.$][a-zA-Z0-9_.$]*)\*$/;
     
