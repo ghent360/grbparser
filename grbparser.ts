@@ -8,7 +8,7 @@ import * as cmds from "./commands";
 /**
  * This is an internal class to "tokenize" the gerber commands from the stream.
  * 
- * It would remove all \n \r from the stream and call a "consumer" for each
+ * It would remove all \n \r and \t from the stream and call a "consumer" for each
  * complete command found in the stream.
  * 
  * The input can be partial buffer.

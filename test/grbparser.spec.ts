@@ -61,7 +61,7 @@ G04 Create aperture*
     it('parse gerber file', () => {
         let folder = "test/Gerber_File_Format_Examples";
         fs.readdirSync(folder)
-            .filter(fileName => fileName.indexOf(".gbr") >= 0)
+            .filter(fileName => fileName.endsWith(".gbr"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
