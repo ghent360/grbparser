@@ -68,6 +68,10 @@ G04 Create aperture*
                 let parser = new gp.GerberParser();
                 console.log(`Parsing ${fullFileName}`);
                 parser.parseBlock(content);
+                let reconstruct = parser.output();
+                console.log(reconstruct);
+                parser = new gp.GerberParser();
+                parser.parseBlock(reconstruct);
             });
     });
 });

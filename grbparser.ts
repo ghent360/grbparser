@@ -155,4 +155,19 @@ export class GerberParser {
             throw e;
         }
     }
+
+    public output():string {
+        let result = "";
+        for (let parseCommand of this.commands) {
+            let cmd = parseCommand.cmd;
+            let cmdString = cmd.formatOutput(this.fmt);
+            if (cmd.isAdvanced) {
+                result += "%" + cmdString + "%";
+            } else {
+                result += cmdString + "*";
+            }
+            result += "\n";
+        }
+        return result;
+    }
 }
