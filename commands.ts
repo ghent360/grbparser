@@ -136,7 +136,7 @@ export class ADCommand implements GerberCommand {
     }
 
     private checlCircleAperture() {
-        if (this.definition.modifiers.length < 1 || this.definition.modifiers.length > 2) {
+        if (this.definition.modifiers.length < 1 || this.definition.modifiers.length > 3) {
             throw new GerberParseException(`Invalid circle aperture ${this.formatOutput()}`);
         }
         if (this.definition.modifiers[0] < 0) {
@@ -144,11 +144,18 @@ export class ADCommand implements GerberCommand {
                 `Invalid circle aperture radius D${this.definition.apertureId}:`
                 + ` ${this.definition.modifiers[0]}`);
         }
-        if (this.definition.modifiers.length > 1
+        if (this.definition.modifiers.length > 0
             && (this.definition.modifiers[1] <= 0
                 || this.definition.modifiers[1] >= this.definition.modifiers[0])) {
             throw new GerberParseException(
                 `Invalid circle aperture hole radius D${this.definition.apertureId}:`
+                + ` ${this.definition.modifiers[1]}`);
+        }
+        if (this.definition.modifiers.length > 1
+            && (this.definition.modifiers[2] <= 0
+                || this.definition.modifiers[2] >= this.definition.modifiers[0])) {
+            throw new GerberParseException(
+                `Invalid circle aperture hole size D${this.definition.apertureId}:`
                 + ` ${this.definition.modifiers[1]}`);
         }
     }
@@ -343,7 +350,7 @@ export class DCommand implements GerberCommand {
     readonly name = "D";
     readonly isAdvanced = false;
     readonly apertureId:number;
-    private static matchExp = /^D(\d+)$/;
+    private static matchExp = /^(?:G54)?D(\d+)$/;
 
     constructor(cmd:string) {
         let match = DCommand.matchExp.exec(cmd);

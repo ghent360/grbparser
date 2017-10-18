@@ -102,14 +102,14 @@ export class GerberParser {
         [/^ADD/, (cmd) => new cmds.ADCommand(cmd)],
         [/^AM/, (cmd) => new cmds.AMCommand(cmd)],
         [/^AB/, (cmd) => new cmds.ABCommand(cmd)],
+        [/^G[0]*4/, (cmd) => new cmds.G04Command(cmd)],
         [/D[0]*1$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
         [/D[0]*2$/, (cmd) => new cmds.D02Command(cmd, this.fmt)],
         [/D[0]*3$/, (cmd) => new cmds.D03Command(cmd, this.fmt)],
-        [/^D(\d+)$/, (cmd) => new cmds.DCommand(cmd)],
+        [/^(?:G54)?D(\d+)$/, (cmd) => new cmds.DCommand(cmd)],
         [/^G[0]*1$/, (cmd) => new cmds.G01Command(cmd)],
         [/^G[0]*2$/, (cmd) => new cmds.G02Command(cmd)],
         [/^G[0]*3$/, (cmd) => new cmds.G03Command(cmd)],
-        [/^G[0]*4/, (cmd) => new cmds.G04Command(cmd)],
         [/^G[0]*36$/, (cmd) => new cmds.G36Command(cmd)],
         [/^G[0]*37$/, (cmd) => new cmds.G37Command(cmd)],
         [/^G[0]*74$/, (cmd) => new cmds.G74Command(cmd)],
@@ -121,7 +121,8 @@ export class GerberParser {
         [/^SR/, (cmd) => new cmds.SRCommand(cmd)],
         [/^M02/, (cmd) => new cmds.M02Command(cmd)],
         [/^T(A|F|O)/, (cmd) => new cmds.TCommand(cmd)],
-        [/^TD/, (cmd) => new cmds.TDCommand(cmd)]
+        [/^TD/, (cmd) => new cmds.TDCommand(cmd)],
+        [/^IP(?:POS)|(?:NEG)/, null]
     ];
     private commands:Array<ParserCommand> = [];
 
@@ -138,6 +139,10 @@ export class GerberParser {
             let dispatcher = this.commandDispatcher.find(d => d[0].test(cmd));
             if (dispatcher == undefined) {
                 throw new GerberParseException(`Invalid command ${cmd}`);
+            }
+            if (dispatcher[1] == null) {
+                console.log(`WARNING: ignoring ${cmd}`);
+                return;
             }
             let command = dispatcher[1](cmd);
             this.commands.push(new ParserCommand(command, lineNo));
