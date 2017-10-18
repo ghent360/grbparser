@@ -16,12 +16,13 @@ import * as cmds from "./commands";
 export class CommandParser {
     public lineNumber = 1;
     private nextTokenSeparator = '*';
-    private consumer:(cmd:string, line:number) => void
+    private consumer:(cmd:string, line:number, isAdvanced:boolean) => void
         = CommandParser.emptyConsumer;
     private commandLineStart:number;
     private command = "";
     private errorHandler:(line:number, buffer:string, idx:number) => void
         = CommandParser.consoleError;
+    private static gCodeSplit = /^(G\d+)((?:X[\+\-]?\d+)?(?:Y[\+\-]?\d+)?(?:I[\+\-]?\d+)?(?:J[\+\-]?\d+)?D0*[1-3])$/;
 
     parseBlock(buffer:string) {
         let idx:number;
@@ -36,9 +37,20 @@ export class CommandParser {
                 continue;
             } else if (nextChar == this.nextTokenSeparator) {
                 //console.log(`cmd: ${this.command}`);
-                this.consumer(this.command, this.commandLineStart);
+                let isAdvanced = this.nextTokenSeparator == '%';
+                let cmd = this.command;
                 this.command = "";
                 this.nextTokenSeparator = '*';
+                if (!isAdvanced) {
+                    let match = CommandParser.gCodeSplit.exec(cmd);
+                    if (match) {
+                        let gCodeCmd = match[1];
+                        let dCmd = match[2];
+                        this.consumer(gCodeCmd, this.commandLineStart, false);
+                        this.consumer(dCmd, this.commandLineStart, false);
+                    }
+                }
+                this.consumer(cmd, this.commandLineStart, isAdvanced);
                 continue;
             } else if (nextChar == '%') {
                 if (this.command.trim().length != 0) {
@@ -68,8 +80,8 @@ export class CommandParser {
     private static emptyConsumer(cmd:string, line:number) {
     }
 
-    setConsumer(consumer:(cmd:string, lineNo:number) => void)
-        :(cmd:string, lineNo:number) => void {
+    setConsumer(consumer:(cmd:string, lineNo:number, isAdvanced:boolean) => void)
+        :(cmd:string, lineNo:number, isAdvanced:boolean) => void {
         let oldValue = this.consumer;
         this.consumer = consumer;
         return oldValue;
