@@ -161,7 +161,7 @@ export class ADCommand implements GerberCommand {
     }
 
     private checlRectangleAperture() {
-        if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 3) {
+        if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new GerberParseException(`Invalid rectangle aperture ${this.formatOutput()}`);
         }
         if (this.definition.modifiers[0] <= 0 || this.definition.modifiers[1] <= 0) {
@@ -171,17 +171,24 @@ export class ADCommand implements GerberCommand {
         }
         if (this.definition.modifiers.length > 2) {
             let radius = this.definition.modifiers[2];
-            if (radius <= 0
-                || radius >= Math.min(this.definition.modifiers[0], this.definition.modifiers[1])) {
+            if (radius <= 0) {
                 throw new GerberParseException(
                     `Invalid rectangle aperture hole radius D${this.definition.apertureId}: `
+                    + `${this.definition.modifiers[2]}`);
+            }
+        }
+        if (this.definition.modifiers.length > 3) {
+            let height = this.definition.modifiers[4];
+            if (height <= 0) {
+                throw new GerberParseException(
+                    `Invalid rectangle aperture hole height D${this.definition.apertureId}: `
                     + `${this.definition.modifiers[2]}`);
             }
         }
     }
 
     private checlObroundAperture() {
-        if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 3) {
+        if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new GerberParseException(`Invalid obround aperture ${this.formatOutput()}`);
         }
         if (this.definition.modifiers[0] <= 0 || this.definition.modifiers[1] <= 0) {
@@ -191,10 +198,17 @@ export class ADCommand implements GerberCommand {
         }
         if (this.definition.modifiers.length > 2) {
             let radius = this.definition.modifiers[2];
-            if (radius <= 0
-                || radius >= Math.min(this.definition.modifiers[0], this.definition.modifiers[1])) {
+            if (radius <= 0) {
                 throw new GerberParseException(
                     `Invalid obround aperture hole radius D${this.definition.apertureId}: `
+                    + `${this.definition.modifiers[2]}`);
+            }
+        }
+        if (this.definition.modifiers.length > 3) {
+            let height = this.definition.modifiers[3];
+            if (height <= 0) {
+                throw new GerberParseException(
+                    `Invalid obround aperture hole height D${this.definition.apertureId}: `
                     + `${this.definition.modifiers[2]}`);
             }
         }

@@ -135,7 +135,14 @@ export class GerberParser {
         [/^M02/, (cmd) => new cmds.M02Command(cmd)],
         [/^T(A|F|O)/, (cmd) => new cmds.TCommand(cmd)],
         [/^TD/, (cmd) => new cmds.TDCommand(cmd)],
-        [/^IP(?:POS)|(?:NEG)/, null]
+        [/^IP(?:POS|NEG)\*$/, null],
+        [/^LN(?:.+)/, null],
+        [/^IJ(?:.+)/, null],
+        [/^IO(?:.+)/, null],
+        [/^IR(?:.+)/, null],
+        [/^AS(?:.+)/, null],
+        [/^KO(?:.+)/, null],
+        [/^MI(?:.+)/, null]
     ];
     private commands:Array<ParserCommand> = [];
 
