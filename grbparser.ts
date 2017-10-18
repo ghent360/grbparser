@@ -48,6 +48,7 @@ export class CommandParser {
                         let dCmd = match[2];
                         this.consumer(gCodeCmd, this.commandLineStart, false);
                         this.consumer(dCmd, this.commandLineStart, false);
+                        continue;
                     }
                 }
                 this.consumer(cmd, this.commandLineStart, isAdvanced);

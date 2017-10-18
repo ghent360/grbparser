@@ -12,8 +12,9 @@ describe("GerberParser tests", () => {
         cmdParser.parseBlock("\n\r");
         assert.equal(commands.length, 0);
         cmdParser.parseBlock("X1234Y5678D02*");
-        assert.equal(commands.length, 1);
-        assert.equal(commands[0], "G01X1234Y5678D02");
+        assert.equal(commands.length, 2);
+        assert.equal(commands[0], "G01");
+        assert.equal(commands[1], "X1234Y5678D02");
     });
     it ('Simple extended commands', () => {
         let commands:string[] = [];
