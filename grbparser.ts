@@ -22,7 +22,10 @@ export class CommandParser {
     private command = "";
     private errorHandler:(line:number, buffer:string, idx:number) => void
         = CommandParser.consoleError;
-    private static gCodeSplit = /^(G\d+)((?:X[\+\-]?\d+)?(?:Y[\+\-]?\d+)?(?:I[\+\-]?\d+)?(?:J[\+\-]?\d+)?D0*[1-3])$/;
+    private static gCodeSplit = /^(G\d+)(.*D\d+)$/;
+    private static g04Match = /^G0*4$/;
+    private static dCmdMatch = /^([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?(D\d+)$/;
+    private static coordinatesOrder = "XYIJ";
 
     parseBlock(buffer:string) {
         let idx:number;
@@ -37,21 +40,9 @@ export class CommandParser {
                 continue;
             } else if (nextChar == this.nextTokenSeparator) {
                 //console.log(`cmd: ${this.command}`);
-                let isAdvanced = this.nextTokenSeparator == '%';
-                let cmd = this.command;
+                this.commandPreprocessor();
                 this.command = "";
                 this.nextTokenSeparator = '*';
-                if (!isAdvanced) {
-                    let match = CommandParser.gCodeSplit.exec(cmd);
-                    if (match) {
-                        let gCodeCmd = match[1];
-                        let dCmd = match[2];
-                        this.consumer(gCodeCmd, this.commandLineStart, false);
-                        this.consumer(dCmd, this.commandLineStart, false);
-                        continue;
-                    }
-                }
-                this.consumer(cmd, this.commandLineStart, isAdvanced);
                 continue;
             } else if (nextChar == '%') {
                 if (this.command.trim().length != 0) {
@@ -94,6 +85,59 @@ export class CommandParser {
         this.errorHandler = handler;
         return old;
     }
+
+    private commandPreprocessor() {
+        let isAdvanced = this.nextTokenSeparator == '%';
+        let cmd = this.command;
+        if (!isAdvanced) {
+            // Look for Gxx.....Dxx command
+            // we would split it to Gxx*; ....Dxx*
+            let match = CommandParser.gCodeSplit.exec(cmd);
+            if (match) {
+                let gCodeCmd = match[1];
+                // Except G04 comment which ends in Dxx
+                if (!CommandParser.g04Match.test(gCodeCmd)) {
+                    let dCmd = match[2];
+                    this.consumer(gCodeCmd, this.commandLineStart, false);
+                    this.consumer(CommandParser.orderDoperation(dCmd), this.commandLineStart, false);
+                    return;
+                }
+            }
+        }
+        this.consumer(CommandParser.orderDoperation(cmd), this.commandLineStart, isAdvanced);
+    }
+
+    private static coordinatePosition(coordinate:string):number {
+        if (coordinate == undefined) {
+            return 99;
+        }
+        return CommandParser.coordinatesOrder.indexOf(coordinate[0]);
+    }
+
+    /**
+     * Sometimes we receive D operation where the coordinates are out of order
+     * for example Y123X567D03. We convert it to X567Y123D03.
+     * @param cmd input command
+     */
+    private static orderDoperation(cmd:string):string {
+        let match = CommandParser.dCmdMatch.exec(cmd);
+        if (!match) {
+            return cmd;
+        }
+        let coordinateParts = match.slice(1, 5).sort((a, b) => {
+            return CommandParser.coordinatePosition(a)
+                - CommandParser.coordinatePosition(b);
+        });
+        let dcode = match[5];
+        let result = "";
+        for (let c of coordinateParts) {
+            if (c != undefined) {
+                result += c;
+            }
+        }
+        result += dcode;
+        return result;
+    }
 }
 
 class ParserCommand {
@@ -119,7 +163,7 @@ export class GerberParser {
         [/D[0]*1$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
         [/D[0]*2$/, (cmd) => new cmds.D02Command(cmd, this.fmt)],
         [/D[0]*3$/, (cmd) => new cmds.D03Command(cmd, this.fmt)],
-        [/^(?:G54)?D(\d+)$/, (cmd) => new cmds.DCommand(cmd)],
+        [/^D(\d+)$/, (cmd) => new cmds.DCommand(cmd)],
         [/^G[0]*1$/, (cmd) => new cmds.G01Command(cmd)],
         [/^G[0]*2$/, (cmd) => new cmds.G02Command(cmd)],
         [/^G[0]*3$/, (cmd) => new cmds.G03Command(cmd)],
@@ -142,7 +186,15 @@ export class GerberParser {
         [/^IR(?:.+)/, null],
         [/^AS(?:.+)/, null],
         [/^KO(?:.+)/, null],
-        [/^MI(?:.+)/, null]
+        [/^MI(?:.+)/, null],
+        [/^OF(?:.+)/, null],
+        [/^RO(?:.+)/, null],
+        [/^SF(?:.+)/, null],
+        [/^G54$/, null],
+        [/^G70$/, null],
+        [/^G71$/, null],
+        [/^G90$/, null],
+        [/^G91$/, null]
     ];
     private commands:Array<ParserCommand> = [];
 
