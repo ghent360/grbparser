@@ -59,6 +59,34 @@ G04 Create aperture*
         assert.equal(commands[2], "G04 Create aperture");
         assert.equal(commands[3], "ADD10RECTROUNDCORNERS,4X3X0.5X0X0X0*");
     });
+    it("Combined G and D codes", () => {
+        let commands:string[] = [];
+        let cmdParser = new gp.CommandParser();
+        cmdParser.setConsumer((cmd) => commands.push(cmd));
+        cmdParser.parseBlock("G54D10*G03X3750Y1000I250J0D01*");
+        assert.equal(commands.length, 4);
+        assert.equal(commands[0], "G54");
+        assert.equal(commands[1], "D10");
+        assert.equal(commands[2], "G03");
+        assert.equal(commands[3], "X3750Y1000I250J0D01");
+    });
+    it("Reorder coordinates", () => {
+        let commands:string[] = [];
+        let cmdParser = new gp.CommandParser();
+        cmdParser.setConsumer((cmd) => commands.push(cmd));
+        cmdParser.parseBlock("Y1000J0I250X3750D01*");
+        assert.equal(commands.length, 1);
+        assert.equal(commands[0], "X3750Y1000I250J0D01");
+    });
+    it("Combined parameters codes", () => {
+        let commands:string[] = [];
+        let cmdParser = new gp.CommandParser();
+        cmdParser.setConsumer((cmd) => commands.push(cmd));
+        cmdParser.parseBlock("%ASAXBY*FSLAX23Y23*MIA0B0*MOIN*OFA0B0*SFA1.0B1.0*%");
+        assert.equal(commands.length, 6);
+        assert.equal(commands[0], "ASAXBY*");
+        assert.equal(commands[5], "SFA1.0B1.0*");
+    });
     it('parse gerber file', () => {
         let folder = "test/Gerber_File_Format_Examples";
         fs.readdirSync(folder)
@@ -67,7 +95,7 @@ G04 Create aperture*
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 let parser = new gp.GerberParser();
-                console.log(`Parsing ${fullFileName}`);
+                //console.log(`Parsing ${fullFileName}`);
                 parser.parseBlock(content);
                 let reconstruct = parser.output();
                 //console.log(reconstruct);

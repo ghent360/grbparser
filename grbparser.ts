@@ -103,6 +103,16 @@ export class CommandParser {
                     return;
                 }
             }
+        } else {
+            // Some advanced commands can be combined together as per
+            // the old spec. See if we have to split them apart.
+            if (!cmd.startsWith("AM") && cmd.indexOf("*") != cmd.lastIndexOf("*")) {
+                let parts = cmd.split("*").slice(0, -1);
+                for (let part of parts) {
+                    this.consumer(part + "*", this.commandLineStart, true);
+                }
+                return;
+            }
         }
         this.consumer(CommandParser.orderDoperation(cmd), this.commandLineStart, isAdvanced);
     }
