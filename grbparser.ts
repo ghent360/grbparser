@@ -163,13 +163,15 @@ class ParserCommand {
 export class GerberParser {
     private commandParser:CommandParser = new CommandParser();
     private fmt:CoordinateFormatSpec;
+    // Order in this array is important, because some regex are more broad
+    // and would detect previous commands.
     private commandDispatcher:Array<[RegExp, (cmd:string) => GerberCommand]> = [
         [/^FS/, (cmd) => new cmds.FSCommand(cmd)],
         [/^MO/, (cmd) => new cmds.MOCommand(cmd)],
         [/^ADD/, (cmd) => new cmds.ADCommand(cmd)],
         [/^AM/, (cmd) => new cmds.AMCommand(cmd)],
         [/^AB/, (cmd) => new cmds.ABCommand(cmd)],
-        [/^G[0]*4/, (cmd) => new cmds.G04Command(cmd)],
+        [/^G[0]*4[^\d]/, (cmd) => new cmds.G04Command(cmd)],
         [/D[0]*1$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
         [/D[0]*2$/, (cmd) => new cmds.D02Command(cmd, this.fmt)],
         [/D[0]*3$/, (cmd) => new cmds.D03Command(cmd, this.fmt)],
@@ -238,7 +240,7 @@ export class GerberParser {
         } catch (e) {
             console.log(`Error parsing gerber file at line ${lineNo}.`);
             console.log(`Offending command: ${cmd}`);
-            console.log(`Error: ${e}`);
+            console.log(`Message: ${e}`);
             throw e;
         }
     }
@@ -256,5 +258,11 @@ export class GerberParser {
             result += "\n";
         }
         return result;
+    }
+
+    public execute(ctx:GerberState) {
+        for (let parseCommand of this.commands) {
+            parseCommand.cmd.execute(ctx);
+        }
     }
 }

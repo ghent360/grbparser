@@ -61,6 +61,13 @@ export class Point {
 export class GerberParseException {
     constructor(readonly message:string, readonly line?:number) {
     }
+
+    public toString():string {
+        if (this.line != undefined) {
+            return `Error parsing gerber file at line ${this.line}: ${this.message}`;
+        }
+        return `Error parsing gerber file: ${this.message}`;
+    }
 }
 
 export class Block {
@@ -238,4 +245,5 @@ export interface GerberCommand {
     readonly name:string;
     readonly isAdvanced:boolean;
     formatOutput(fmt:CoordinateFormatSpec):string;
+    execute(ctx:GerberState);
 }

@@ -25,7 +25,8 @@ import {
     Attribute,
     AttributeType,
     VariableDefinition,
-    GerberCommand
+    GerberCommand,
+    GerberState
 } from './primitives';
 
 export class FSCommand implements GerberCommand {
@@ -52,6 +53,10 @@ export class FSCommand implements GerberCommand {
             + this.coordinateFormat.yNumDecPos
             + "*";
     }
+
+    execute(ctx:GerberState) {
+        ctx.coordinateFormatSpec = this.coordinateFormat;
+    }
 }
 
 export class MOCommand implements GerberCommand {
@@ -72,6 +77,10 @@ export class MOCommand implements GerberCommand {
 
     formatOutput():string {
         return "MO" + (this.units == FileUnits.MILIMETERS ? "MM" : "IN") + "*";
+    }
+
+    execute(ctx:GerberState) {
+        ctx.fileUnits = this.units;
     }
 }
 
@@ -123,6 +132,10 @@ export class ADCommand implements GerberCommand {
         }
         result += "*";
         return result;
+    }
+
+    execute(ctx:GerberState) {
+        ctx.setAperture(this.definition);
     }
 
     private checkStandardApertures() {
@@ -268,6 +281,9 @@ export class G04Command implements GerberCommand {
     formatOutput():string {
         return "G04" + this.comment;
     }
+
+    execute(ctx:GerberState) {
+    }
 }
 
 export class AMCommand implements GerberCommand {
@@ -324,6 +340,10 @@ export class AMCommand implements GerberCommand {
         }
         return result;
     }
+
+    execute(ctx:GerberState) {
+        ctx.setApertureMacro(this.macro);
+    }
 }
 
 export class ABCommand implements GerberCommand {
@@ -355,6 +375,10 @@ export class ABCommand implements GerberCommand {
         result += "*";
         return result;
     }
+
+    execute(ctx:GerberState) {
+        console.log("AB commant not implemented");
+    }
 }
 
 /**
@@ -379,6 +403,11 @@ export class DCommand implements GerberCommand {
 
     formatOutput():string {
         return "D" + this.apertureId;
+    }
+
+    execute(ctx:GerberState) {
+        ctx.getAperture(this.apertureId);
+        ctx.currentAppretureId = this.apertureId;
     }
 }
 
@@ -458,6 +487,10 @@ export class D01Command implements GerberCommand {
         result += "D01";
         return result;
     }
+
+    execute(ctx:GerberState) {
+        console.log("D01 commant not implemented");
+    }
 }
 
 export class D02Command implements GerberCommand {
@@ -494,6 +527,10 @@ export class D02Command implements GerberCommand {
         }
         result += "D02";
         return result;
+    }
+
+    execute(ctx:GerberState) {
+        console.log("D02 commant not implemented");
     }
 }
 
@@ -532,6 +569,10 @@ export class D03Command implements GerberCommand {
         result += "D03";
         return result;
     }
+
+    execute(ctx:GerberState) {
+        console.log("D03 commant not implemented");
+    }
 }
 
 class BaseGCodeCommand {
@@ -566,12 +607,20 @@ export class G01Command extends BaseGCodeCommand implements GerberCommand {
     constructor(cmd:string) {
         super(cmd, 1);
     }
+
+    execute(ctx:GerberState) {
+        ctx.interpolationMode = InterpolationMode.LINEAR;
+    }
 }
 
 export class G02Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G02";
     constructor(cmd:string) {
         super(cmd, 2);
+    }
+
+    execute(ctx:GerberState) {
+        ctx.interpolationMode = InterpolationMode.CLOCKWISE;
     }
 }
 
@@ -580,6 +629,10 @@ export class G03Command extends BaseGCodeCommand implements GerberCommand {
     constructor(cmd:string) {
         super(cmd, 3);
     }
+
+    execute(ctx:GerberState) {
+        ctx.interpolationMode = InterpolationMode.COUNTER_CLOCKWISE;
+    }
 }
 
 export class G74Command extends BaseGCodeCommand implements GerberCommand {
@@ -587,12 +640,20 @@ export class G74Command extends BaseGCodeCommand implements GerberCommand {
     constructor(cmd:string) {
         super(cmd, 74);
     }
+
+    execute(ctx:GerberState) {
+        ctx.quadrantMode = QuadrantMode.SINGLE;
+    }
 }
 
 export class G75Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G75";
     constructor(cmd:string) {
         super(cmd, 75);
+    }
+
+    execute(ctx:GerberState) {
+        ctx.quadrantMode = QuadrantMode.MULTI;
     }
 }
 
@@ -612,6 +673,10 @@ export class LPCommand implements GerberCommand {
 
     formatOutput():string {
         return "LP" + ((this.polarity == ObjectPolarity.LIGHT) ? "C" : "D") + "*";
+    }
+
+    execute(ctx:GerberState) {
+        ctx.objectPolarity = this.polarity;
     }
 }
 
@@ -649,6 +714,10 @@ export class LMCommand implements GerberCommand {
         result += "*";
         return result;
     }
+
+    execute(ctx:GerberState) {
+        ctx.objectMirroring = this.miroring;
+    }
 }
 
 export class LRCommand implements GerberCommand {
@@ -667,6 +736,10 @@ export class LRCommand implements GerberCommand {
 
     formatOutput():string {
         return "LR" + this.rotation + "*";
+    }
+
+    execute(ctx:GerberState) {
+        ctx.objectRotation = this.rotation;
     }
 }
 
@@ -687,6 +760,10 @@ export class LSCommand implements GerberCommand {
     formatOutput():string {
         return "LS" + this.scale + "*";
     }
+
+    execute(ctx:GerberState) {
+        ctx.objectScaling = this.scale;
+    }
 }
 
 export class G36Command extends BaseGCodeCommand implements GerberCommand {
@@ -694,12 +771,20 @@ export class G36Command extends BaseGCodeCommand implements GerberCommand {
     constructor(cmd:string) {
         super(cmd, 36);
     }
+
+    execute(ctx:GerberState) {
+        console.log("G36 command is not implemnted");
+    }
 }
 
 export class G37Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G37";
     constructor(cmd:string) {
         super(cmd, 37);
+    }
+
+    execute(ctx:GerberState) {
+        console.log("G37 command is not implemnted");
     }
 }
 
@@ -740,6 +825,10 @@ export class SRCommand implements GerberCommand {
         result += "*";
         return result;
     }
+
+    execute(ctx:GerberState) {
+        console.log("SR command is not implemnted");
+    }
 }
 
 export class M02Command implements GerberCommand {
@@ -754,6 +843,9 @@ export class M02Command implements GerberCommand {
 
     formatOutput():string {
         return "M02";
+    }
+
+    execute() {
     }
 }
 
@@ -803,6 +895,10 @@ export class TCommand implements GerberCommand {
         result += "*";
         return result;
     }
+
+    execute(ctx:GerberState) {
+        console.log("Tx command is not implemnted");
+    }
 }
 
 export class TDCommand implements GerberCommand {
@@ -821,5 +917,9 @@ export class TDCommand implements GerberCommand {
 
     formatOutput():string {
         return "TD" + this.attributeName + "*";
+    }
+
+    execute(ctx:GerberState) {
+        console.log("TD command is not implemnted");
     }
 }

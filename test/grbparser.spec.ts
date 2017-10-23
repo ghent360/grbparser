@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as gp from '../grbparser';
+import * as pr from '../primitives';
 
 describe("GerberParser tests", () => {
     it('G01', () => {
@@ -87,6 +88,10 @@ G04 Create aperture*
         assert.equal(commands[0], "ASAXBY*");
         assert.equal(commands[5], "SFA1.0B1.0*");
     });
+    it('Parsing error', () => {
+        let parser = new gp.GerberParser();
+        assert.throws(() => parser.parseBlock("G77*"), "Invalid command G77");
+    });
     it('parse gerber file', () => {
         let folder = "test/Gerber_File_Format_Examples";
         fs.readdirSync(folder)
@@ -95,8 +100,10 @@ G04 Create aperture*
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 let parser = new gp.GerberParser();
-                //console.log(`Parsing ${fullFileName}`);
+                console.log(`Parsing ${fullFileName}`);
                 parser.parseBlock(content);
+                let ctx = new pr.GerberState();
+                parser.execute(ctx);
                 let reconstruct = parser.output();
                 //console.log(reconstruct);
                 parser = new gp.GerberParser();
