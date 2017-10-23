@@ -489,6 +489,8 @@ export class D01Command implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
+        let aperture = ctx.getCurrentAperture();
+
         if (ctx.interpolationMode == InterpolationMode.LINEAR) {
             let targetX:number;
             let targetY:number;
@@ -525,19 +527,21 @@ export class D01Command implements GerberCommand {
             let startPointY = ctx.currentPointY;
             let endPointX:number;
             let endPointY:number;
+
             if (this.x != undefined) {
                 endPointX = this.x;
                 ctx.currentPointX = this.x;
             } else {
                 endPointX = ctx.currentPointX;
             }
-
             if (this.y != undefined) {
                 endPointY = this.y;
                 ctx.currentPointY = this.y;
             } else {
                 endPointY = ctx.currentPointY;
             }
+            let radius = Math.sqrt(targetI * targetI + targetJ * targetJ);
+
             console.log(`D01 arc from ${startPointX}, ${startPointY} to ${endPointX}, ${endPointY}`);
         }
     }
