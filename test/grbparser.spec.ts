@@ -92,7 +92,7 @@ G04 Create aperture*
         let parser = new gp.GerberParser();
         assert.throws(() => parser.parseBlock("G77*"), "Invalid command G77");
     });
-    it('parse gerber file', () => {
+    it('parse and reconstruct gerber files', () => {
         let folder = "test/Gerber_File_Format_Examples";
         fs.readdirSync(folder)
             .filter(fileName => fileName.endsWith(".gbr"))
@@ -102,12 +102,27 @@ G04 Create aperture*
                 let parser = new gp.GerberParser();
                 console.log(`Parsing ${fullFileName}`);
                 parser.parseBlock(content);
-                let ctx = new pr.GerberState();
-                parser.execute(ctx);
                 let reconstruct = parser.output();
-                //console.log(reconstruct);
                 parser = new gp.GerberParser();
                 parser.parseBlock(reconstruct);
+            });
+    });
+    it('parse and execute gerber file', () => {
+        let folder = "test/Gerber_File_Format_Examples";
+        fs.readdirSync(folder)
+            .filter(fileName => fileName.endsWith(".gbr"))
+            .filter(filename => !filename.startsWith("4-11-6_Block_with_different_orientations")
+                                && !filename.startsWith("4-6-4_Nested_blocks")
+                                && !filename.startsWith("test-image-offset-2")
+                                && !filename.startsWith("test-layer-mode-1"))
+            .forEach(fileName => {
+                let fullFileName = folder + "/" + fileName;
+                let content = fs.readFileSync(fullFileName).toString();
+                let parser = new gp.GerberParser();
+                console.log(`Parsing ${fullFileName}`);
+                parser.parseBlock(content);
+                let ctx = new pr.GerberState();
+                parser.execute(ctx);
             });
     });
 });
