@@ -112,8 +112,9 @@ export class GerberState {
     private coordinateFormat_:CoordinateFormatSpec = undefined;
     private fileUnits_:FileUnits = undefined;
     private currentPoint_:Point = new Point();
+    private currentCenterOffset_:Point = new Point();
     private currentAppretureId_:number = undefined;
-    private interpolationMode_:InterpolationMode = undefined;
+    public interpolationMode:InterpolationMode = InterpolationMode.LINEAR;
     private quadrantMode_:QuadrantMode = undefined;
     public objectPolarity:ObjectPolarity = ObjectPolarity.DARK;
     public objectMirroring:ObjectMirroring = ObjectMirroring.NONE;
@@ -172,6 +173,28 @@ export class GerberState {
         this.currentPoint_.y = value;        
     }
 
+    get currentI():number {
+        if (this.currentCenterOffset_.x == undefined) {
+            this.error("Current I is not set.");
+        }
+        return this.currentCenterOffset_.x;
+    }
+
+    set currentI(value:number) {
+        this.currentCenterOffset_.x = value;
+    }
+
+    get currentJ():number {
+        if (this.currentCenterOffset_.y == undefined) {
+            this.error("Current J is not set.");
+        }
+        return this.currentCenterOffset_.y;
+    }
+
+    set currentJ(value:number) {
+        this.currentCenterOffset_.y = value;
+    }
+
     get currentAppretureId():number {
         if (this.currentAppretureId_ == undefined) {
             this.error("Current appreture is not set.");
@@ -181,17 +204,6 @@ export class GerberState {
 
     set currentAppretureId(value:number) {
         this.currentAppretureId_ = value;        
-    }
-
-    get interpolationMode():InterpolationMode {
-        if (this.interpolationMode_ == undefined) {
-            this.error("Current interpolation mode is not set.");
-        }
-        return this.interpolationMode_;
-    }
-
-    set interpolationMode(value:InterpolationMode) {
-        this.interpolationMode_ = value;        
     }
 
     get quadrantMode():QuadrantMode {
@@ -209,6 +221,14 @@ export class GerberState {
         if (id < 10) {
             this.error(`Invalid aprture ID ${id}`);
         }
+        if (this.apertures[id] == undefined) {
+            this.error(`Aprture ID ${id} is not defined yet`);
+        }
+        return this.apertures[id];
+    }
+
+    getCurrentAperture():ApertureDefinition {
+        let id = this.currentAppretureId
         if (this.apertures[id] == undefined) {
             this.error(`Aprture ID ${id} is not defined yet`);
         }

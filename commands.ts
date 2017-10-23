@@ -489,7 +489,57 @@ export class D01Command implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        console.log("D01 commant not implemented");
+        if (ctx.interpolationMode == InterpolationMode.LINEAR) {
+            let targetX:number;
+            let targetY:number;
+            if (this.x != undefined) {
+                targetX = this.x;
+                ctx.currentPointX = this.x;
+            } else {
+                targetX = ctx.currentPointX;
+            }
+
+            if (this.y != undefined) {
+                targetY = this.y;
+                ctx.currentPointY = this.y;
+            } else {
+                targetY = ctx.currentPointY;
+            }
+            console.log(`D01 line to ${targetX}, ${targetY}`);
+        } else {
+            let targetI:number;
+            let targetJ:number;
+            if (this.i != undefined) {
+                targetI = this.i;
+                ctx.currentI = this.i;
+            } else {
+                targetI = ctx.currentI;
+            }
+            if (this.j != undefined) {
+                targetJ = this.j;
+                ctx.currentJ = this.j;
+            } else {
+                targetJ = ctx.currentJ;
+            }
+            let startPointX = ctx.currentPointX;
+            let startPointY = ctx.currentPointY;
+            let endPointX:number;
+            let endPointY:number;
+            if (this.x != undefined) {
+                endPointX = this.x;
+                ctx.currentPointX = this.x;
+            } else {
+                endPointX = ctx.currentPointX;
+            }
+
+            if (this.y != undefined) {
+                endPointY = this.y;
+                ctx.currentPointY = this.y;
+            } else {
+                endPointY = ctx.currentPointY;
+            }
+            console.log(`D01 arc from ${startPointX}, ${startPointY} to ${endPointX}, ${endPointY}`);
+        }
     }
 }
 
@@ -530,7 +580,12 @@ export class D02Command implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        console.log("D02 commant not implemented");
+        if (this.x != undefined) {
+            ctx.currentPointX = this.x;
+        }
+        if (this.y != undefined) {
+            ctx.currentPointY = this.y;
+        }
     }
 }
 
@@ -571,7 +626,25 @@ export class D03Command implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        console.log("D03 commant not implemented");
+        let targetX:number;
+        let targetY:number;
+
+        if (this.x != undefined) {
+            targetX = this.x;
+            ctx.currentPointX = this.x;
+        } else {
+            targetX = ctx.currentPointX;
+        }
+
+        if (this.y != undefined) {
+            targetY = this.y;
+            ctx.currentPointY = this.y;
+        } else {
+            targetY = ctx.currentPointY;
+        }
+
+        let aperture = ctx.getCurrentAperture();
+        console.log(`D03 flash aperture ${aperture.apertureId} at ${targetX}, ${targetY}`);
     }
 }
 
