@@ -267,3 +267,5 @@ export interface GerberCommand {
     formatOutput(fmt:CoordinateFormatSpec):string;
     execute(ctx:GerberState);
 }
+
+export const Epsilon = 1E-12;

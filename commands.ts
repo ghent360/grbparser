@@ -26,7 +26,8 @@ import {
     AttributeType,
     VariableDefinition,
     GerberCommand,
-    GerberState
+    GerberState,
+    Epsilon
 } from './primitives';
 
 export class FSCommand implements GerberCommand {
@@ -434,6 +435,24 @@ function formatCoordinateY(value:number, fmt:CoordinateFormatSpec):string {
     return formatFixedNumber(value, fmt.yNumDecPos);
 }
 
+function vectorLength(v:{x:number, y:number}):number {
+    return Math.sqrt(v.x * v.x + v.y * v.y);
+}
+
+function unitVector(v:{x:number, y:number}):{x:number, y:number} {
+    let len = vectorLength(v);
+    return {x:v.x/len, y:v.y/len};
+}
+
+function scaleVector(v:{x:number, y:number}, s:number):{x:number, y:number} {
+    return {x:v.x * s, y:v.y * s};
+}
+
+function addVector(a:{x:number, y:number}, b:{x:number, y:number})
+    : {x:number, y:number} {
+    return {x:a.x + b.x, y:a.y + b.y};
+}
+
 export class D01Command implements GerberCommand {
     readonly name = "D01";
     readonly isAdvanced = false;
@@ -489,25 +508,25 @@ export class D01Command implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        let aperture = ctx.getCurrentAperture();
-
         if (ctx.interpolationMode == InterpolationMode.LINEAR) {
-            let targetX:number;
-            let targetY:number;
+            let startPointX = ctx.currentPointX;
+            let startPointY = ctx.currentPointY;
+            let endPointX:number;
+            let endPointY:number;
             if (this.x != undefined) {
-                targetX = this.x;
+                endPointX = this.x;
                 ctx.currentPointX = this.x;
             } else {
-                targetX = ctx.currentPointX;
+                endPointX = ctx.currentPointX;
             }
 
             if (this.y != undefined) {
-                targetY = this.y;
+                endPointY = this.y;
                 ctx.currentPointY = this.y;
             } else {
-                targetY = ctx.currentPointY;
+                endPointY = ctx.currentPointY;
             }
-            console.log(`D01 line to ${targetX}, ${targetY}`);
+            console.log(`D01 line from ${startPointX}, ${startPointY} to ${endPointX}, ${endPointY}`);
         } else {
             let targetI:number;
             let targetJ:number;
@@ -540,7 +559,30 @@ export class D01Command implements GerberCommand {
             } else {
                 endPointY = ctx.currentPointY;
             }
+            if (Math.abs(startPointX - endPointX) < Epsilon
+                && Math.abs(startPointY - endPointY) < Epsilon) {
+                console.log("D01 zero length arc.");
+                return;
+            }
             let radius = Math.sqrt(targetI * targetI + targetJ * targetJ);
+            let mid = {x:(startPointX + endPointX) / 2, y:(startPointY + endPointY) / 2};
+            let v = {x:(startPointX - endPointX), y:(startPointY - endPointY)};
+            let v2 = {x:v.x / 2, y:v.y / 2};
+            let v2len = vectorLength(v2);
+            let d2 = radius * radius - v2len * v2len;
+            if (d2 < 0) {
+                console.log("D01 Invalid arc, radius too small");
+                return;
+            }
+            let d = Math.sqrt(d2);
+            let center: {x:number, y:number};
+            if (ctx.interpolationMode == InterpolationMode.CLOCKWISE) {
+                let pvCW = unitVector({ x:-v.y, y:v.x });
+                center = addVector(mid, scaleVector(pvCW, d));
+            } else {
+                let pvCCW = unitVector({ x:v.y, y:-v.x });
+                center = addVector(mid, scaleVector(pvCCW, d));
+            }
 
             console.log(`D01 arc from ${startPointX}, ${startPointY} to ${endPointX}, ${endPointY}`);
         }
