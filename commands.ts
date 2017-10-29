@@ -27,7 +27,8 @@ import {
     VariableDefinition,
     GerberCommand,
     GerberState,
-    Epsilon
+    Epsilon,
+    Point
 } from './primitives';
 
 export class FSCommand implements GerberCommand {
@@ -526,7 +527,7 @@ export class D01Command implements GerberCommand {
             } else {
                 endPointY = ctx.currentPointY;
             }
-            console.log(`D01 line from ${startPointX}, ${startPointY} to ${endPointX}, ${endPointY}`);
+            ctx.line(new Point(startPointX, startPointY),  new Point(endPointX, endPointY));
         } else {
             let targetI:number;
             let targetJ:number;
@@ -559,19 +560,25 @@ export class D01Command implements GerberCommand {
             } else {
                 endPointY = ctx.currentPointY;
             }
+            let radius = Math.sqrt(targetI * targetI + targetJ * targetJ);
             if (Math.abs(startPointX - endPointX) < Epsilon
                 && Math.abs(startPointY - endPointY) < Epsilon) {
-                console.log("D01 zero length arc.");
+                if (ctx.quadrantMode == QuadrantMode.SINGLE) {
+                    ctx.error("D01 zero length arc.");
+                } else {
+                    let centerX = startPointX + targetI;
+                    let centerY = startPointY + targetJ;
+                    ctx.circle(new Point(centerX, centerY), radius);
+                }
                 return;
             }
-            let radius = Math.sqrt(targetI * targetI + targetJ * targetJ);
             let mid = {x:(startPointX + endPointX) / 2, y:(startPointY + endPointY) / 2};
             let v = {x:(startPointX - endPointX), y:(startPointY - endPointY)};
             let v2 = {x:v.x / 2, y:v.y / 2};
             let v2len = vectorLength(v2);
             let d2 = radius * radius - v2len * v2len;
             if (d2 < 0) {
-                console.log("D01 Invalid arc, radius too small");
+                ctx.error("D01 Invalid arc, radius too small");
                 return;
             }
             let d = Math.sqrt(d2);
@@ -584,7 +591,11 @@ export class D01Command implements GerberCommand {
                 center = addVector(mid, scaleVector(pvCCW, d));
             }
 
-            console.log(`D01 arc from ${startPointX}, ${startPointY} to ${endPointX}, ${endPointY}`);
+            ctx.arc(
+                new Point(center.x, center.y),
+                radius,
+                new Point(startPointX, startPointY),
+                new Point(endPointX, endPointY));
         }
     }
 }
@@ -688,9 +699,7 @@ export class D03Command implements GerberCommand {
         } else {
             targetY = ctx.currentPointY;
         }
-
-        let aperture = ctx.getCurrentAperture();
-        console.log(`D03 flash aperture ${aperture.apertureId} at ${targetX}, ${targetY}`);
+        ctx.flash(new Point(targetX, targetY));
     }
 }
 

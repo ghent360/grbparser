@@ -53,9 +53,32 @@ export class CoordinateFormatSpec {
         }
 }
 
+function formatFloat(n:number, precision:number):string {
+    let s = n.toPrecision(precision);
+    let dotIdx = s.indexOf('.');
+    if (dotIdx >= 0) {
+        let idx:number;
+        for (idx = s.length - 1; idx > dotIdx + 1; idx--) {
+            if (s[idx] != '0') {
+                break;
+            }
+        }
+        s = s.substring(0, idx + 1);
+    }
+    return s;
+}
+
 export class Point {
-    public x:number;
-    public y:number;
+    constructor (public x?:number, public y?:number) {
+    }
+
+    isValid():boolean {
+        return this.x != undefined && this.y != undefined;
+    }
+
+    toString():string {
+        return `(${formatFloat(this.x, 6)}, ${formatFloat(this.y, 6)})`;
+    }
 }
 
 export class GerberParseException {
@@ -256,8 +279,37 @@ export class GerberState {
         this.apertureMacros[apm.macroName] = apm;
     }
 
-    private error(message:string) {
+    public error(message:string) {
         throw new GerberParseException(message);
+    }
+
+    public line(from:Point, to:Point) {
+        if (!from.isValid() || !to.isValid()) {
+            this.error(`Invalid line ${from} ${to}`);
+        }
+        console.log(`Line from ${from} to ${to}`);
+    }
+
+    public circle(center:Point, radius:number) {
+        if (!center.isValid() || radius <= Epsilon) {
+            this.error(`Invalid circle ${center} R${radius}`);
+        }
+        console.log(`Circle at ${center} R ${radius}`);
+    }
+
+    public arc(center:Point, radius:number, start:Point, end:Point) {
+        if (!center.isValid() || radius <= Epsilon || !start.isValid() || !end.isValid()) {
+            this.error(`Invalid arc ${center} R${radius} from ${start} to ${end}`);
+        }
+        console.log(`Arc from ${start} to ${end} center at ${center} R ${radius}`);
+    }
+
+    public flash(center:Point) {
+        if (!center.isValid()) {
+            this.error(`Invalid flash location ${center}`);
+        }
+        let aperture = this.getCurrentAperture();
+        console.log(`Flash aperture ${aperture.apertureId} at ${center}`);
     }
 }
 
