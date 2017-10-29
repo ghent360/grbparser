@@ -5,6 +5,8 @@
  * Some of these are for internal consumption.
  */
 
+ import {formatFloat} from "./utils";
+ 
 export enum FileUnits {
     INCHES,
     MILIMETERS
@@ -51,21 +53,6 @@ export class CoordinateFormatSpec {
             this.xPow = Math.pow(10, -this.xNumDecPos);
             this.yPow = Math.pow(10, -this.yNumDecPos);
         }
-}
-
-function formatFloat(n:number, precision:number):string {
-    let s = n.toPrecision(precision);
-    let dotIdx = s.indexOf('.');
-    if (dotIdx >= 0) {
-        let idx:number;
-        for (idx = s.length - 1; idx > dotIdx + 1; idx--) {
-            if (s[idx] != '0') {
-                break;
-            }
-        }
-        s = s.substring(0, idx + 1);
-    }
-    return s;
 }
 
 export class Point {
@@ -364,11 +351,14 @@ export class ArcSegment {
     }
 }
 
-class BlockGraphicsOperationsConsumer implements GraphicsOperations {
-    private contour_:Array<LineSegment|CircleSegment|ArcSegment> = [];
-    private blockContours_:Array<Array<LineSegment|CircleSegment|ArcSegment>> = [];
+export type BlockSegment = LineSegment | CircleSegment | ArcSegment;
+export type BlockContour = Array<BlockSegment>;
 
-    get blockContours():Array<Array<LineSegment|CircleSegment|ArcSegment>> {
+class BlockGraphicsOperationsConsumer implements GraphicsOperations {
+    private contour_:BlockContour = [];
+    private blockContours_:Array<BlockContour> = [];
+
+    get blockContours():Array<BlockContour> {
         return this.blockContours_;
     }
 
@@ -395,7 +385,7 @@ class BlockGraphicsOperationsConsumer implements GraphicsOperations {
         }
     }
 
-    block(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState) {
+    block(contours:Array<BlockContour>, ctx:GerberState) {
         ctx.error("Blocks are not allowed inside a block definition.");
     }
 }
@@ -439,10 +429,12 @@ export class Block {
     }
 }
 
-export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
-    private primitives_:Array<Line|Circle|Arc|Flash|Block> = [];
+export type GraphicsPrimitive = Line | Circle | Arc | Flash | Block;
 
-    get primitives():Array<Line|Circle|Arc|Flash|Block> {
+export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
+    private primitives_:Array<GraphicsPrimitive> = [];
+
+    get primitives():Array<GraphicsPrimitive> {
         return this.primitives_;
     }
 
@@ -465,7 +457,7 @@ export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
     close(ctx:GerberState) {
     }
 
-    block(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState) {
+    block(contours:Array<BlockContour>, ctx:GerberState) {
         this.primitives_.push(new Block(contours));
     }
 }

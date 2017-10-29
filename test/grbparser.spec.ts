@@ -124,25 +124,6 @@ G04 Create aperture*
                 parser.parseBlock(content);
                 let ctx = new pr.GerberState();
                 parser.execute(ctx);
-                let primitives = (ctx.graphicsOperations as pr.BaseGraphicsOperationsConsumer).primitives;
-                primitives.forEach((p) => {
-                    if (p instanceof pr.Line) {
-                        let line = p as pr.Line;
-                        console.log(`Line from ${line.from} to ${line.to}`);
-                    } else if (p instanceof pr.Arc) {
-                        let arc = p as pr.Arc;
-                        console.log(`Arc from ${arc.start} to ${arc.end} R ${arc.radius}`);
-                    } else if (p instanceof pr.Circle) {
-                        let circle = p as pr.Circle;
-                        console.log(`Cricle at ${circle.center} R ${circle.radius}`);
-                    } else if (p instanceof pr.Flash) {
-                        let flash = p as pr.Flash;
-                        console.log(`Flash aperture ${flash.aperture.apertureId} at ${flash.center}`);
-                    } else if (p instanceof pr.Block) {
-                        let block = p as pr.Block;
-                        console.log(`Block with ${block.contours.length} contours`);
-                    }
-                });
             });
     });
 });
