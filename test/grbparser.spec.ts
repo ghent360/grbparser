@@ -115,6 +115,7 @@ G04 Create aperture*
                                 && !filename.startsWith("4-6-4_Nested_blocks")
                                 && !filename.startsWith("test-image-offset-2")
                                 && !filename.startsWith("test-layer-mode-1"))
+            //.filter(fn => fn.endsWith("test-aperture-circle-1.gbr"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();

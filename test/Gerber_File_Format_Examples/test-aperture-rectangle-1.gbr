@@ -9,7 +9,7 @@ G04  drawing with it (only should show in flashes)*
 
 G04 No hole, centered at 0,0 *
 G54D10*
-G04 Recenter to 0,0
+G04 Recenter to 0,0*
 G01X0Y0D02*
 G04 Draw a line segment*
 X00100Y0D01*
