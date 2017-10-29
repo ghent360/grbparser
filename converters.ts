@@ -17,26 +17,44 @@ import {
 } from "./primitives";
 import {formatFloat} from "./utils";
 
-export class DebugConverter {
-    convert(primitives:Array<GraphicsPrimitive>):Array<String> {
-        let result:Array<String> = [];
+abstract class ConverterBase<T> {
+    convert(primitives:Array<GraphicsPrimitive>):Array<T> {
+        let result:Array<T> = [];
         primitives.forEach(p => {
             if (p instanceof Line) {
                 let line = p as Line;
-                result.push(`Line from ${line.from} to ${line.to}`);
+                result.push(this.convertLine(line));
             } else if (p instanceof Arc) {
                 let arc = p as Arc;
-                result.push(`Arc from ${arc.start} to ${arc.end} R ${formatFloat(arc.radius, 3)}`);
+                result.push(this.convertArc(arc));
             } else if (p instanceof Circle) {
                 let circle = p as Circle;
-                result.push(`Cricle at ${circle.center} R ${formatFloat(circle.radius, 3)}`);
+                result.push(this.convertCircle(circle));
             } else if (p instanceof Flash) {
                 let flash = p as Flash;
-                result.push(`Flash aperture ${flash.aperture.apertureId} at ${flash.center}`);
+                result.push(this.convertFlash(flash));
             } else if (p instanceof Block) {
                 let block = p as Block;
-                result.push(`Block with ${block.contours.length} contours`);
+                result.push(this.convertBlock(block));
+            } else {
+                throw new Error("Unknown primitive " + p);
             }
+        });
+        return result;
+    }
+
+    abstract convertLine(l:Line):T;
+    abstract convertArc(a:Arc):T;
+    abstract convertCircle(c:Circle):T;
+    abstract convertFlash(f:Flash):T;
+    abstract convertBlock(b:Block):T;
+}
+
+export class DebugConverter {
+    convert(primitives:Array<GraphicsPrimitive>):Array<string> {
+        let result:Array<string> = [];
+        primitives.forEach(p => {
+            result.push(p.toString());
         });
         return result;
     }

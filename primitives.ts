@@ -6,7 +6,7 @@
  */
 
  import {formatFloat} from "./utils";
- 
+
 export enum FileUnits {
     INCHES,
     MILIMETERS
@@ -333,12 +333,20 @@ export class LineSegment {
         readonly from:Point,
         readonly to:Point){
     }
+
+    toString():string {
+        return `l(${this.from}, ${this.to})`;
+    }
 }
 
 export class CircleSegment {
     constructor(
         readonly center:Point,
         readonly radius:number) {
+    }
+
+    toString():string {
+        return `c(${this.center}R${formatFloat(this.radius, 3)})`;
     }
 }
 
@@ -348,6 +356,10 @@ export class ArcSegment {
         readonly radius:number,
         readonly start:Point,
         readonly end:Point) {
+    }
+
+    toString():string {
+        return `a(${this.start}, ${this.end}@${this.center}R${formatFloat(this.radius, 3)})`;
     }
 }
 
@@ -396,6 +408,10 @@ export class Line {
         readonly to:Point,
         readonly aperture:ApertureDefinition) {
     }
+
+    toString():string {
+        return `L(${this.from}, ${this.to})`;
+    }
 }
 
 export class Circle {
@@ -403,6 +419,10 @@ export class Circle {
         readonly center:Point,
         readonly radius:number,
         readonly aperture:ApertureDefinition) {
+    }
+
+    toString():string {
+        return `C(${this.center}R${formatFloat(this.radius, 3)})`;
     }
 }
 
@@ -414,6 +434,10 @@ export class Arc {
         readonly end:Point,
         readonly aperture:ApertureDefinition) {
     }
+
+    toString():string {
+        return `A(${this.start}, ${this.end}@${this.center}R${formatFloat(this.radius, 3)})`;
+    }
 }
 
 export class Flash {
@@ -421,11 +445,38 @@ export class Flash {
         readonly center:Point,
         readonly aperture:ApertureDefinition) {
     }
+
+    toString():string {
+        return `F(${this.aperture.apertureId}@${this.center})`;
+    }
 }
 
 export class Block {
     constructor(
         readonly contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>) {
+    }
+
+    toString():string {
+        let result = "B[";
+        let firstContour = true;
+        this.contours.forEach(contour => {
+            if (!firstContour) {
+                result += ", ";
+            }
+            firstContour = false;
+            result += "contour {";
+            let firstSegment = true;
+            contour.forEach(segment => {
+                if (!firstSegment) {
+                    result += ", ";
+                }
+                firstSegment = false;
+                result += segment.toString();
+            });
+            result += "}";
+        });
+        result += "]";
+        return result;
     }
 }
 
