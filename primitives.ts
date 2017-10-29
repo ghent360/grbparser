@@ -533,8 +533,7 @@ export class Flash {
     }
 }
 
-export const PointZero = new Point(0, 0);
-export const EmptyBounds = new Bounds(PointZero, PointZero);
+export const EmptyBounds = new Bounds(new Point(0, 0), new Point(0, 0));
 
 export class Block {
     constructor(
