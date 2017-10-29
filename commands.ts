@@ -643,6 +643,7 @@ export class D02Command implements GerberCommand {
         if (this.y != undefined) {
             ctx.currentPointY = this.y;
         }
+        ctx.close();
     }
 }
 
@@ -901,7 +902,7 @@ export class G36Command extends BaseGCodeCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        console.log("G36 command is not implemnted");
+        ctx.startBlock();
     }
 }
 
@@ -912,7 +913,7 @@ export class G37Command extends BaseGCodeCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        console.log("G37 command is not implemnted");
+        ctx.endBlock();
     }
 }
 

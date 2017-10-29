@@ -85,15 +85,12 @@ export class GerberParseException {
     constructor(readonly message:string, readonly line?:number) {
     }
 
-    public toString():string {
+    toString():string {
         if (this.line != undefined) {
             return `Error parsing gerber file at line ${this.line}: ${this.message}`;
         }
         return `Error parsing gerber file: ${this.message}`;
     }
-}
-
-export class Block {
 }
 
 export class ApertureDefinition {
@@ -131,6 +128,15 @@ export class Attribute {
     }
 }
 
+export interface GraphicsOperations {
+    line(from:Point, to:Point, ctx:GerberState);
+    circle(center:Point, radius:number, ctx:GerberState);
+    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState);
+    flash(center:Point, ctx:GerberState);
+    close(ctx:GerberState);
+    block(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState);
+}
+
 export class GerberState {
     private coordinateFormat_:CoordinateFormatSpec = undefined;
     private fileUnits_:FileUnits = undefined;
@@ -145,6 +151,8 @@ export class GerberState {
     public objectScaling:number = 1.0;
     private apertures:{[id:number]:ApertureDefinition} = {};
     private apertureMacros:{[name:string]:ApertureMacro} = {};
+    private graphisOperationsConsumer_:GraphicsOperations = new TopGraphicsOperationsConsumer();
+    private savedGraphisOperationsConsumer_:GraphicsOperations;
     
     get coordinateFormatSpec():CoordinateFormatSpec {
         if (this.coordinateFormat_ == undefined) {
@@ -279,37 +287,182 @@ export class GerberState {
         this.apertureMacros[apm.macroName] = apm;
     }
 
-    public error(message:string) {
+    error(message:string) {
         throw new GerberParseException(message);
     }
 
-    public line(from:Point, to:Point) {
+    line(from:Point, to:Point) {
         if (!from.isValid() || !to.isValid()) {
             this.error(`Invalid line ${from} ${to}`);
         }
-        console.log(`Line from ${from} to ${to}`);
+        this.graphisOperationsConsumer_.line(from, to, this);
     }
 
-    public circle(center:Point, radius:number) {
+    circle(center:Point, radius:number) {
         if (!center.isValid() || radius <= Epsilon) {
             this.error(`Invalid circle ${center} R${radius}`);
         }
-        console.log(`Circle at ${center} R ${radius}`);
+        this.graphisOperationsConsumer_.circle(center, radius, this);
     }
 
-    public arc(center:Point, radius:number, start:Point, end:Point) {
+    arc(center:Point, radius:number, start:Point, end:Point) {
         if (!center.isValid() || radius <= Epsilon || !start.isValid() || !end.isValid()) {
             this.error(`Invalid arc ${center} R${radius} from ${start} to ${end}`);
         }
-        console.log(`Arc from ${start} to ${end} center at ${center} R ${radius}`);
+        this.graphisOperationsConsumer_.arc(center, radius, start, end, this);
     }
 
-    public flash(center:Point) {
+    flash(center:Point) {
         if (!center.isValid()) {
             this.error(`Invalid flash location ${center}`);
         }
-        let aperture = this.getCurrentAperture();
-        console.log(`Flash aperture ${aperture.apertureId} at ${center}`);
+        this.graphisOperationsConsumer_.flash(center, this);
+    }
+
+    close() {
+        this.graphisOperationsConsumer_.close(this);
+    }
+
+    startBlock() {
+        this.savedGraphisOperationsConsumer_ = this.graphisOperationsConsumer_;
+        this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
+    }
+
+    endBlock() {
+        let block = this.graphisOperationsConsumer_ as BlockGraphicsOperationsConsumer;
+        block.close(this);
+
+        this.graphisOperationsConsumer_ = this.savedGraphisOperationsConsumer_;
+        this.graphisOperationsConsumer_.block(block.blockContours, this);
+    }
+}
+
+class LineSegment {
+    constructor(
+        readonly from:Point,
+        readonly to:Point){
+    }
+}
+
+class CircleSegment {
+    constructor(
+        readonly center:Point,
+        readonly radius:number) {
+    }
+}
+
+class ArcSegment {
+    constructor(
+        readonly center:Point,
+        readonly radius:number,
+        readonly start:Point,
+        readonly end:Point) {
+    }
+}
+
+class BlockGraphicsOperationsConsumer implements GraphicsOperations {
+    private contour_:Array<LineSegment|CircleSegment|ArcSegment> = [];
+    private blockContours_:Array<Array<LineSegment|CircleSegment|ArcSegment>> = [];
+
+    get blockContours():Array<Array<LineSegment|CircleSegment|ArcSegment>> {
+        return this.blockContours_;
+    }
+
+    line(from:Point, to:Point) {
+        this.contour_.push(new LineSegment(from, to));
+    }
+
+    circle(center:Point, radius:number) {
+        this.contour_.push(new CircleSegment(center, radius));
+    }
+
+    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState) {
+        this.contour_.push(new ArcSegment(center, radius, start, end));
+    }
+
+    flash(center:Point, ctx:GerberState) {
+        ctx.error("Flashes are not allowed inside a block definition.");
+    }
+
+    close(ctx:GerberState) {
+        if (this.contour_.length > 0) {
+            this.blockContours_.push(this.contour_);
+            this.contour_ = [];
+        }
+    }
+
+    block(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState) {
+        ctx.error("Blocks are not allowed inside a block definition.");
+    }
+}
+
+class Line {
+    constructor(
+        readonly from:Point,
+        readonly to:Point,
+        readonly aperture:ApertureDefinition) {
+    }
+}
+
+class Circle {
+    constructor(
+        readonly center:Point,
+        readonly radius:number,
+        readonly aperture:ApertureDefinition) {
+    }
+}
+
+class Arc {
+    constructor(
+        readonly center:Point,
+        readonly radius:number,
+        readonly start:Point,
+        readonly end:Point,
+        readonly aperture:ApertureDefinition) {
+    }
+}
+
+class Flash {
+    constructor(
+        readonly center:Point,
+        readonly aperture:ApertureDefinition) {
+    }
+}
+
+class Block {
+    constructor(
+        readonly contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>) {
+    }
+}
+
+class TopGraphicsOperationsConsumer implements GraphicsOperations {
+    private primitives_:Array<Line|Circle|Arc|Flash|Block> = [];
+
+    get primitives():Array<Line|Circle|Arc|Flash|Block> {
+        return this.primitives_;
+    }
+
+    line(from:Point, to:Point, ctx:GerberState) {
+        this.primitives_.push(new Line(from, to, ctx.getCurrentAperture()));
+    }
+
+    circle(center:Point, radius:number, ctx:GerberState) {
+        this.primitives_.push(new Circle(center, radius, ctx.getCurrentAperture()));
+    }
+
+    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState) {
+        this.primitives_.push(new Arc(center, radius, start, end, ctx.getCurrentAperture()));
+    }
+
+    flash(center:Point, ctx:GerberState) {
+        this.primitives_.push(new Flash(center, ctx.getCurrentAperture()));
+    }
+
+    close(ctx:GerberState) {
+    }
+
+    block(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState) {
+        this.primitives_.push(new Block(contours));
     }
 }
 
