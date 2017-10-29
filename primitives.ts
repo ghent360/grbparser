@@ -64,7 +64,19 @@ export class Point {
     }
 
     toString():string {
-        return `(${formatFloat(this.x, 6)}, ${formatFloat(this.y, 6)})`;
+        return `(${formatFloat(this.x, 4)}, ${formatFloat(this.y, 4)})`;
+    }
+
+    add(other:Point):Point {
+        return new Point(this.x + other.x, this.y + other.y);
+    }
+
+    subtract(other:Point):Point {
+        return new Point(this.x - other.x, this.y - other.y);
+    }
+
+    scale(scale:number):Point {
+        return new Point(this.x * scale, this.y * scale);
     }
 }
 
@@ -328,6 +340,34 @@ export class GerberState {
     }
 }
 
+export class Bounds {
+    constructor(public min:Point, public max:Point) {
+    }
+
+    merge(other:Bounds) {
+        if (other.min.x < this.min.x) {
+            this.min.x = other.min.x;
+        }
+        if (other.min.y < this.min.y) {
+            this.min.y = other.min.y;
+        }
+        if (other.max.x > this.max.x) {
+            this.max.x = other.max.x;
+        }
+        if (other.max.y > this.max.y) {
+            this.max.y = other.max.y;
+        }
+    }
+
+    get width():number {
+        return this.max.x - this.min.x;
+    }
+
+    get height():number {
+        return this.max.y - this.min.y;
+    }
+}
+
 export class LineSegment {
     constructor(
         readonly from:Point,
@@ -336,6 +376,12 @@ export class LineSegment {
 
     toString():string {
         return `l(${this.from}, ${this.to})`;
+    }
+
+    get bounds():Bounds {
+        return new Bounds(
+            new Point(Math.min(this.from.x, this.to.x), Math.min(this.from.y, this.to.y)),
+            new Point(Math.max(this.from.x, this.to.x), Math.max(this.from.y, this.to.y)));
     }
 }
 
@@ -347,6 +393,12 @@ export class CircleSegment {
 
     toString():string {
         return `c(${this.center}R${formatFloat(this.radius, 3)})`;
+    }
+
+    get bounds():Bounds {
+        return new Bounds(
+            new Point(this.center.x - this.radius, this.center.x - this.radius),
+            new Point(this.center.x + this.radius, this.center.x + this.radius));
     }
 }
 
@@ -360,6 +412,12 @@ export class ArcSegment {
 
     toString():string {
         return `a(${this.start}, ${this.end}@${this.center}R${formatFloat(this.radius, 3)})`;
+    }
+
+    get bounds():Bounds {
+        return new Bounds(
+            new Point(Math.min(this.start.x, this.end.x), Math.min(this.start.y, this.end.y)),
+            new Point(Math.max(this.start.x, this.end.x), Math.max(this.start.y, this.end.y)));
     }
 }
 
@@ -412,6 +470,12 @@ export class Line {
     toString():string {
         return `L(${this.from}, ${this.to})`;
     }
+
+    get bounds():Bounds {
+        return new Bounds(
+            new Point(Math.min(this.from.x, this.to.x), Math.min(this.from.y, this.to.y)),
+            new Point(Math.max(this.from.x, this.to.x), Math.max(this.from.y, this.to.y)));
+    }
 }
 
 export class Circle {
@@ -423,6 +487,12 @@ export class Circle {
 
     toString():string {
         return `C(${this.center}R${formatFloat(this.radius, 3)})`;
+    }
+
+    get bounds():Bounds {
+        return new Bounds(
+            new Point(this.center.x - this.radius, this.center.x - this.radius),
+            new Point(this.center.x + this.radius, this.center.x + this.radius));
     }
 }
 
@@ -438,6 +508,12 @@ export class Arc {
     toString():string {
         return `A(${this.start}, ${this.end}@${this.center}R${formatFloat(this.radius, 3)})`;
     }
+
+    get bounds():Bounds {
+        return new Bounds(
+            new Point(Math.min(this.start.x, this.end.x), Math.min(this.start.y, this.end.y)),
+            new Point(Math.max(this.start.x, this.end.x), Math.max(this.start.y, this.end.y)));
+    }
 }
 
 export class Flash {
@@ -449,11 +525,20 @@ export class Flash {
     toString():string {
         return `F(${this.aperture.apertureId}@${this.center})`;
     }
+
+    get bounds():Bounds {
+        return new Bounds(
+            new Point(this.center.x, this.center.y),
+            new Point(this.center.x, this.center.y));
+    }
 }
+
+export const PointZero = new Point(0, 0);
+export const EmptyBounds = new Bounds(PointZero, PointZero);
 
 export class Block {
     constructor(
-        readonly contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>) {
+        readonly contours:Array<BlockContour>) {
     }
 
     toString():string {
@@ -477,6 +562,18 @@ export class Block {
         });
         result += "]";
         return result;
+    }
+
+    get bounds():Bounds {
+        let bounds = EmptyBounds;
+        this.contours.forEach(c => bounds.merge(this.contourBounds(c)));
+        return bounds;
+    }
+
+    private contourBounds(contour:BlockContour):Bounds {
+        let bounds = EmptyBounds;
+        contour.forEach(s => bounds.merge(s.bounds));
+        return bounds;
     }
 }
 

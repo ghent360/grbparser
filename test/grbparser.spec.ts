@@ -100,7 +100,7 @@ G04 Create aperture*
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 let parser = new gp.GerberParser();
-                console.log(`Parsing ${fullFileName}`);
+                //console.log(`Parsing ${fullFileName}`);
                 parser.parseBlock(content);
                 let reconstruct = parser.output();
                 parser = new gp.GerberParser();
@@ -120,7 +120,7 @@ G04 Create aperture*
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 let parser = new gp.GerberParser();
-                console.log(`Parsing ${fullFileName}`);
+                //console.log(`Parsing ${fullFileName}`);
                 parser.parseBlock(content);
                 let ctx = new pr.GerberState();
                 parser.execute(ctx);

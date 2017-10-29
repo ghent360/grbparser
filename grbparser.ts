@@ -225,7 +225,7 @@ export class GerberParser {
                 throw new GerberParseException(`Invalid command ${cmd}`);
             }
             if (dispatcher[1] == null) {
-                console.log(`WARNING: ignoring ${cmd}`);
+                //console.log(`WARNING: ignoring ${cmd}`);
                 return;
             }
             let command = dispatcher[1](cmd);
