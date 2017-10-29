@@ -151,7 +151,7 @@ export class GerberState {
     public objectScaling:number = 1.0;
     private apertures:{[id:number]:ApertureDefinition} = {};
     private apertureMacros:{[name:string]:ApertureMacro} = {};
-    private graphisOperationsConsumer_:GraphicsOperations = new TopGraphicsOperationsConsumer();
+    private graphisOperationsConsumer_:GraphicsOperations = new BaseGraphicsOperationsConsumer();
     private savedGraphisOperationsConsumer_:GraphicsOperations;
     
     get coordinateFormatSpec():CoordinateFormatSpec {
@@ -335,23 +335,27 @@ export class GerberState {
         this.graphisOperationsConsumer_ = this.savedGraphisOperationsConsumer_;
         this.graphisOperationsConsumer_.block(block.blockContours, this);
     }
+
+    get graphicsOperations():GraphicsOperations {
+        return this.graphisOperationsConsumer_;
+    }
 }
 
-class LineSegment {
+export class LineSegment {
     constructor(
         readonly from:Point,
         readonly to:Point){
     }
 }
 
-class CircleSegment {
+export class CircleSegment {
     constructor(
         readonly center:Point,
         readonly radius:number) {
     }
 }
 
-class ArcSegment {
+export class ArcSegment {
     constructor(
         readonly center:Point,
         readonly radius:number,
@@ -396,7 +400,7 @@ class BlockGraphicsOperationsConsumer implements GraphicsOperations {
     }
 }
 
-class Line {
+export class Line {
     constructor(
         readonly from:Point,
         readonly to:Point,
@@ -404,7 +408,7 @@ class Line {
     }
 }
 
-class Circle {
+export class Circle {
     constructor(
         readonly center:Point,
         readonly radius:number,
@@ -412,7 +416,7 @@ class Circle {
     }
 }
 
-class Arc {
+export class Arc {
     constructor(
         readonly center:Point,
         readonly radius:number,
@@ -422,20 +426,20 @@ class Arc {
     }
 }
 
-class Flash {
+export class Flash {
     constructor(
         readonly center:Point,
         readonly aperture:ApertureDefinition) {
     }
 }
 
-class Block {
+export class Block {
     constructor(
         readonly contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>) {
     }
 }
 
-class TopGraphicsOperationsConsumer implements GraphicsOperations {
+export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
     private primitives_:Array<Line|Circle|Arc|Flash|Block> = [];
 
     get primitives():Array<Line|Circle|Arc|Flash|Block> {
