@@ -111,7 +111,7 @@ export class GerberParseException {
 export type Polygon = Array<Point>;
 export type PolygonSet = Array<Polygon>;
 const PI2 = Math.PI * 2;
-export const NUMSTEPS = 20;
+export const NUMSTEPS = 40;
 const NUMSTEPS2 = NUMSTEPS / 2;
 const ZeroPoint = new Point(0, 0);
 
@@ -161,8 +161,8 @@ function circleToPolygon(
     let step = PI2 / nsteps;
     rotation = (PI2 * rotation) / 360;
     for (let idx = 0; idx <= nsteps; idx++) {
-        let dx = Math.cos(idx * step + rotation) * radius;
-        let dy = Math.sin(idx * step + rotation) * radius;
+        let dx = Math.cos(idx * step - rotation) * radius;
+        let dy = Math.sin(idx * step - rotation) * radius;
         result[idx] = new Point(dx, dy);
     }
     return result;
