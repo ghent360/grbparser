@@ -25,7 +25,7 @@ describe("Conveter tests", () => {
                 let primitives = (ctx.graphicsOperations as pr.BaseGraphicsOperationsConsumer).primitives;
                 let cvt = new cv.SVGConverter();
                 let result = cvt.convert(primitives);
-                let outputFileName = folder + "/" + fileName.replace(".gbr", ".svg");
+                /*let outputFileName = folder + "/" + fileName.replace(".gbr", ".svg");
                 let stream = fs.createWriteStream(outputFileName);
                 result.forEach(l => {
                     if (l.length > 0) {
@@ -33,8 +33,8 @@ describe("Conveter tests", () => {
                         stream.write("\n");
                     }
                 });
-                stream.end();
-                console.log(`Conversion result for ${fileName}: ${result}`);
+                stream.end();*/
+                //console.log(`Conversion result for ${fileName}: ${result}`);
             });
     });
 });

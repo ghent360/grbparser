@@ -93,6 +93,7 @@ export class SVGConverter extends ConverterBase<string> {
 
     convertFlash(f:Flash):string {
         let center = f.center.scale(this.scale_).add(this.offset_);
+        let aperture = f.aperture;
         return `<circle cx="${center.x}" cy="${center.y}" r="1" fill="none" stroke-width="1"/>`;
     }
 

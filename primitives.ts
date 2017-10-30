@@ -78,6 +78,22 @@ export class Point {
     scale(scale:number):Point {
         return new Point(this.x * scale, this.y * scale);
     }
+
+    distance1(other:Point):number {
+        let dx = this.x - other.x;
+        let dy = this.y - other.y;
+        return Math.abs(dx) + Math.abs(dy);
+    }
+
+    distance2(other:Point):number {
+        let dx = this.x - other.x;
+        let dy = this.y - other.y;
+        return dx * dx + dy * dy;
+    }
+
+    distance(other:Point):number {
+        return Math.sqrt(this.distance2(other));
+    }
 }
 
 export class GerberParseException {
@@ -92,11 +108,158 @@ export class GerberParseException {
     }
 }
 
+export type Polygon = Array<Point>;
+export type PolygonSet = Array<Polygon>;
+const PI2 = Math.PI * 2;
+export const NUMSTEPS = 20;
+const NUMSTEPS2 = NUMSTEPS / 2;
+const ZeroPoint = new Point(0, 0);
+
+function translatePolygon(poly:Polygon, offset:Point):Polygon {
+    return poly.map(p => p.add(offset));
+}
+
+function translatePolySet(polySet:PolygonSet, offset:Point):PolygonSet {
+    return polySet.map(ps => translatePolygon(ps, offset));
+}
+
+function circleToPolygon(
+    radius:number,
+    nsteps:number = NUMSTEPS,
+    rotation:number = 0):Polygon {
+    let result:Polygon = new Array<Point>(nsteps + 1);
+    let step = PI2 / nsteps;
+    rotation = (PI2 * rotation) / 360;
+    for (let idx = 0; idx <= nsteps; idx++) {
+        let dx = Math.cos(idx * step + rotation) * radius;
+        let dy = Math.sin(idx * step + rotation) * radius;
+        result[idx] = new Point(dx, dy);
+    }
+    return result;
+}
+
+function rectangleToPolygon(width:number, height:number):Polygon {
+    let result:Polygon = new Array<Point>(5);
+    let width2 = width / 2;
+    let height2 = height / 2;
+
+    result[0] = new Point(width2, -height2);
+    result[1] = new Point(width2, height2);
+    result[2] = new Point(-width2, height2);
+    result[3] = new Point(-width2, -height2);
+    result[4] = new Point(result[0].x, result[0].y);
+    return result;
+}
+
+function obroundToPolygon(width:number, height:number):Polygon {
+    let result:Polygon = new Array<Point>(NUMSTEPS + 3);
+    if (width < height) {
+        let radius = width / 2;
+        let innerHeight = height - width;
+        let height2 = innerHeight / 2;
+        result[0] = new Point(radius, -height2);
+        let step = Math.PI / NUMSTEPS2;
+        for (let idx = 0; idx <= NUMSTEPS2; idx++) {
+            let dx = Math.cos(idx * step) * radius;
+            let dy = Math.sin(idx * step) * radius + height2;
+            result[idx + 1] = new Point(dx, dy);
+        }
+        for (let idx = 0; idx <= NUMSTEPS2; idx++) {
+            let dx = Math.cos(idx * step + Math.PI) * radius;
+            let dy = Math.sin(idx * step + Math.PI) * radius - height2;
+            result[idx + NUMSTEPS2 + 2] = new Point(dx, dy);
+        }
+    } else {
+        let radius = height / 2;
+        let innerWidth = width - height;
+        let width2 = innerWidth / 2;
+        result[0] = new Point(-width2, -radius);
+        let step = Math.PI / NUMSTEPS2;
+        for (let idx = 0; idx <= NUMSTEPS2; idx++) {
+            let dx = Math.sin(idx * step) * radius + width2;
+            let dy = -Math.cos(idx * step) * radius;
+            result[idx + 1] = new Point(dx, dy);
+        }
+        for (let idx = 0; idx <= NUMSTEPS2; idx++) {
+            let dx = -Math.sin(idx * step) * radius - width2;
+            let dy = Math.cos(idx * step) * radius;
+            result[idx + NUMSTEPS2 + 2] = new Point(dx, dy);
+        }
+    }
+    return result;
+}
+
 export class ApertureDefinition {
+    private macro_:ApertureMacro = undefined;
+    private static standardTemplates = ["C", "R", "O", "P"];
+    private polygonSet_:PolygonSet = undefined;
+
     constructor(
         readonly apertureId:number,
         readonly templateName:string,
         readonly modifiers:number[]) {
+    }
+
+    isMacro():boolean {
+        return ApertureDefinition.standardTemplates.indexOf(this.templateName) < 0;
+    }
+
+    get macro():ApertureMacro {
+        return this.macro_;
+    }
+
+    execute(ctx:GerberState) {
+        if (this.isMacro()) {
+            this.macro_ = ctx.getApertureMacro(this.templateName);
+        }
+    }
+
+    toPolygonSet():PolygonSet {
+        if (this.polygonSet_ != undefined) {
+            return this.polygonSet_;
+        }
+
+        let result:PolygonSet = [];
+
+        if (this.templateName === "C") {
+            let radius = this.modifiers[0];
+            if (radius < Epsilon) {
+                throw new GerberParseException('Can not convert zero size aperture to polyset');
+            }
+            result.push(circleToPolygon(radius));
+            if (this.modifiers.length == 2) {
+                result.push(circleToPolygon(this.modifiers[1]));
+            } else if (this.modifiers.length == 3) {
+                result.push(rectangleToPolygon(this.modifiers[1], this.modifiers[2]));
+            }
+        } else if (this.templateName === "R") {
+            result.push(rectangleToPolygon(this.modifiers[0], this.modifiers[1]));
+            if (this.modifiers.length == 3) {
+                result.push(circleToPolygon(this.modifiers[2]));
+            } else if (this.modifiers.length == 4) {
+                result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]));
+            }
+        } else if (this.templateName === "O") {
+            result.push(obroundToPolygon(this.modifiers[0], this.modifiers[1]));
+            if (this.modifiers.length == 3) {
+                result.push(circleToPolygon(this.modifiers[2]));
+            } else if (this.modifiers.length == 4) {
+                result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]));
+            }
+        } else if (this.templateName === "P") {
+            if (this.modifiers.length == 2) {
+                result.push(circleToPolygon(this.modifiers[0], this.modifiers[1]));
+            } else if (this.modifiers.length > 2) {
+                result.push(circleToPolygon(this.modifiers[0], this.modifiers[1], this.modifiers[2]));
+            }
+            if (this.modifiers.length == 4) {
+                result.push(circleToPolygon(this.modifiers[3]));
+            } else if (this.modifiers.length == 5) {
+                result.push(rectangleToPolygon(this.modifiers[3], this.modifiers[4]));
+            }
+        }
+        this.polygonSet_ = result;
+        return result;
     }
 }
 
@@ -272,7 +435,7 @@ export class GerberState {
         this.apertures[ap.apertureId] = ap;
     }
 
-    getApertureMacro(name:number):ApertureMacro {
+    getApertureMacro(name:string):ApertureMacro {
         if (this.apertureMacros[name] == undefined) {
             this.error(`Aprture macro name ${name} is not defined yet`);
         }

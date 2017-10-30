@@ -137,6 +137,7 @@ export class ADCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
+        this.definition.execute(ctx);
         ctx.setAperture(this.definition);
     }
 
