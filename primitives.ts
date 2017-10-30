@@ -116,11 +116,41 @@ const NUMSTEPS2 = NUMSTEPS / 2;
 const ZeroPoint = new Point(0, 0);
 
 function translatePolygon(poly:Polygon, offset:Point):Polygon {
-    return poly.map(p => p.add(offset));
+    return poly.map(point => point.add(offset));
 }
 
-function translatePolySet(polySet:PolygonSet, offset:Point):PolygonSet {
-    return polySet.map(ps => translatePolygon(ps, offset));
+export function translatePolySet(polySet:PolygonSet, offset:Point):PolygonSet {
+    return polySet.map(polygon => translatePolygon(polygon, offset));
+}
+
+function scalePolygon(poly:Polygon, scale:number):Polygon {
+    return poly.map(point => point.scale(scale));
+}
+
+export function scalePolySet(polySet:PolygonSet, scale:number):PolygonSet {
+    return polySet.map(polygon => scalePolygon(polygon, scale));
+}
+
+function polygonBounds(poly:Polygon):Bounds {
+    if (poly.length == 0) {
+        return EmptyBounds();
+    }
+    let bounds = new Bounds(poly[0], poly[0]);
+    for (let idx = 1; idx < poly.length; idx++) {
+        bounds.merge(poly[idx]);
+    }
+    return bounds;
+}
+
+export function polySetBounds(polygonSet:PolygonSet):Bounds {
+    if (polygonSet.length == 0) {
+        return EmptyBounds();
+    }
+    let bounds = polygonBounds(polygonSet[0]);
+    for (let idx = 1; idx < polygonSet.length; idx++) {
+        bounds.merge(polygonBounds(polygonSet[idx]));
+    }
+    return bounds;
 }
 
 function circleToPolygon(
@@ -507,18 +537,33 @@ export class Bounds {
     constructor(public min:Point, public max:Point) {
     }
 
-    merge(other:Bounds) {
-        if (other.min.x < this.min.x) {
-            this.min.x = other.min.x;
-        }
-        if (other.min.y < this.min.y) {
-            this.min.y = other.min.y;
-        }
-        if (other.max.x > this.max.x) {
-            this.max.x = other.max.x;
-        }
-        if (other.max.y > this.max.y) {
-            this.max.y = other.max.y;
+    merge(other:Bounds|Point) {
+        if (other instanceof Bounds) {
+            if (other.min.x < this.min.x) {
+                this.min.x = other.min.x;
+            }
+            if (other.min.y < this.min.y) {
+                this.min.y = other.min.y;
+            }
+            if (other.max.x > this.max.x) {
+                this.max.x = other.max.x;
+            }
+            if (other.max.y > this.max.y) {
+                this.max.y = other.max.y;
+            }
+        } else {
+            if (other.x < this.min.x) {
+                this.min.x = other.x;
+            }
+            if (other.y < this.min.y) {
+                this.min.y = other.y;
+            }
+            if (other.x > this.max.x) {
+                this.max.x = other.x;
+            }
+            if (other.y > this.max.y) {
+                this.max.y = other.y;
+            }
         }
     }
 

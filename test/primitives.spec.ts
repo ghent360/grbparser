@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
+import {SVGBuilder} from "../svgbuilder";
 import * as pr from '../primitives';
 
 describe("Primitives tests", () => {
@@ -52,12 +53,18 @@ describe("Primitives tests", () => {
         assert.ok(polySet[1][0].distance(polySet[1][4]) < pr.Epsilon);
     });
     it('Standard Obround Aperture Tests', () => {
-        let aperture = new pr.ApertureDefinition(10, "O", [5, 10]);
+        let aperture = new pr.ApertureDefinition(10, "O", [5, 10, 3, 5]);
         assert.equal(aperture.isMacro(), false);
         let polySet = aperture.toPolygonSet();
-        assert.equal(polySet.length, 1);
+        //assert.equal(polySet.length, 1);
         assert.equal(polySet[0].length, pr.NUMSTEPS + 3);
         //console.log(`O poly set ${polySet}`);
+        let svgbldr = new SVGBuilder();
+        svgbldr.Add(polySet);
+        let stream = fs.createWriteStream("test.svg");
+        svgbldr.SaveToSVG(stream);
+        stream.end();
+
     });
     it('Standard Polygon Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "P", [10, 3]);
