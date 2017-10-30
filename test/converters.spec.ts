@@ -14,7 +14,7 @@ describe("Conveter tests", () => {
                                 && !filename.startsWith("4-6-4_Nested_blocks")
                                 && !filename.startsWith("test-image-offset-2")
                                 && !filename.startsWith("test-layer-mode-1"))
-            .filter(fileName => fileName.endsWith("2-13-1_Two_square_boxes.gbr"))
+            //.filter(fileName => fileName.endsWith("2-13-1_Two_square_boxes.gbr"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();

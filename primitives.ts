@@ -491,8 +491,8 @@ export class Circle {
 
     get bounds():Bounds {
         return new Bounds(
-            new Point(this.center.x - this.radius, this.center.x - this.radius),
-            new Point(this.center.x + this.radius, this.center.x + this.radius));
+            new Point(this.center.x - this.radius, this.center.y - this.radius),
+            new Point(this.center.x + this.radius, this.center.y + this.radius));
     }
 }
 
@@ -533,7 +533,9 @@ export class Flash {
     }
 }
 
-export const EmptyBounds = new Bounds(new Point(0, 0), new Point(0, 0));
+export function EmptyBounds():Bounds {
+    return new Bounds(new Point(0, 0), new Point(0, 0));
+}
 
 export class Block {
     constructor(
@@ -564,13 +566,19 @@ export class Block {
     }
 
     get bounds():Bounds {
-        let bounds = EmptyBounds;
-        this.contours.forEach(c => bounds.merge(this.contourBounds(c)));
+        if (this.contours.length == 0) {
+            return EmptyBounds();
+        }
+        let bounds = Block.contourBounds(this.contours[0]);
+        this.contours.forEach(c => bounds.merge(Block.contourBounds(c)));
         return bounds;
     }
 
-    private contourBounds(contour:BlockContour):Bounds {
-        let bounds = EmptyBounds;
+    private static contourBounds(contour:BlockContour):Bounds {
+        if (contour.length == 0) {
+            return EmptyBounds();
+        }
+        let bounds = contour[0].bounds;
         contour.forEach(s => bounds.merge(s.bounds));
         return bounds;
     }

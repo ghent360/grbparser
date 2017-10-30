@@ -73,11 +73,12 @@ export class DebugConverter {
 
 export class SVGConverter extends ConverterBase<string> {
     private margin_ = 10;
+    private scale_ = 100;
     private offset_:Point;
 
     convertLine(l:Line):string {
-        let from = l.from.add(this.offset_);
-        let to = l.to.add(this.offset_);
+        let from = l.from.scale(this.scale_).add(this.offset_);
+        let to = l.to.scale(this.scale_).add(this.offset_);
         return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"/>`;
     }
 
@@ -86,11 +87,13 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     convertCircle(c:Circle):string {
-        return "";
+        let center = c.center.scale(this.scale_).add(this.offset_);
+        return `<circle cx="${center.x}" cy="${center.y}" r="${c.radius * this.scale_}" fill="none" stroke-width="1"/>`;
     }
 
     convertFlash(f:Flash):string {
-        return "";
+        let center = f.center.scale(this.scale_).add(this.offset_);
+        return `<circle cx="${center.x}" cy="${center.y}" r="1" fill="none" stroke-width="1"/>`;
     }
 
     convertBlock(b:Block):string {
@@ -98,16 +101,18 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     header(primitives:Array<GraphicsPrimitive>):Array<string> {
-        let bounds = EmptyBounds;
+        let bounds = primitives[0].bounds;
         primitives.forEach(p => bounds.merge(p.bounds));
-        let width = bounds.width + this.margin_ * 2;
-        let height = bounds.height + this.margin_ * 2;
-        this.offset_ = new Point(-bounds.min.x + this.margin_, -bounds.min.y + this.margin_);
+        let width = bounds.width * this.scale_ + this.margin_ * 2;
+        let height = bounds.height * this.scale_ + this.margin_ * 2;
+        this.offset_ = new Point(
+            -bounds.min.x * this.scale_  + this.margin_,
+            -bounds.min.y * this.scale_ + this.margin_);
         
         return ['<?xml version="1.0" standalone="no"?>',
                 '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">',
-                `<svg width="${width}px" height="${height}px" viewBox="0 0 ${width} ${height}" version="1.1" xmlns="http://www.w3.org/2000/svg">`,
-                `<rect x="${this.margin_}" y="${this.margin_}" width="${bounds.width}" height="${bounds.height}" stroke="green" stroke-width="1"/>`,
+                `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" version="1.1" xmlns="http://www.w3.org/2000/svg">`,
+                `<rect x="${this.margin_}" y="${this.margin_}" width="${bounds.width * this.scale_}" height="${bounds.height * this.scale_}" stroke="green" stroke-width="1" fill="none"/>`,
                 '<g stroke="black">'];
     }
 
