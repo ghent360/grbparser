@@ -261,38 +261,38 @@ export class ApertureDefinition {
         let result:PolygonSet = [];
 
         if (this.templateName === "C") {
-            let radius = this.modifiers[0];
+            let radius = this.modifiers[0] / 2;
             if (radius < Epsilon) {
                 throw new GerberParseException('Can not convert zero size aperture to polyset');
             }
             result.push(circleToPolygon(radius));
             if (this.modifiers.length == 2) {
-                result.push(circleToPolygon(this.modifiers[1]));
+                result.push(circleToPolygon(this.modifiers[1] / 2));
             } else if (this.modifiers.length == 3) {
                 result.push(rectangleToPolygon(this.modifiers[1], this.modifiers[2]));
             }
         } else if (this.templateName === "R") {
             result.push(rectangleToPolygon(this.modifiers[0], this.modifiers[1]));
             if (this.modifiers.length == 3) {
-                result.push(circleToPolygon(this.modifiers[2]));
+                result.push(circleToPolygon(this.modifiers[2] / 2));
             } else if (this.modifiers.length == 4) {
                 result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]));
             }
         } else if (this.templateName === "O") {
             result.push(obroundToPolygon(this.modifiers[0], this.modifiers[1]));
             if (this.modifiers.length == 3) {
-                result.push(circleToPolygon(this.modifiers[2]));
+                result.push(circleToPolygon(this.modifiers[2] / 2));
             } else if (this.modifiers.length == 4) {
                 result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]));
             }
         } else if (this.templateName === "P") {
             if (this.modifiers.length == 2) {
-                result.push(circleToPolygon(this.modifiers[0], this.modifiers[1]));
+                result.push(circleToPolygon(this.modifiers[0] / 2, this.modifiers[1]));
             } else if (this.modifiers.length > 2) {
-                result.push(circleToPolygon(this.modifiers[0], this.modifiers[1], this.modifiers[2]));
+                result.push(circleToPolygon(this.modifiers[0] / 2, this.modifiers[1], this.modifiers[2]));
             }
             if (this.modifiers.length == 4) {
-                result.push(circleToPolygon(this.modifiers[3]));
+                result.push(circleToPolygon(this.modifiers[3] / 2));
             } else if (this.modifiers.length == 5) {
                 result.push(rectangleToPolygon(this.modifiers[3], this.modifiers[4]));
             }
