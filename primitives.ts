@@ -234,6 +234,11 @@ export class ApertureDefinition {
         return ApertureDefinition.standardTemplates.indexOf(this.templateName) < 0;
     }
 
+    isDrawable():boolean {
+        return (this.templateName === 'C' && this.modifiers.length == 1)
+            || (this.templateName === 'R' && this.modifiers.length == 2);
+    }
+
     get macro():ApertureMacro {
         return this.macro_;
     }
@@ -287,6 +292,8 @@ export class ApertureDefinition {
             } else if (this.modifiers.length == 5) {
                 result.push(rectangleToPolygon(this.modifiers[3], this.modifiers[4]));
             }
+        } else {
+            result.push(circleToPolygon(1));
         }
         this.polygonSet_ = result;
         return result;
@@ -725,19 +732,24 @@ export class Arc {
 }
 
 export class Flash {
+    private polygonSet_:PolygonSet;
+
     constructor(
         readonly center:Point,
         readonly aperture:ApertureDefinition) {
+        this.polygonSet_ = translatePolySet(aperture.toPolygonSet(), center);
     }
 
     toString():string {
         return `F(${this.aperture.apertureId}@${this.center})`;
     }
 
+    get polygonSet():PolygonSet {
+        return this.polygonSet_;
+    }
+
     get bounds():Bounds {
-        return new Bounds(
-            new Point(this.center.x, this.center.y),
-            new Point(this.center.x, this.center.y));
+        return polySetBounds(this.polygonSet_);
     }
 }
 

@@ -34,7 +34,7 @@ describe("Conveter tests", () => {
                     }
                 });
                 stream.end();*/
-                //console.log(`Conversion result for ${fileName}: ${result}`);
+                console.log(`Conversion result for ${fileName}: ${result}`);
             });
     });
 });

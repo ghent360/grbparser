@@ -16,7 +16,8 @@ import {
     GraphicsPrimitive,
     Bounds,
     EmptyBounds,
-    Point
+    Point,
+    PolygonSet
 } from "./primitives";
 import {formatFloat} from "./utils";
 
@@ -92,9 +93,8 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     convertFlash(f:Flash):string {
-        let center = f.center.scale(this.scale_).add(this.offset_);
-        let aperture = f.aperture;
-        return `<circle cx="${center.x}" cy="${center.y}" r="1" fill="none" stroke-width="1"/>`;
+        let polySet = f.polygonSet;
+        return this.polySetToPath(polySet);
     }
 
     convertBlock(b:Block):string {
@@ -120,5 +120,19 @@ export class SVGConverter extends ConverterBase<string> {
     footer():Array<string> {
         return ["</g>",
                 "</svg>"];
+    }
+
+    private polySetToPath(polySet:PolygonSet):string {
+        let result = '<path d="';
+        polySet.filter(polygon => polygon.length > 2).forEach(polygon => {
+            let start = polygon[0].scale(this.scale_).add(this.offset_);
+            result += ` M ${start.x} ${start.y}`;
+            for (let idx = 1; idx < polygon.length; idx++) {
+                let point = polygon[idx].scale(this.scale_).add(this.offset_);
+                result += ` L ${point.x} ${point.y}`;
+            }
+        });
+        result += ' z" style="fill:#ffffcc; fill-opacity:1; fill-rule:evenodd; stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
+        return result;
     }
 }
