@@ -94,6 +94,10 @@ export class Point {
     distance(other:Point):number {
         return Math.sqrt(this.distance2(other));
     }
+
+    clone():Point {
+        return new Point(this.x, this.y);
+    }
 }
 
 export class GerberParseException {
@@ -135,7 +139,7 @@ function polygonBounds(poly:Polygon):Bounds {
     if (poly.length == 0) {
         return EmptyBounds();
     }
-    let bounds = new Bounds(poly[0], poly[0]);
+    let bounds = new Bounds(poly[0].clone(), poly[0].clone());
     for (let idx = 1; idx < poly.length; idx++) {
         bounds.merge(poly[idx]);
     }

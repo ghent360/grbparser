@@ -14,7 +14,7 @@ describe("Conveter tests", () => {
                                 && !filename.startsWith("4-6-4_Nested_blocks")
                                 && !filename.startsWith("test-image-offset-2")
                                 && !filename.startsWith("test-layer-mode-1"))
-            //.filter(fileName => fileName.endsWith("2-13-1_Two_square_boxes.gbr"))
+            .filter(fileName => fileName.endsWith("test-aperture-circle-flash-1.gbr"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
@@ -25,7 +25,7 @@ describe("Conveter tests", () => {
                 let primitives = (ctx.graphicsOperations as pr.BaseGraphicsOperationsConsumer).primitives;
                 let cvt = new cv.SVGConverter();
                 let result = cvt.convert(primitives);
-                /*let outputFileName = folder + "/" + fileName.replace(".gbr", ".svg");
+                let outputFileName = folder + "/" + fileName.replace(".gbr", ".svg");
                 let stream = fs.createWriteStream(outputFileName);
                 result.forEach(l => {
                     if (l.length > 0) {
@@ -33,7 +33,7 @@ describe("Conveter tests", () => {
                         stream.write("\n");
                     }
                 });
-                stream.end();*/
+                stream.end();
                 console.log(`Conversion result for ${fileName}: ${result}`);
             });
     });
