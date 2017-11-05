@@ -71,7 +71,7 @@ export class Point {
     }
 
     toString():string {
-        return `(${formatFloat(this.x, 4)}, ${formatFloat(this.y, 4)})`;
+        return `(${formatFloat(this.x, 3)}, ${formatFloat(this.y, 3)})`;
     }
 
     add(other:Point):Point {
@@ -260,8 +260,13 @@ function obroundToPolygon(width:number, height:number):Polygon {
     return result;
 }
 
-function arcToPolygon(start:Point, end:Point, center:Point, close:boolean = true):Polygon {
-    let result:Polygon = new Array<Point>(NUMSTEPS - ((close) ? 0 : 1));
+function arcToPolygon(
+    start:Point,
+    end:Point,
+    center:Point,
+    closeEnd:boolean = true,
+    closeStart:boolean = true):Polygon {
+    let result:Polygon = new Array<Point>(NUMSTEPS - ((closeStart) ? 0 : 1) - ((closeEnd) ? 0 : 1));
     let startAngle = center.angleFrom(start);
     let endAngle = center.angleFrom(end);
     if (endAngle < startAngle) {
@@ -269,15 +274,19 @@ function arcToPolygon(start:Point, end:Point, center:Point, close:boolean = true
     }
     let radius = (center.distance(start) + center.distance(end)) / 2;
     let step = (endAngle - startAngle) / NUMSTEPS;
+    let startOffset = -1;
+    if (closeStart) {
+        result[0] = start.clone();
+        startOffset = 0;
+    }
     for (let idx = 1; idx < NUMSTEPS; idx++) {
         let angle = idx * step + startAngle;
         let x = center.x + radius * Math.cos(angle);
         let y = center.y + radius * Math.sin(angle);
-        result[idx] = new Point(x, y);
+        result[idx + startOffset] = new Point(x, y);
     }
-    result[0] = start.clone();
-    if (close) {
-        result[NUMSTEPS - 1] = end.clone();
+    if (closeEnd) {
+        result[NUMSTEPS - 1 + startOffset] = end.clone();
     }
     return result;
 }
@@ -336,10 +345,10 @@ export class ApertureDefinition {
         let outerStartVector = addVector(startVector, rStartVector);
         let innerEndVector = addVector(endVector, negVector(rEndVector));
         let outerEndVector = addVector(endVector, rEndVector);
-        let innerStart = new Point(innerStartVector.x, innerStartVector.y);
-        let outerStart = new Point(outerStartVector.x, outerStartVector.y);
-        let innerEnd = new Point(innerEndVector.x, innerEndVector.y);
-        let outerEnd = new Point(outerEndVector.x, outerEndVector.y);
+        let innerStart = new Point(innerStartVector.x + center.x, innerStartVector.y + center.y);
+        let outerStart = new Point(outerStartVector.x + center.x, outerStartVector.y + center.y);
+        let innerEnd = new Point(innerEndVector.x + center.x, innerEndVector.y + center.y);
+        let outerEnd = new Point(outerEndVector.x + center.x, outerEndVector.y + center.y);
         if (this.templateName == "C" || this.templateName == "O") {
             result = arcToPolygon(innerStart, outerStart, innerStart.midPoint(outerStart), false);
             result = result.concat(arcToPolygon(outerStart, outerEnd, center, false));

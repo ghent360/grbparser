@@ -94,6 +94,7 @@ describe("Primitives tests", () => {
         let aperture = new pr.ApertureDefinition(10, "C", [3]);
         let result1 = aperture.generateArcDraw(new pr.Point(10, 0), new pr.Point(7.071, 7.071), new pr.Point(0, 0));
         let result2 = aperture.generateArcDraw(new pr.Point(14.1421, 14.1421), new pr.Point(20, 0), new pr.Point(0, 0));
-        saveSVG([result1, result2], "arc_draw_circle.svg");
+        let result3 = aperture.generateArcDraw(new pr.Point(7.071, 7.071), new pr.Point(10, 0), new pr.Point(17.1,7.071));
+        saveSVG([result2, result3], "arc_draw_circle.svg");
     });
 });

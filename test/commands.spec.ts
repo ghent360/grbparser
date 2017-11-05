@@ -117,7 +117,21 @@ describe("Commands tests", () => {
         cmd = new cm.G74Command("G74");
         cmd = new cm.G75Command("G75");
     });
-    it("Lx commands", () => {
-        let cmd = new cm.G01Command("G1");
+    it("Arc commands", () => {
+        let fmt = new pr.CoordinateFormatSpec(1, 3, 1, 3);
+        // Arc to 7.071, 7.071 center offset -10, 0
+        let cmd = new cm.D01Command("X7071Y7071I-10000J0D01", fmt);
+        let ctx = new pr.GerberState();
+        // Aperture circle 1 unit diameter
+        ctx.setAperture(new pr.ApertureDefinition(10, "C", [1]));
+        ctx.currentAppretureId = 10;
+        // Arc center at 0, 0
+        ctx.currentPointX = 10;
+        ctx.currentPointY = 0;
+        ctx.interpolationMode = pr.InterpolationMode.CLOCKWISE;
+        cmd.execute(ctx);
+        let primitives = (ctx.graphicsOperations as pr.BaseGraphicsOperationsConsumer).primitives;
+        assert.equal(primitives.length, 1);
+        console.log(`arc: ${primitives[0]}`);
     });
 });

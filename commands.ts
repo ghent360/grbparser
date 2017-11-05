@@ -575,16 +575,20 @@ export class D01Command implements GerberCommand {
             if (ctx.interpolationMode == InterpolationMode.CLOCKWISE) {
                 let pvCW = unitVector({ x:-v.y, y:v.x });
                 center = addVector(mid, scaleVector(pvCW, d));
-            } else {
+                ctx.arc(
+                    new Point(center.x, center.y),
+                    radius,
+                    new Point(endPointX, endPointY),
+                    new Point(startPointX, startPointY));
+                } else {
                 let pvCCW = unitVector({ x:v.y, y:-v.x });
                 center = addVector(mid, scaleVector(pvCCW, d));
-            }
-
-            ctx.arc(
-                new Point(center.x, center.y),
-                radius,
-                new Point(startPointX, startPointY),
-                new Point(endPointX, endPointY));
+                ctx.arc(
+                    new Point(center.x, center.y),
+                    radius,
+                    new Point(startPointX, startPointY),
+                    new Point(endPointX, endPointY));
+                }
         }
     }
 }
