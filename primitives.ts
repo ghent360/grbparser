@@ -10,7 +10,8 @@ import {
     vectorLength,
     scaleVector,
     unitVector,
-    addVector
+    addVector,
+    negVector
 } from "./vectorUtils";
 
 export enum FileUnits {
@@ -259,8 +260,8 @@ function obroundToPolygon(width:number, height:number):Polygon {
     return result;
 }
 
-function arcToPolygon(start:Point, end:Point, center:Point):Polygon {
-    let result:Polygon = new Array<Point>(NUMSTEPS);
+function arcToPolygon(start:Point, end:Point, center:Point, close:boolean = true):Polygon {
+    let result:Polygon = new Array<Point>(NUMSTEPS - ((close) ? 0 : 1));
     let startAngle = center.angleFrom(start);
     let endAngle = center.angleFrom(end);
     if (endAngle < startAngle) {
@@ -275,7 +276,9 @@ function arcToPolygon(start:Point, end:Point, center:Point):Polygon {
         result[idx] = new Point(x, y);
     }
     result[0] = start.clone();
-    result[NUMSTEPS - 1] = end.clone();
+    if (close) {
+        result[NUMSTEPS - 1] = end.clone();
+    }
     return result;
 }
 
@@ -309,36 +312,69 @@ export class ApertureDefinition {
         }
     }
 
-    generateLineDraw(start:Point, end:Point):Polygon {
+    generateArcDraw(start:Point, end:Point, center:Point):Polygon {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {
-            if (this.templateName == "C") {
+            if (this.templateName == "C" || this.templateName == "O") {
                 return translatePolygon(
                     circleToPolygon(this.modifiers[0] / 2),
                     start.midPoint(end));
             } else if (this.templateName == "R") {
                 return translatePolygon(
-                    rectangleToPolygon(this.modifiers[1], this.modifiers[2]),
-                    start.midPoint(end));
-            } else if (this.templateName == "O") {
-                return translatePolygon(
-                    circleToPolygon(Math.max(this.modifiers[0], this.modifiers[1]) / 2),
+                    rectangleToPolygon(this.modifiers[0], this.modifiers[1]),
                     start.midPoint(end));
             }
-            throw new GerberParseException("Draw with this aperture is not supported.");
+            throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
+        }
+        let startVector = {x:start.x - center.x, y:start.y - center.y};
+        let endVector = {x:end.x - center.x, y:end.y - center.y};
+        // This is the radius of the aperture, not the arc itself
+        let radius = this.modifiers[0] / 2;
+        let rStartVector = scaleVector(unitVector(startVector), radius);
+        let rEndVector = scaleVector(unitVector(endVector), radius);
+        let innerStartVector = addVector(startVector, negVector(rStartVector));
+        let outerStartVector = addVector(startVector, rStartVector);
+        let innerEndVector = addVector(endVector, negVector(rEndVector));
+        let outerEndVector = addVector(endVector, rEndVector);
+        let innerStart = new Point(innerStartVector.x, innerStartVector.y);
+        let outerStart = new Point(outerStartVector.x, outerStartVector.y);
+        let innerEnd = new Point(innerEndVector.x, innerEndVector.y);
+        let outerEnd = new Point(outerEndVector.x, outerEndVector.y);
+        if (this.templateName == "C" || this.templateName == "O") {
+            result = arcToPolygon(innerStart, outerStart, innerStart.midPoint(outerStart), false);
+            result = result.concat(arcToPolygon(outerStart, outerEnd, center, false));
+            result = result.concat(arcToPolygon(outerEnd, innerEnd, outerEnd.midPoint(innerEnd), false));
+            result = result.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+            return result;
+        } else if (this.templateName == "R") {
+            result = arcToPolygon(outerStart, outerEnd, center, false);
+            result = result.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+            return result;
+        }
+        throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
+    }
+
+    generateLineDraw(start:Point, end:Point):Polygon {
+        let result:Polygon;
+        if (start.distance(end) < Epsilon) {
+            if (this.templateName == "C" || this.templateName == "O") {
+                return translatePolygon(
+                    circleToPolygon(this.modifiers[0] / 2),
+                    start.midPoint(end));
+            } else if (this.templateName == "R") {
+                return translatePolygon(
+                    rectangleToPolygon(this.modifiers[0], this.modifiers[1]),
+                    start.midPoint(end));
+            }
+            throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
         }
         let angle = start.angleFrom(end);
 
         if (this.templateName == "C" || this.templateName == "O") {
-            let radius:number;
+            let radius = this.modifiers[0] / 2;
             let vector = {x:end.x - start.x, y:end.y - start.y};
             let uVector = unitVector(vector);
 
-            if (this.templateName == "C") {
-                radius = this.modifiers[0] / 2;
-            } else {
-                radius = Math.max(this.modifiers[0], this.modifiers[1]) / 2;
-            }
             let pCW = scaleVector({x:uVector.y, y:-uVector.x}, radius);
             let pCCW = scaleVector({x:-uVector.y, y:uVector.x}, radius);
 

@@ -83,7 +83,8 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     convertArc(a:Arc):string {
-        return "";
+        let polygon = a.aperture.generateArcDraw(a.start, a.end, a.center);
+        return this.polySetToPath([polygon]);
     }
 
     convertCircle(c:Circle):string {

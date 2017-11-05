@@ -14,3 +14,7 @@ export function addVector(a:{x:number, y:number}, b:{x:number, y:number})
     : {x:number, y:number} {
     return {x:a.x + b.x, y:a.y + b.y};
 }
+
+export function negVector(v:{x:number, y:number}):{x:number, y:number} {
+    return {x:-v.x, y:-v.y};
+}
