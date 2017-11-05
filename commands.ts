@@ -30,6 +30,12 @@ import {
     Epsilon,
     Point
 } from './primitives';
+import {
+    vectorLength,
+    scaleVector,
+    unitVector,
+    addVector
+} from "./vectorUtils";
 
 export class FSCommand implements GerberCommand {
     readonly name:string = "FS";
@@ -435,24 +441,6 @@ function formatCoordinateX(value:number, fmt:CoordinateFormatSpec):string {
 
 function formatCoordinateY(value:number, fmt:CoordinateFormatSpec):string {
     return formatFixedNumber(value, fmt.yNumDecPos);
-}
-
-function vectorLength(v:{x:number, y:number}):number {
-    return Math.sqrt(v.x * v.x + v.y * v.y);
-}
-
-function unitVector(v:{x:number, y:number}):{x:number, y:number} {
-    let len = vectorLength(v);
-    return {x:v.x/len, y:v.y/len};
-}
-
-function scaleVector(v:{x:number, y:number}, s:number):{x:number, y:number} {
-    return {x:v.x * s, y:v.y * s};
-}
-
-function addVector(a:{x:number, y:number}, b:{x:number, y:number})
-    : {x:number, y:number} {
-    return {x:a.x + b.x, y:a.y + b.y};
 }
 
 export class D01Command implements GerberCommand {

@@ -5,7 +5,13 @@
  * Some of these are for internal consumption.
  */
 
- import {formatFloat} from "./utils";
+import {formatFloat} from "./utils";
+import {
+    vectorLength,
+    scaleVector,
+    unitVector,
+    addVector
+} from "./vectorUtils";
 
 export enum FileUnits {
     INCHES,
@@ -97,6 +103,36 @@ export class Point {
 
     clone():Point {
         return new Point(this.x, this.y);
+    }
+
+    midPoint(other:Point):Point {
+        return new Point((this.x + other.x) / 2, (this.y + other.y) / 2);
+    }
+
+    // The angle of the vector (other - this) in radians 0..2PI
+    angleFrom(other:Point):number {
+        let angle = Math.atan2(other.y - this.y, other.x - this.x);
+        if (angle < 0) {
+            angle += Math.PI * 2;
+        }
+        return angle;
+    }
+
+    angleTo(other:Point):number {
+        let angle = Math.atan2(this.y - other.y, this.x - other.x);
+        if (angle < 0) {
+            angle += Math.PI * 2;
+        }
+        return angle;
+    }
+
+    // The angle of the vector (this - (0, 0)) in radians 0..2PI
+    angle():number {
+        let angle = Math.atan2(this.y, this.x);
+        if (angle < 0) {
+            angle += Math.PI * 2;
+        }
+        return angle;
     }
 }
 
@@ -223,6 +259,26 @@ function obroundToPolygon(width:number, height:number):Polygon {
     return result;
 }
 
+function arcToPolygon(start:Point, end:Point, center:Point):Polygon {
+    let result:Polygon = new Array<Point>(NUMSTEPS);
+    let startAngle = center.angleFrom(start);
+    let endAngle = center.angleFrom(end);
+    if (endAngle < startAngle) {
+        endAngle += Math.PI * 2;
+    }
+    let radius = (center.distance(start) + center.distance(end)) / 2;
+    let step = (endAngle - startAngle) / NUMSTEPS;
+    for (let idx = 1; idx < NUMSTEPS; idx++) {
+        let angle = idx * step + startAngle;
+        let x = center.x + radius * Math.cos(angle);
+        let y = center.y + radius * Math.sin(angle);
+        result[idx] = new Point(x, y);
+    }
+    result[0] = start.clone();
+    result[NUMSTEPS - 1] = end.clone();
+    return result;
+}
+
 export class ApertureDefinition {
     private macro_:ApertureMacro = undefined;
     private static standardTemplates = ["C", "R", "O", "P"];
@@ -251,6 +307,97 @@ export class ApertureDefinition {
         if (this.isMacro()) {
             this.macro_ = ctx.getApertureMacro(this.templateName);
         }
+    }
+
+    generateLineDraw(start:Point, end:Point):Polygon {
+        let result:Polygon;
+        if (start.distance(end) < Epsilon) {
+            if (this.templateName == "C") {
+                return translatePolygon(
+                    circleToPolygon(this.modifiers[0] / 2),
+                    start.midPoint(end));
+            } else if (this.templateName == "R") {
+                return translatePolygon(
+                    rectangleToPolygon(this.modifiers[1], this.modifiers[2]),
+                    start.midPoint(end));
+            }
+            throw new GerberParseException("Draw with this aperture is not supported.");
+        }
+        let angle = start.angleFrom(end);
+
+        if (this.templateName == "C") {
+            let radius = this.modifiers[0] / 2;
+            let vector = {x:end.x - start.x, y:end.y - start.y};
+            let uVector = unitVector(vector);
+
+            let pCW = scaleVector({x:uVector.y, y:-uVector.x}, radius);
+            let pCCW = scaleVector({x:-uVector.y, y:uVector.x}, radius);
+
+            let startLeft = addVector({x:start.x, y:start.y}, pCCW);
+            let endLeft = addVector(startLeft, vector);
+            let startRight = addVector({x:start.x, y:start.y}, pCW);
+            let endRight = addVector(startRight, vector);
+            result = arcToPolygon(
+                new Point(startLeft.x, startLeft.y),
+                new Point(startRight.x, startRight.y),
+                start);
+            result = result.concat(arcToPolygon(
+                new Point(endRight.x, endRight.y),
+                new Point(endLeft.x, endLeft.y),
+                end));
+            result.push(new Point(startLeft.x, startLeft.y));
+            return result;
+        } else if (this.templateName == "R") {
+            let width2 = this.modifiers[0] / 2;
+            let height2 = this.modifiers[1] / 2;
+            if (Math.abs(start.x - end.x) < Epsilon) { // Vertical Line
+                return translatePolygon(
+                    rectangleToPolygon(this.modifiers[0], Math.abs(end.y - start.y) + this.modifiers[1]),
+                    start.midPoint(end));
+            } else if (Math.abs(start.y - end.y) < Epsilon) { // Horizontal Line
+                return translatePolygon(
+                    rectangleToPolygon(Math.abs(end.x - start.x) + this.modifiers[0], this.modifiers[1]),
+                    start.midPoint(end));
+            } else {
+                let vector = {x:end.x - start.x, y:end.y - start.y};
+                result = new Array<Point>(7);
+                if (angle < Math.PI / 2) {
+                    result[0] = new Point(start.x - width2, start.y - height2);
+                    result[1] = new Point(start.x + width2, start.y - height2);
+                    result[2] = new Point(end.x + width2, end.y - height2);
+                    result[3] = new Point(end.x + width2, end.y + height2);
+                    result[4] = new Point(end.x - width2, end.y + height2);
+                    result[5] = new Point(start.x - width2, start.y + height2);
+                    result[6] = new Point(start.x - width2, start.y - height2);
+                } else if (angle < Math.PI) {
+                    result[0] = new Point(start.x - width2, start.y - height2);
+                    result[1] = new Point(start.x + width2, start.y - height2);
+                    result[2] = new Point(start.x + width2, start.y + height2);
+                    result[3] = new Point(end.x + width2, end.y + height2);
+                    result[4] = new Point(end.x - width2, end.y + height2);
+                    result[5] = new Point(end.x - width2, end.y - height2);
+                    result[6] = new Point(start.x - width2, start.y - height2);
+                } else if (angle < Math.PI) {
+                    result[0] = new Point(end.x - width2, end.y - height2);
+                    result[1] = new Point(end.x + width2, end.y - height2);
+                    result[2] = new Point(start.x + width2, start.y - height2);
+                    result[3] = new Point(start.x + width2, start.y + height2);
+                    result[4] = new Point(start.x - width2, start.y + height2);
+                    result[5] = new Point(end.x - width2, end.y + height2);
+                    result[6] = new Point(end.x - width2, end.y - height2);
+                } else {
+                    result[0] = new Point(end.x - width2, end.y - height2);
+                    result[1] = new Point(end.x + width2, end.y - height2);
+                    result[2] = new Point(end.x + width2, end.y + height2);
+                    result[3] = new Point(start.x + width2, start.y + height2);
+                    result[4] = new Point(start.x - width2, start.y + height2);
+                    result[5] = new Point(start.x - width2, start.y - height2);
+                    result[6] = new Point(start.x - width2, start.y - height2);
+                }
+                return result;
+            }
+        }
+        throw new GerberParseException("Draw with this aperture is not supported.");
     }
 
     toPolygonSet():PolygonSet {

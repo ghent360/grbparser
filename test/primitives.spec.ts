@@ -78,4 +78,16 @@ describe("Primitives tests", () => {
         saveSVG(polySet, "polygon3.svg");
         //console.log(`P poly set ${polySet}`);
     });
+    it('Line draw with circular aperture', () => {
+        let aperture = new pr.ApertureDefinition(10, "C", [15]);
+        let result = aperture.generateLineDraw(new pr.Point(10, 10), new pr.Point(100, 100));
+        saveSVG([result], "line_draw_circle.svg");
+    });
+    it('Line draw with rectangular aperture', () => {
+        let aperture = new pr.ApertureDefinition(10, "R", [15, 6]);
+        let result1 = aperture.generateLineDraw(new pr.Point(10, 10), new pr.Point(100, 100));
+        let result2 = aperture.generateLineDraw(new pr.Point(-20, 10), new pr.Point(-20, 100));
+        let result3 = aperture.generateLineDraw(new pr.Point(10, -10), new pr.Point(100, -10));
+        saveSVG([result1, result2, result3], "line_draw_rectangle.svg");
+    });
 });
