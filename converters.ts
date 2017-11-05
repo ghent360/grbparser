@@ -78,9 +78,8 @@ export class SVGConverter extends ConverterBase<string> {
     private offset_:Point;
 
     convertLine(l:Line):string {
-        let from = l.from.scale(this.scale_).add(this.offset_);
-        let to = l.to.scale(this.scale_).add(this.offset_);
-        return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"/>`;
+        let polygon = l.aperture.generateLineDraw(l.from, l.to);
+        return this.polySetToPath([polygon]);
     }
 
     convertArc(a:Arc):string {

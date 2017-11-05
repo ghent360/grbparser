@@ -320,16 +320,25 @@ export class ApertureDefinition {
                 return translatePolygon(
                     rectangleToPolygon(this.modifiers[1], this.modifiers[2]),
                     start.midPoint(end));
+            } else if (this.templateName == "O") {
+                return translatePolygon(
+                    circleToPolygon(Math.max(this.modifiers[0], this.modifiers[1]) / 2),
+                    start.midPoint(end));
             }
             throw new GerberParseException("Draw with this aperture is not supported.");
         }
         let angle = start.angleFrom(end);
 
-        if (this.templateName == "C") {
-            let radius = this.modifiers[0] / 2;
+        if (this.templateName == "C" || this.templateName == "O") {
+            let radius:number;
             let vector = {x:end.x - start.x, y:end.y - start.y};
             let uVector = unitVector(vector);
 
+            if (this.templateName == "C") {
+                radius = this.modifiers[0] / 2;
+            } else {
+                radius = Math.max(this.modifiers[0], this.modifiers[1]) / 2;
+            }
             let pCW = scaleVector({x:uVector.y, y:-uVector.x}, radius);
             let pCCW = scaleVector({x:-uVector.y, y:uVector.x}, radius);
 
@@ -397,7 +406,7 @@ export class ApertureDefinition {
                 return result;
             }
         }
-        throw new GerberParseException("Draw with this aperture is not supported.");
+        throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
 
     toPolygonSet():PolygonSet {
