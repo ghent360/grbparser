@@ -377,6 +377,17 @@ export class ApertureDefinition {
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
 
+    generateCircleDraw(center:Point, radius:number):PolygonSet {
+        if (this.templateName == "C" || this.templateName == "O" || this.templateName == "R") {
+            let result:PolygonSet = [];
+            let apertureRadius = this.modifiers[0] / 2;
+            result.push(translatePolygon(circleToPolygon(radius - apertureRadius), center));
+            result.push(translatePolygon(circleToPolygon(radius + apertureRadius), center));
+            return result;
+        }
+        throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
+    }
+
     generateLineDraw(start:Point, end:Point):Polygon {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {

@@ -88,8 +88,7 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     convertCircle(c:Circle):string {
-        let center = c.center.scale(this.scale_).add(this.offset_);
-        return `<circle cx="${center.x}" cy="${center.y}" r="${c.radius * this.scale_}" fill="none" stroke-width="1"/>`;
+        return this.polySetToPath(c.aperture.generateCircleDraw(c.center, c.radius));
     }
 
     convertFlash(f:Flash):string {
