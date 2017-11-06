@@ -131,7 +131,7 @@ export class SVGConverter extends ConverterBase<string> {
                 result += ` L ${point.x} ${point.y}`;
             }
         });
-        result += ' z" style="fill:#ffffcc; fill-opacity:1; fill-rule:evenodd; stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
+        result += ' z" style="fill:#ff1f1c; fill-opacity:1; fill-rule:evenodd; stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
         return result;
     }
 }

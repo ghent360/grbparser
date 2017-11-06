@@ -96,7 +96,7 @@ export class ADCommand implements GerberCommand {
     readonly name:string = "AD";
     readonly isAdvanced = true;
     readonly definition:ApertureDefinition;
-    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z0-9_.$]*)(,(?:[\+\-]?(?:\d+|\d*.\d+)(?:X[\+\-]?(?:\d+|\d*.\d+))*))?\*$/;
+    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z0-9_.$]*)(,(?:[\+\-]?(?:\d*\.\d+|\d+)(?:X[\+\-]?(?:\d*\.\d+|\d+))*))?\*$/;
 
     constructor(cmd:string) {
         let match = ADCommand.matchExp.exec(cmd);
@@ -846,7 +846,7 @@ export class LRCommand implements GerberCommand {
     readonly name = "LR";
     readonly isAdvanced = true;
     readonly rotation:number;
-    private static matchExp = /^LR([\+\-]?(?:\d+|\d*\.\d+))\*$/;
+    private static matchExp = /^LR([\+\-]?(?:\d*\.\d+|\d+))\*$/;
 
     constructor(cmd:string) {
         let match = LRCommand.matchExp.exec(cmd);
@@ -869,7 +869,7 @@ export class LSCommand implements GerberCommand {
     readonly name = "LS";
     readonly isAdvanced = true;
     readonly scale:number;
-    private static matchExp = /^LS([\+\-]?(?:\d+|\d*\.\d+))\*$/;
+    private static matchExp = /^LS([\+\-]?(?:\d*\.\d+|\d+))\*$/;
 
     constructor(cmd:string) {
         let match = LSCommand.matchExp.exec(cmd);
@@ -917,7 +917,7 @@ export class SRCommand implements GerberCommand {
     readonly y?:number;
     readonly i?:number;
     readonly j?:number;
-    private static matchExp = /^SR(?:X(\d+)Y(\d+)I(\d+|(?:\d*\.\d+))J(\d+|(?:\d*\.\d+)))?\*$/;
+    private static matchExp = /^SR(?:X(\d+)Y(\d+)I(\d*\.\d+|\d+)J(\d*\.\d+|\d+))?\*$/;
 
     constructor(cmd:string) {
         let match = SRCommand.matchExp.exec(cmd);

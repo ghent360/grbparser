@@ -523,7 +523,7 @@ export class ApertureDefinition {
                 result.push(rectangleToPolygon(this.modifiers[3], this.modifiers[4]));
             }
         } else {
-            result.push(circleToPolygon(1));
+            return this.macro.toPolygonSet(this.modifiers);
         }
         this.polygonSet_ = result;
         return result;
@@ -546,6 +546,11 @@ export class ApertureMacro {
     constructor(
         readonly macroName:string,
         readonly content:Array<VariableDefinition|Primitive>) {
+    }
+
+    toPolygonSet(modifiers:Array<number>):PolygonSet {
+        let result:PolygonSet = [];
+        return result;
     }
 }
 
