@@ -356,7 +356,21 @@ export class ApertureDefinition {
             result = result.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
             return result;
         } else if (this.templateName == "R") {
-            result = arcToPolygon(outerStart, outerEnd, center, false);
+            let startLine = {x:outerStart.x - innerStart.x, y:outerStart.y - innerStart.y};
+            let endLine = {x:outerEnd.x - innerEnd.x, y:outerEnd.y - innerEnd.y};
+            let pStartLineCCW = scaleVector(unitVector({x:startLine.y, y:-startLine.x}), this.modifiers[1]);
+            let pEncLineCW = scaleVector(unitVector({x:-endLine.y, y:endLine.x}), this.modifiers[1]);
+            result = [
+                innerStart.clone(),
+                new Point(innerStart.x + pStartLineCCW.x, innerStart.y + pStartLineCCW.y),
+                new Point(outerStart.x + pStartLineCCW.x, outerStart.y + pStartLineCCW.y)
+            ];
+            result = result.concat(arcToPolygon(outerStart, outerEnd, center, false));
+            result = result.concat([
+                outerEnd.clone(),
+                new Point(outerEnd.x + pEncLineCW.x, outerEnd.y + pEncLineCW.y),
+                new Point(innerEnd.x + pEncLineCW.x, innerEnd.y + pEncLineCW.y)
+            ]);
             result = result.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
             return result;
         }
