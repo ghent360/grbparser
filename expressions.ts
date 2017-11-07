@@ -3,7 +3,7 @@ export class Memory {
 
     init(modifiers:Array<number>) {
         for (let idx = 0; idx < modifiers.length; idx++) {
-            this.set(idx, modifiers[idx]);
+            this.set(idx + 1, modifiers[idx]);
         }
     }
 
@@ -21,7 +21,6 @@ export class Memory {
 }
 
 enum TokenID {
-    UNARY_MINUS,
     MINUS,
     PLUS,
     TIMES,
@@ -29,7 +28,8 @@ enum TokenID {
     OPEN_BRACKET,
     CLOSE_BRACKET,
     NUMBER,
-    VARIABLE
+    VARIABLE,
+    END
 }
 
 export interface AritmeticOperation {
@@ -108,60 +108,130 @@ interface Token {
 
 export class ExpressionParser {
     private expression_:string;
-    private tokenStack:Array<Token> = [];
+    private token:Token;
+    private prevToken:Token;
     private bracketLevel = 0;
 
     private static MetchVariable = /^\$(\d+)/;
-    private static MetchNumber = /^([\+\-]?(?:\d*\.\d+|\d+))/;
+    private static MetchNumber = /^(\d*\.\d+|\d+)/;
 
     constructor(expression:string) {
         this.expression_ = expression.trim();
     }
 
-    private nextToken():Token {
+    private nextToken() {
+        this.prevToken = this.token;
+        if (this.expression_.length == 0) {
+            this.token = {id:TokenID.END, len:0, token:""};
+            return;
+        }
         let match = ExpressionParser.MetchVariable.exec(this.expression_);
         if (match) {
-            return {id:TokenID.VARIABLE, len:match[0].length, token:match[1]};
+            this.token = {id:TokenID.VARIABLE, len:match[0].length, token:match[1]};
+            this.consume();
+            return
         }
         match = ExpressionParser.MetchNumber.exec(this.expression_);
         if (match) {
-            return {id:TokenID.NUMBER, len:match[0].length, token:match[1]};
+            this.token = {id:TokenID.NUMBER, len:match[0].length, token:match[1]};
+            this.consume();
+            return
         }
         let nextChar = this.expression_[0];
         if (nextChar == '+') {
-            return {id:TokenID.PLUS, len:1, token:nextChar};
+            this.token = {id:TokenID.PLUS, len:1, token:nextChar};
+        } else if (nextChar == 'x' || nextChar == 'X') {
+            this.token = {id:TokenID.TIMES, len:1, token:nextChar};
+        } else if (nextChar == '/') {
+            this.token = {id:TokenID.DIVIDE, len:1, token:nextChar};
+        } else if (nextChar == '(') {
+            this.token = {id:TokenID.OPEN_BRACKET, len:1, token:nextChar};
+        } else if (nextChar == ')') {
+            this.token = {id:TokenID.CLOSE_BRACKET, len:1, token:nextChar};
+        } else if (nextChar == '-') {
+            this.token = {id:TokenID.MINUS, len:1, token:nextChar};
         }
-        if (nextChar == 'x' || nextChar == 'X') {
-            return {id:TokenID.TIMES, len:1, token:nextChar};
+        this.consume();
+        return
+}
+
+    private consume() {
+        this.expression_ = this.expression_.substr(this.token.len).trim();
+    }
+
+    private accept(id:TokenID):boolean {
+        if (this.token.id == id) {
+            this.nextToken();
+            return true;
         }
-        if (nextChar == '/') {
-            return {id:TokenID.DIVIDE, len:1, token:nextChar};
+        return false;
+    }
+
+    private expect(id:TokenID):boolean {
+        if (this.accept(id)) {
+            return true;
         }
-        if (nextChar == '(') {
-            return {id:TokenID.OPEN_BRACKET, len:1, token:nextChar};
+        throw new Error(`Expected token ID ${id}`);
+    }
+
+    private operand():AritmeticOperation {
+        if (this.accept(TokenID.VARIABLE)) {
+            return new Variable(Number.parseInt(this.prevToken.token));
         }
-        if (nextChar == ')') {
-            return {id:TokenID.CLOSE_BRACKET, len:1, token:nextChar};
+        if (this.accept(TokenID.NUMBER)) {
+            return new ConstantNumber(Number.parseFloat(this.prevToken.token));
         }
-        if (nextChar == '-') {
-            let prevToken = this.tokenStack[this.tokenStack.length - 1];
-            if (prevToken === undefined || prevToken.id == TokenID.OPEN_BRACKET) {
-                return {id:TokenID.UNARY_MINUS, len:1, token:nextChar};    
-            }
-            return {id:TokenID.MINUS, len:1, token:nextChar};
+        if (this.accept(TokenID.OPEN_BRACKET)) {
+            let expr = this.expression();
+            this.expect(TokenID.CLOSE_BRACKET);
+            return expr;
+        }
+        throw new Error(`Unexpected token ${this.token}`);
+    }
+
+    private factor():AritmeticOperation {
+        if (this.accept(TokenID.MINUS)) {
+            let operand = this.operand();
+            return new UnaryMinus(operand);
+        } else {
+            return this.operand();
         }
     }
 
-    private consume(token:Token) {
-        this.expression_ = this.expression_.substr(token.len).trim();
+    private term():AritmeticOperation {
+        let factor1 = this.factor();
+        while (this.token.id == TokenID.TIMES || this.token.id == TokenID.DIVIDE) {
+            let isTimes = this.token.id == TokenID.TIMES;
+            this.nextToken();
+            let factor2 = this.factor();
+            if (isTimes) {
+                factor1 = new Times(factor1, factor2); 
+            } else {
+                factor1 = new Divide(factor1, factor2);
+            }
+        }
+        return factor1;
+    }
+
+    private expression():AritmeticOperation {
+        let term1 = this.term();
+        while (this.token.id == TokenID.PLUS || this.token.id == TokenID.MINUS) {
+            let isPlus = this.token.id == TokenID.PLUS;
+            this.nextToken();
+            let term2 = this.term();
+            if (isPlus) {
+                term1 = new Plus(term1, term2); 
+            } else {
+                term1 = new Minus(term1, term2);
+            }
+        }
+        return term1;
     }
 
     parse():AritmeticOperation {
-        while (this.expression_.length > 0) {
-            let token = this.nextToken();
-            this.tokenStack.push(token);
-            this.consume(token);
-        }
-        return null;
+        this.nextToken();
+        let result = this.expression();
+        this.expect(TokenID.END);
+        return result;
     }
 }
