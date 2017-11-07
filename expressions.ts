@@ -1,7 +1,7 @@
 export class Memory {
     private variables:Array<number> = [];
 
-    init(modifiers:Array<number>) {
+    constructor(modifiers:Array<number>) {
         for (let idx = 0; idx < modifiers.length; idx++) {
             this.set(idx + 1, modifiers[idx]);
         }
@@ -37,11 +37,15 @@ export interface AritmeticOperation {
 }
 
 class ConstantNumber implements AritmeticOperation {
-    constructor(readonly value:number) {
+    constructor(public value:number) {
     }
 
     getValue():number {
         return this.value;
+    }
+
+    toString():string {
+        return this.value.toPrecision();
     }
 }
 
@@ -52,6 +56,10 @@ class Variable implements AritmeticOperation {
     getValue(memory:Memory):number {
         return memory.get(this.id);
     }
+
+    toString():string {
+        return `$${this.id}`;
+    }
 }
 
 class UnaryMinus implements AritmeticOperation {
@@ -61,8 +69,11 @@ class UnaryMinus implements AritmeticOperation {
     getValue(memory:Memory):number {
         return -this.op.getValue(memory);
     }
-}
 
+    toString():string {
+        return `-${this.op}`;
+    }
+}
 
 class Minus implements AritmeticOperation {
     constructor(public a:AritmeticOperation, public b:AritmeticOperation) {
@@ -70,6 +81,10 @@ class Minus implements AritmeticOperation {
 
     getValue(memory:Memory):number {
         return this.a.getValue(memory) - this.b.getValue(memory);
+    }
+
+    toString():string {
+        return `${this.a}-${this.b}`;
     }
 }
 
@@ -80,6 +95,10 @@ class Plus implements AritmeticOperation {
     getValue(memory:Memory):number {
         return this.a.getValue(memory) + this.b.getValue(memory);
     }
+
+    toString():string {
+        return `${this.a}+${this.b}`;
+    }
 }
 
 class Times implements AritmeticOperation {
@@ -89,6 +108,10 @@ class Times implements AritmeticOperation {
     getValue(memory:Memory):number {
         return this.a.getValue(memory) * this.b.getValue(memory);
     }
+
+    toString():string {
+        return `${this.a}x${this.b}`;
+    }
 }
 
 class Divide implements AritmeticOperation {
@@ -97,6 +120,23 @@ class Divide implements AritmeticOperation {
 
     getValue(memory:Memory):number {
         return this.a.getValue(memory) / this.b.getValue(memory);
+    }
+
+    toString():string {
+        return `${this.a}/${this.b}`;
+    }
+}
+
+class BracketedExpression implements AritmeticOperation {
+    constructor(public op:AritmeticOperation) {
+    }
+
+    getValue(memory:Memory):number {
+        return this.op.getValue(memory);
+    }
+
+    toString():string {
+        return `(${this.op})`;
     }
 }
 
@@ -184,7 +224,7 @@ export class ExpressionParser {
         if (this.accept(TokenID.OPEN_BRACKET)) {
             let expr = this.expression();
             this.expect(TokenID.CLOSE_BRACKET);
-            return expr;
+            return new BracketedExpression(expr);
         }
         throw new Error(`Unexpected token ${this.token}`);
     }
@@ -192,6 +232,11 @@ export class ExpressionParser {
     private factor():AritmeticOperation {
         if (this.accept(TokenID.MINUS)) {
             let operand = this.operand();
+            if (operand instanceof ConstantNumber) {
+                let num = operand as ConstantNumber;
+                num.value *= -1;
+                return num;
+            }
             return new UnaryMinus(operand);
         } else {
             return this.operand();
