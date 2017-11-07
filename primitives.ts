@@ -13,6 +13,7 @@ import {
     addVector,
     negVector
 } from "./vectorUtils";
+import {AritmeticOperation, Memory} from "./expressions";
 
 export enum FileUnits {
     INCHES,
@@ -156,19 +157,44 @@ export const NUMSTEPS = 40;
 const NUMSTEPS2 = NUMSTEPS / 2;
 const ZeroPoint = new Point(0, 0);
 
+function rotatePolygon(poly:Polygon, angle:number):Polygon {
+    if (angle == 0) {
+        return poly;
+    }
+    let angleRadians = angle * (Math.PI * 2.0) / 360;
+    let cosA = Math.cos(angleRadians);
+    let sinA = Math.sin(angleRadians);
+
+    return poly.map(point => new Point(
+        point.x * cosA - point.y * sinA,
+        point.x * sinA + point.y * cosA));
+}
+
 function translatePolygon(poly:Polygon, offset:Point):Polygon {
+    if (offset.x == 0 && offset.y == 0) {
+        return poly;
+    }
     return poly.map(point => point.add(offset));
 }
 
 export function translatePolySet(polySet:PolygonSet, offset:Point):PolygonSet {
+    if (offset.x == 0 && offset.y == 0) {
+        return polySet;
+    }
     return polySet.map(polygon => translatePolygon(polygon, offset));
 }
 
 function scalePolygon(poly:Polygon, scale:number):Polygon {
+    if (scale == 1) {
+        return poly;
+    }
     return poly.map(point => point.scale(scale));
 }
 
 export function scalePolySet(polySet:PolygonSet, scale:number):PolygonSet {
+    if (scale == 1) {
+        return polySet;
+    }
     return polySet.map(polygon => scalePolygon(polygon, scale));
 }
 
@@ -531,26 +557,89 @@ export class ApertureDefinition {
 }
 
 export class VariableDefinition {
-    constructor(readonly id:number, readonly expression:string) {
+    constructor(readonly id:number, readonly expression:AritmeticOperation) {
     }
 }
 
 export class Primitive {
     constructor(
         readonly code:number,
-        readonly modifiers:string[]) {
+        readonly modifiers:Array<AritmeticOperation>) {
+    }
+}
+
+export class PrimitiveComment {
+    constructor(
+        readonly text:string) {
     }
 }
 
 export class ApertureMacro {
     constructor(
         readonly macroName:string,
-        readonly content:Array<VariableDefinition|Primitive>) {
+        readonly content:Array<VariableDefinition|Primitive|PrimitiveComment>) {
     }
 
     toPolygonSet(modifiers:Array<number>):PolygonSet {
+        let positives:PolygonSet = [];
+        let negatives:PolygonSet = [];
+
+        let memory = new Memory(modifiers);
+        for (let element of this.content) {
+            if (element instanceof PrimitiveComment) {
+                continue;
+            } else if (element instanceof VariableDefinition) {
+                let variable = element as VariableDefinition;
+                memory.set(variable.id, variable.expression.getValue(memory));
+            } else {
+                let primitive = element as Primitive;
+                let modifiers = primitive.modifiers.map(m => m.getValue(memory));
+                let numModifiers = modifiers.length;
+                let shape:PolygonSet;
+                let isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
+                switch (primitive.code) {
+                    case 1: // Circle (exposure, diameter, center x, center y, rotation)
+                        shape = [
+                            rotatePolygon(
+                                translatePolygon(
+                                    circleToPolygon(ApertureMacro.getValue(modifiers, 1) / 2),
+                                    new Point(
+                                        ApertureMacro.getValue(modifiers, 2),
+                                        ApertureMacro.getValue(modifiers, 3))),
+                                ApertureMacro.getValue(modifiers, 4))];
+                        break;
+
+                    case 4: // Outline (exposure, num vertices, start x, start y, ..., (3+2n) end x, 4+2n end y, rotation)
+                        break;
+
+                    case 5: // Polygon (exposure, num vertices, center x, center y, diameter, rotation)
+                        break;
+
+                    case 6: // Moire (center x, center y, outer diam, ring thickness, gap, num rings, cross hair thickness, cross hair len, rotation)
+                            // exposure is always on
+                        break;
+
+                    case 7: // Thermal (center x, center y, outer diam, inner diam, gap, rotation)
+                        break;
+
+                    case 20: // Vector line (exposure, width, start x, start y, end x, end y, rotation)
+                        break;
+
+                    case 21: // Center line (exposure, width, height, center x, center y, rotation)
+                        break;
+                }
+            }
+        }
         let result:PolygonSet = [];
         return result;
+    }
+
+    private static getValue(modifiers:Array<number>, idx:number):number {
+        let r = modifiers[idx];
+        if (r === undefined) {
+            return 0;
+        }
+        return r;
     }
 }
 

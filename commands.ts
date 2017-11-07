@@ -22,6 +22,7 @@ import {
     ObjectPolarity,
     ObjectMirroring,
     Primitive,
+    PrimitiveComment,
     Attribute,
     AttributeType,
     VariableDefinition,
@@ -36,6 +37,10 @@ import {
     unitVector,
     addVector
 } from "./vectorUtils";
+import {
+    AritmeticOperation,
+    ExpressionParser
+} from "./expressions";
 
 export class FSCommand implements GerberCommand {
     readonly name:string = "FS";
@@ -303,7 +308,7 @@ export class AMCommand implements GerberCommand {
     constructor(cmd:string) {
         let content = cmd.split("*");
         let name = content[0].substring(2);
-        let macroContent:Array<VariableDefinition|Primitive> = [];
+        let macroContent:Array<VariableDefinition|Primitive|PrimitiveComment> = [];
         for (let idx = 1; idx < content.length - 1; idx++) {
             let part = content[idx];
             if (part[0] == "$") {
@@ -312,15 +317,19 @@ export class AMCommand implements GerberCommand {
                 if (part[numEndIdx] != "=") {
                     throw new GerberParseException(`Invalid variable definition ${part}`);
                 }
-                macroContent.push(new VariableDefinition(varId, part.substring(numEndIdx + 1)));
+                let parser = new ExpressionParser(part.substring(numEndIdx + 1));
+                macroContent.push(new VariableDefinition(varId, parser.parse()));
             } else {
                 if (part.startsWith("0 ")) {
-                    macroContent.push(new Primitive(0, [part.substr(2)]));
+                    macroContent.push(new PrimitiveComment(part.substr(2)));
                 } else {
                     let primitiveParts = part.split(",");
                     let primitiveId = Number.parseInt(primitiveParts[0]);
                     primitiveParts.splice(0, 1);
-                    macroContent.push(new Primitive(primitiveId, primitiveParts));
+                    macroContent.push(new Primitive(primitiveId, primitiveParts.map(part => {
+                        let parser = new ExpressionParser(part);
+                        return parser.parse();
+                    })));
                 }
             }
         }
@@ -334,17 +343,16 @@ export class AMCommand implements GerberCommand {
             if (part instanceof VariableDefinition) {
                 let varDef = part as VariableDefinition;
                 result += "$" + varDef.id + "=" + varDef.expression + "*";
+            } else if (part instanceof PrimitiveComment) {
+                let comment = part as PrimitiveComment;
+                result += "0 " + comment.text + "*";
             } else {
                 let primitive = part as Primitive;
-                if (primitive.code == 0) {
-                    result += "0 " + primitive.modifiers[0] + "*";
-                } else {
-                    result += primitive.code;
-                    for (let modifier of primitive.modifiers) {
-                        result += "," + modifier;
-                    }
-                    result += "*";
+                result += primitive.code;
+                for (let modifier of primitive.modifiers) {
+                    result += "," + modifier.toString();
                 }
+                result += "*";
             }
         }
         return result;
