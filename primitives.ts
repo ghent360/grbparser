@@ -614,7 +614,7 @@ export class ApertureMacro {
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0; 
                         let numPoints = ApertureMacro.getValue(modifiers, 1);
                         if (numPoints < 1) {
-                            throw new GerberParseException(`Invalid number od points in a macro outline ${numPoints}`);
+                            throw new GerberParseException(`Invalid number of points in a macro outline ${numPoints}`);
                         }
                         let outline = new Array<Point>(numPoints + 1);
                         for (let idx = 0; idx <= numPoints; idx++) {
@@ -627,12 +627,16 @@ export class ApertureMacro {
 
                     case 5: // Polygon (exposure, num vertices, center x, center y, diameter, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
+                        let numSteps = ApertureMacro.getValue(modifiers, 1);
+                        if (numSteps < 3) {
+                            throw new GerberParseException(`Invalid number of steps in a macro polygon ${numSteps}`);
+                        }
                         shape = [
                             rotatePolygon(
                                 translatePolygon(
                                     circleToPolygon(
                                         ApertureMacro.getValue(modifiers, 4) / 2,
-                                        ApertureMacro.getValue(modifiers, 1)),
+                                        numSteps),
                                     new Point(
                                         ApertureMacro.getValue(modifiers, 2),
                                         ApertureMacro.getValue(modifiers, 3))),
