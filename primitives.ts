@@ -619,10 +619,10 @@ export class ApertureMacro {
                         let outline = new Array<Point>(numPoints + 1);
                         for (let idx = 0; idx <= numPoints; idx++) {
                             outline[idx] = new Point(
-                                ApertureMacro.getValue(modifiers, 2*idx + 2),
-                                ApertureMacro.getValue(modifiers, 2*idx + 3));
+                                ApertureMacro.getValue(modifiers, 2 * idx + 2),
+                                ApertureMacro.getValue(modifiers, 2 * idx + 3));
                         }
-                        shape = [rotatePolygon(outline, ApertureMacro.getValue(modifiers, 2*numPoints + 4))];
+                        shape = [rotatePolygon(outline, ApertureMacro.getValue(modifiers, 2 * numPoints + 4))];
                         break;
 
                     case 5: // Polygon (exposure, num vertices, center x, center y, diameter, rotation)
