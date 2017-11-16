@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import {SVGBuilder} from "../svgbuilder";
 import * as pr from '../primitives';
 import * as ps from '../polygonSet';
+import * as exp from '../expressions';
 
 function saveSVG(polygonSet:ps.PolygonSet, fileName:string) {
     let svgbldr = new SVGBuilder();
@@ -10,6 +11,10 @@ function saveSVG(polygonSet:ps.PolygonSet, fileName:string) {
     let stream = fs.createWriteStream(fileName);
     svgbldr.SaveToSVG(stream);
     stream.end();
+}
+
+function perseExpressions(expressions:Array<string>):Array<exp.AritmeticOperation> {
+    return expressions.map(e => new exp.ExpressionParser(e).parse());
 }
 
 describe("Primitives tests", () => {
@@ -103,5 +108,15 @@ describe("Primitives tests", () => {
         let result2 = aperture.generateArcDraw(new pr.Point(14.1421, 14.1421), new pr.Point(20, 0), new pr.Point(0, 0));
         let result3 = aperture.generateArcDraw(new pr.Point(7.071, 7.071), new pr.Point(10, 0), new pr.Point(17.1,7.071));
         saveSVG([result2, result3], "arc_draw_rectangle.svg");
+    });
+    it('Aperture macro', () => {
+        let aperture = new pr.ApertureMacro("MACRO", [
+            new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "0"])),
+            new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "20"])),
+            new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "40"])),
+            new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "60"])),
+            new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "90"]))]);
+        let result = aperture.toPolygonSet([]);
+        saveSVG(result, "macro1.svg");
     });
 });

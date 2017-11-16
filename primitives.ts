@@ -534,17 +534,23 @@ export class ApertureMacro {
             } else if (element instanceof VariableDefinition) {
                 let variable = element as VariableDefinition;
                 memory.set(variable.id, variable.expression.getValue(memory));
+                continue;
             } else {
                 let primitive = element as Primitive;
                 let modifiers = primitive.modifiers.map(m => m.getValue(memory));
                 let numModifiers = modifiers.length;
                 let shape:PolygonSet;
                 let isPositive:boolean;
+                let center:Point;
+                let diameter:number;
+                let rotation:number;
+                let gap:number;
+                let outerDiameter:number;
                 switch (primitive.code) {
                     case 1: // Circle (exposure, diameter, center x, center y, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
-                        let diameter = ApertureMacro.getValue(modifiers, 1);
-                        let center = new Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
+                        diameter = ApertureMacro.getValue(modifiers, 1);
+                        center = new Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
                         if (diameter > Epsilon) {
                             shape = [
                                 rotatePolygon(
@@ -595,13 +601,13 @@ export class ApertureMacro {
                         isPositive = true;
                         shape = [];
                         center = new Point(ApertureMacro.getValue(modifiers, 0), ApertureMacro.getValue(modifiers, 1));
-                        let outerDiameter = ApertureMacro.getValue(modifiers, 2);
+                        outerDiameter = ApertureMacro.getValue(modifiers, 2);
                         let ringThickness = ApertureMacro.getValue(modifiers, 3);
-                        let gap = ApertureMacro.getValue(modifiers, 4);
+                        gap = ApertureMacro.getValue(modifiers, 4);
                         let maxRings = ApertureMacro.getValue(modifiers, 5);
                         let crossThickness = ApertureMacro.getValue(modifiers, 6);
                         let crossLen = ApertureMacro.getValue(modifiers, 7);
-                        let rotation = ApertureMacro.getValue(modifiers, 8);
+                        rotation = ApertureMacro.getValue(modifiers, 8);
                         if (ringThickness > Epsilon) {
                             for (let ringNo = 1; ringNo < maxRings && outerDiameter > Epsilon; ringNo++) {
                                 let innerDiameter = outerDiameter - ringThickness * 2;
@@ -739,6 +745,7 @@ export class ApertureMacro {
 
                     case 20: // Vector line (exposure, width, start x, start y, end x, end y, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
+                        shape = [];
                         break;
     
                     case 21: // Center line (exposure, width, height, center x, center y, rotation)
@@ -755,6 +762,8 @@ export class ApertureMacro {
                             console.log("Empty center line shape");
                         }
                         break;
+                    default:
+                        throw new GerberParseException(`Unsupported macro primitive ${primitive.code}`);
                 }
                 if (isPositive) {
                     positives = positives.concat(shape);
@@ -763,7 +772,7 @@ export class ApertureMacro {
                 }
             }
         }
-        let result:PolygonSet = [];
+        let result:PolygonSet = positives;
         return result;
     }
 
