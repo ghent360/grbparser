@@ -542,15 +542,18 @@ export class ApertureMacro {
                 let isPositive:boolean;
                 switch (primitive.code) {
                     case 1: // Circle (exposure, diameter, center x, center y, rotation)
-                        shape = [
-                            rotatePolygon(
-                                translatePolygon(
-                                    circleToPolygon(ApertureMacro.getValue(modifiers, 1) / 2),
-                                    new Point(
-                                        ApertureMacro.getValue(modifiers, 2),
-                                        ApertureMacro.getValue(modifiers, 3))),
-                                ApertureMacro.getValue(modifiers, 4))];
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
+                        let diameter = ApertureMacro.getValue(modifiers, 1);
+                        let center = new Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
+                        if (diameter > Epsilon) {
+                            shape = [
+                                rotatePolygon(
+                                    translatePolygon(circleToPolygon(diameter / 2), center),
+                                    ApertureMacro.getValue(modifiers, 4))];
+                        } else {
+                            shape = [];
+                            console.log("Empty circle shape");
+                        }
                         break;
 
                     case 4: // Outline (exposure, num vertices, start x, start y, ..., (3+2n) end x, 4+2n end y, rotation)
@@ -571,24 +574,51 @@ export class ApertureMacro {
                     case 5: // Polygon (exposure, num vertices, center x, center y, diameter, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
                         let numSteps = ApertureMacro.getValue(modifiers, 1);
+                        center = new Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
+                        diameter = ApertureMacro.getValue(modifiers, 4);
                         if (numSteps < 3) {
                             throw new GerberParseException(`Invalid number of steps in a macro polygon ${numSteps}`);
                         }
-                        shape = [
-                            rotatePolygon(
-                                translatePolygon(
-                                    circleToPolygon(
-                                        ApertureMacro.getValue(modifiers, 4) / 2,
-                                        numSteps),
-                                    new Point(
-                                        ApertureMacro.getValue(modifiers, 2),
-                                        ApertureMacro.getValue(modifiers, 3))),
-                                ApertureMacro.getValue(modifiers, 5))];
+                        if (diameter > Epsilon) {
+                            shape = [
+                                rotatePolygon(
+                                    translatePolygon(circleToPolygon(diameter / 2, numSteps), center),
+                                    ApertureMacro.getValue(modifiers, 5))];
+                        } else {
+                            shape = [];
+                            console.log("Empty polygon shape");
+                        }
                         break;
 
                     case 6: // Moire (center x, center y, outer diam, ring thickness, gap, num rings, cross hair thickness, cross hair len, rotation)
                             // exposure is always on
                         isPositive = true;
+                        shape = [];
+                        center = new Point(ApertureMacro.getValue(modifiers, 0), ApertureMacro.getValue(modifiers, 1));
+                        let outerDiameter = ApertureMacro.getValue(modifiers, 2);
+                        let ringThickness = ApertureMacro.getValue(modifiers, 3);
+                        let ringGap = ApertureMacro.getValue(modifiers, 4);
+                        let maxRings = ApertureMacro.getValue(modifiers, 5);
+                        let crossThickness = ApertureMacro.getValue(modifiers, 6);
+                        let crossLen = ApertureMacro.getValue(modifiers, 7);
+                        let rotation = ApertureMacro.getValue(modifiers, 8);
+                        if (ringThickness > Epsilon) {
+                            for (let ringNo = 1; ringNo < maxRings && outerDiameter > Epsilon; ringNo++) {
+                                let innerDiameter = outerDiameter - ringThickness * 2;
+                                shape.push(rotatePolygon(translatePolygon(circleToPolygon(outerDiameter / 2), center), rotation));
+                                if (innerDiameter > Epsilon) {
+                                    shape.push(rotatePolygon(translatePolygon(circleToPolygon(innerDiameter / 2), center), rotation));
+                                }
+                                outerDiameter = innerDiameter - ringGap * 2;
+                            }
+                        }
+                        if (crossLen > Epsilon && crossThickness > Epsilon) {
+                            shape.push(rotatePolygon(translatePolygon(rectangleToPolygon(crossLen, crossThickness), center), rotation));
+                            shape.push(rotatePolygon(translatePolygon(rectangleToPolygon(crossThickness, crossLen), center), rotation));
+                        }
+                        if (shape.length < 1) {
+                            console.log("Empty moire shape");
+                        }
                         break;
 
                     case 7: // Thermal (center x, center y, outer diam, inner diam, gap, rotation)
@@ -601,7 +631,23 @@ export class ApertureMacro {
     
                     case 21: // Center line (exposure, width, height, center x, center y, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
+                        let width = ApertureMacro.getValue(modifiers, 1);
+                        let height = ApertureMacro.getValue(modifiers, 2);
+                        center = new Point(ApertureMacro.getValue(modifiers, 3), ApertureMacro.getValue(modifiers, 4));
+                        rotation = ApertureMacro.getValue(modifiers, 5);
+                        if (width > Epsilon && height > Epsilon) {
+                            shape = [
+                                rotatePolygon(translatePolygon(rectangleToPolygon(width, height), center), rotation)];
+                        } else {
+                            shape = [];
+                            console.log("Empty center line shape");
+                        }
                         break;
+                }
+                if (isPositive) {
+                    positives = positives.concat(shape);
+                } else {
+                    negatives = negatives.concat(shape);
                 }
             }
         }
