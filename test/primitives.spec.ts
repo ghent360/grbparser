@@ -109,14 +109,44 @@ describe("Primitives tests", () => {
         let result3 = aperture.generateArcDraw(new pr.Point(7.071, 7.071), new pr.Point(10, 0), new pr.Point(17.1,7.071));
         saveSVG([result2, result3], "arc_draw_rectangle.svg");
     });
-    it('Aperture macro', () => {
+    it('Aperture macro - circles', () => {
         let aperture = new pr.ApertureMacro("MACRO", [
             new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "0"])),
-            new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "20"])),
-            new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "40"])),
-            new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "60"])),
-            new pr.Primitive(1, perseExpressions(["1", "1", "5", "0", "90"]))]);
+            new pr.Primitive(1, perseExpressions(["1", "1.2", "5", "0", "20"])),
+            new pr.Primitive(1, perseExpressions(["1", "1.4", "5", "0", "40"])),
+            new pr.Primitive(1, perseExpressions(["1", "1.6", "5", "0", "60"])),
+            new pr.Primitive(1, perseExpressions(["1", "1.8", "5", "0", "90"]))]);
         let result = aperture.toPolygonSet([]);
-        saveSVG(result, "macro1.svg");
+        saveSVG(result, "macro_circles.svg");
+    });
+    it('Aperture macro - outline', () => {
+        let aperture = new pr.ApertureMacro("MACRO", [
+            new pr.Primitive(4, perseExpressions(["1", "4", "0.1", "0.1", "0.5", "0.1", "0.5", "0.5", "0.1", "0.5", "0.1", "0.1", "30"])),
+        ]);
+        let result = aperture.toPolygonSet([]);
+        saveSVG(result, "macro_outline.svg");
+    });
+    it('Aperture macro - polygon', () => {
+        let aperture = new pr.ApertureMacro("MACRO", [
+            new pr.Primitive(5, perseExpressions(["1", "5", "50", "0", "10", "30"])),
+        ]);
+        let result = aperture.toPolygonSet([]);
+        saveSVG(result, "macro_polygon.svg");
+    });
+    it('Aperture macro - moire', () => {
+        let aperture = new pr.ApertureMacro("MACRO", [
+            new pr.Primitive(6, perseExpressions(["50", "0", "10", "0.5", "0.2", "3", "1.5", "12", "0"])),
+            new pr.Primitive(6, perseExpressions(["0", "50", "10", "0.5", "0.2", "13", "0.5", "12", "0"])),
+        ]);
+        let result = aperture.toPolygonSet([]);
+        saveSVG(result, "macro_moire.svg");
+    });
+    it('Aperture macro - thermal', () => {
+        let aperture = new pr.ApertureMacro("MACRO", [
+            new pr.Primitive(7, perseExpressions(["50", "0", "10", "8.5", "1.1", "0"])),
+            new pr.Primitive(7, perseExpressions(["0", "50", "10", "0", "1.1", "0"])),
+        ]);
+        let result = aperture.toPolygonSet([]);
+        saveSVG(result, "macro_thermal.svg");
     });
 });

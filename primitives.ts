@@ -609,7 +609,7 @@ export class ApertureMacro {
                         let crossLen = ApertureMacro.getValue(modifiers, 7);
                         rotation = ApertureMacro.getValue(modifiers, 8);
                         if (ringThickness > Epsilon) {
-                            for (let ringNo = 1; ringNo < maxRings && outerDiameter > Epsilon; ringNo++) {
+                            for (let ringNo = 0; ringNo < maxRings && outerDiameter > Epsilon; ringNo++) {
                                 let innerDiameter = outerDiameter - ringThickness * 2;
                                 shape.push(rotatePolygon(translatePolygon(circleToPolygon(outerDiameter / 2), center), rotation));
                                 if (innerDiameter > Epsilon) {
@@ -703,7 +703,7 @@ export class ApertureMacro {
 
                                     // Quadrant 2 shape
                                     polygon = [];
-                                    innerPoint = new Point(gap2 + center.x, -gap2 + center.y);
+                                    innerPoint = new Point(-gap2 + center.x, gap2 + center.y);
                                     outerStart = new Point(-gap2 + center.x, outerRadius + center.y);
                                     outerEnd = new Point(-outerRadius + center.x, gap2 + center.y);
                                     polygon.push(innerPoint);
