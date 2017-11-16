@@ -597,7 +597,7 @@ export class ApertureMacro {
                         center = new Point(ApertureMacro.getValue(modifiers, 0), ApertureMacro.getValue(modifiers, 1));
                         let outerDiameter = ApertureMacro.getValue(modifiers, 2);
                         let ringThickness = ApertureMacro.getValue(modifiers, 3);
-                        let ringGap = ApertureMacro.getValue(modifiers, 4);
+                        let gap = ApertureMacro.getValue(modifiers, 4);
                         let maxRings = ApertureMacro.getValue(modifiers, 5);
                         let crossThickness = ApertureMacro.getValue(modifiers, 6);
                         let crossLen = ApertureMacro.getValue(modifiers, 7);
@@ -609,7 +609,7 @@ export class ApertureMacro {
                                 if (innerDiameter > Epsilon) {
                                     shape.push(rotatePolygon(translatePolygon(circleToPolygon(innerDiameter / 2), center), rotation));
                                 }
-                                outerDiameter = innerDiameter - ringGap * 2;
+                                outerDiameter = innerDiameter - gap * 2;
                             }
                         }
                         if (crossLen > Epsilon && crossThickness > Epsilon) {
@@ -623,6 +623,118 @@ export class ApertureMacro {
 
                     case 7: // Thermal (center x, center y, outer diam, inner diam, gap, rotation)
                         isPositive = true;
+                        center = new Point(ApertureMacro.getValue(modifiers, 0), ApertureMacro.getValue(modifiers, 1));
+                        outerDiameter = ApertureMacro.getValue(modifiers, 2);
+                        let innerDiameter = ApertureMacro.getValue(modifiers, 3);
+                        gap = ApertureMacro.getValue(modifiers, 4);
+                        let gap2 = gap / 2;
+                        let innerRadius = innerDiameter / 2;
+                        let outerRadius = outerDiameter / 2;
+                        rotation = ApertureMacro.getValue(modifiers, 5);
+                        if (outerDiameter <= innerDiameter) {
+                            throw new GerberParseException(`Invalid thermal shape outer=${outerDiameter}, inner=${innerDiameter}`);
+                        }
+                        if (gap >= outerDiameter / Math.sqrt(2)) {
+                            throw new GerberParseException(`Invalid thermal shape outer=${outerDiameter}, gap=${gap}`);
+                        }
+                        shape = [];
+                        if (outerDiameter > Epsilon) {
+                            if (gap > Epsilon) {
+                                if (innerDiameter > Epsilon) {
+                                    // Quadrant 1 shape
+                                    let polygon:Polygon = [];
+                                    let innerStart = new Point(innerRadius + center.x, gap2 + center.y);
+                                    let outerStart = new Point(outerRadius + center.x, gap2 + center.y);
+                                    let innerEnd = new Point(gap2 + center.x, innerRadius + center.y);
+                                    let outerEnd = new Point(gap2 + center.x, outerRadius + center.y);
+                                    polygon.push(innerStart);
+                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
+                                    polygon = polygon.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+                                    shape.push(rotatePolygon(polygon, rotation));
+
+                                    // Quadrant 2 shape
+                                    polygon = [];
+                                    innerStart = new Point(-gap2 + center.x, innerRadius + center.y);
+                                    outerStart = new Point(-gap2 + center.x, outerRadius + center.y);
+                                    innerEnd = new Point(-innerRadius + center.x, gap2 + center.y);
+                                    outerEnd = new Point(-outerRadius + center.x, gap2 + center.y);
+                                    polygon.push(innerStart);
+                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
+                                    polygon = polygon.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+                                    shape.push(rotatePolygon(polygon, rotation));
+
+                                    // Quadrant 3 shape
+                                    polygon = [];
+                                    innerStart = new Point(-innerRadius + center.x, -gap2 + center.y);
+                                    outerStart = new Point(-outerRadius + center.x, -gap2 + center.y);
+                                    innerEnd = new Point(-gap2 + center.x, -innerRadius + center.y);
+                                    outerEnd = new Point(-gap2 + center.x, -outerRadius + center.y);
+                                    polygon.push(innerStart);
+                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
+                                    polygon = polygon.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+                                    shape.push(rotatePolygon(polygon, rotation));
+
+                                    // Quadrant 4 shape
+                                    polygon = [];
+                                    innerStart = new Point(gap2 + center.x, -innerRadius + center.y);
+                                    outerStart = new Point(gap2 + center.x, -outerRadius + center.y);
+                                    innerEnd = new Point(innerRadius + center.x, -gap2 + center.y);
+                                    outerEnd = new Point(outerRadius + center.x, -gap2 + center.y);
+                                    polygon.push(innerStart);
+                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
+                                    polygon = polygon.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+                                    shape.push(rotatePolygon(polygon, rotation));
+                                } else {
+                                    // Quadrant 1 shape
+                                    let polygon:Polygon = [];
+                                    let innerPoint = new Point(gap2 + center.x, gap2 + center.y);
+                                    let outerStart = new Point(outerRadius + center.x, gap2 + center.y);
+                                    let outerEnd = new Point(gap2 + center.x, outerRadius + center.y);
+                                    polygon.push(innerPoint);
+                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
+                                    polygon.push(innerPoint);
+                                    shape.push(rotatePolygon(polygon, rotation));
+
+                                    // Quadrant 2 shape
+                                    polygon = [];
+                                    innerPoint = new Point(gap2 + center.x, -gap2 + center.y);
+                                    outerStart = new Point(-gap2 + center.x, outerRadius + center.y);
+                                    outerEnd = new Point(-outerRadius + center.x, gap2 + center.y);
+                                    polygon.push(innerPoint);
+                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
+                                    polygon.push(innerPoint);
+                                    shape.push(rotatePolygon(polygon, rotation));
+
+                                    // Quadrant 3 shape
+                                    polygon = [];
+                                    innerPoint = new Point(-gap2 + center.x, -gap2 + center.y);
+                                    outerStart = new Point(-outerRadius + center.x, -gap2 + center.y);
+                                    outerEnd = new Point(-gap2 + center.x, -outerRadius + center.y);
+                                    polygon.push(innerPoint);
+                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
+                                    polygon.push(innerPoint);
+                                    shape.push(rotatePolygon(polygon, rotation));
+
+                                    // Quadrant 4 shape
+                                    polygon = [];
+                                    innerPoint = new Point(gap2 + center.x, -gap2 + center.y);
+                                    outerStart = new Point(gap2 + center.x, -outerRadius + center.y);
+                                    outerEnd = new Point(outerRadius + center.x, -gap2 + center.y);
+                                    polygon.push(innerPoint);
+                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
+                                    polygon.push(innerPoint);
+                                    shape.push(rotatePolygon(polygon, rotation));
+                                }
+                            } else {
+                                shape.push(rotatePolygon(translatePolygon(circleToPolygon(outerRadius), center), rotation));
+                                if (innerDiameter > Epsilon) {
+                                    shape.push(rotatePolygon(translatePolygon(circleToPolygon(innerRadius), center), rotation));
+                                }
+                            }
+                        } else {
+                            shape = [];
+                            console.log("Empty thermal shape");
+                        }
                         break;
 
                     case 20: // Vector line (exposure, width, start x, start y, end x, end y, rotation)
