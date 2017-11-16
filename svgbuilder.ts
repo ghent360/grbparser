@@ -1,4 +1,5 @@
-﻿import {Point, Polygon, PolygonSet} from "./primitives";
+﻿import {Point} from "./primitives";
+import {Polygon, PolygonSet} from "./polygonSet";
 import * as fs from "fs";
 
 function toString2(n:number):string {

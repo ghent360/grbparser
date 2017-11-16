@@ -2,8 +2,9 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import {SVGBuilder} from "../svgbuilder";
 import * as pr from '../primitives';
+import * as ps from '../polygonSet';
 
-function saveSVG(polygonSet:pr.PolygonSet, fileName:string) {
+function saveSVG(polygonSet:ps.PolygonSet, fileName:string) {
     let svgbldr = new SVGBuilder();
     svgbldr.Add(polygonSet);
     let stream = fs.createWriteStream(fileName);

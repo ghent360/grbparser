@@ -18,7 +18,9 @@ import {
     Polygon,
     PolygonSet,
     translatePolygon,
-    rotatePolygon
+    translatePolySet,
+    rotatePolygon,
+    polySetBounds
 } from "./polygonSet";
 
 export enum FileUnits {

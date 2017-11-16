@@ -17,8 +17,8 @@ import {
     Bounds,
     EmptyBounds,
     Point,
-    PolygonSet
 } from "./primitives";
+import {PolygonSet} from "./polygonSet";
 import {formatFloat} from "./utils";
 
 abstract class ConverterBase<T> {
