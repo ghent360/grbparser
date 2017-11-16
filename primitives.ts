@@ -537,7 +537,7 @@ export class ApertureMacro {
                 let modifiers = primitive.modifiers.map(m => m.getValue(memory));
                 let numModifiers = modifiers.length;
                 let shape:PolygonSet;
-                let isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
+                let isPositive:boolean;
                 switch (primitive.code) {
                     case 1: // Circle (exposure, diameter, center x, center y, rotation)
                         shape = [
@@ -548,25 +548,57 @@ export class ApertureMacro {
                                         ApertureMacro.getValue(modifiers, 2),
                                         ApertureMacro.getValue(modifiers, 3))),
                                 ApertureMacro.getValue(modifiers, 4))];
+                        isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
                         break;
 
                     case 4: // Outline (exposure, num vertices, start x, start y, ..., (3+2n) end x, 4+2n end y, rotation)
+                        isPositive =  ApertureMacro.getValue(modifiers, 0) != 0; 
+                        let numPoints = ApertureMacro.getValue(modifiers, 1);
+                        if (numPoints < 1) {
+                            throw new GerberParseException(`Invalid number of points in a macro outline ${numPoints}`);
+                        }
+                        let outline = new Array<Point>(numPoints + 1);
+                        for (let idx = 0; idx <= numPoints; idx++) {
+                            outline[idx] = new Point(
+                                ApertureMacro.getValue(modifiers, 2 * idx + 2),
+                                ApertureMacro.getValue(modifiers, 2 * idx + 3));
+                        }
+                        shape = [rotatePolygon(outline, ApertureMacro.getValue(modifiers, 2 * numPoints + 4))];
                         break;
 
                     case 5: // Polygon (exposure, num vertices, center x, center y, diameter, rotation)
+                        isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
+                        let numSteps = ApertureMacro.getValue(modifiers, 1);
+                        if (numSteps < 3) {
+                            throw new GerberParseException(`Invalid number of steps in a macro polygon ${numSteps}`);
+                        }
+                        shape = [
+                            rotatePolygon(
+                                translatePolygon(
+                                    circleToPolygon(
+                                        ApertureMacro.getValue(modifiers, 4) / 2,
+                                        numSteps),
+                                    new Point(
+                                        ApertureMacro.getValue(modifiers, 2),
+                                        ApertureMacro.getValue(modifiers, 3))),
+                                ApertureMacro.getValue(modifiers, 5))];
                         break;
 
                     case 6: // Moire (center x, center y, outer diam, ring thickness, gap, num rings, cross hair thickness, cross hair len, rotation)
                             // exposure is always on
+                        isPositive = true;
                         break;
 
                     case 7: // Thermal (center x, center y, outer diam, inner diam, gap, rotation)
+                        isPositive = true;
                         break;
 
                     case 20: // Vector line (exposure, width, start x, start y, end x, end y, rotation)
+                        isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
                         break;
-
+    
                     case 21: // Center line (exposure, width, height, center x, center y, rotation)
+                        isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
                         break;
                 }
             }
