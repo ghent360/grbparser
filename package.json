@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/ghent360/grbparser#readme",
   "dependencies": {
-    "@types/node": "^8.0.51",
+    "@types/node": "^8.0.53",
     "node": "^9.1.0",
     "ts-node": "^3.3.0",
     "typescript": "^2.6.1"
