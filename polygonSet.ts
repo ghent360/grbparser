@@ -1,4 +1,5 @@
 import {Point, Bounds, EmptyBounds} from "./primitives";
+import * as cl from "clipperjs";
 
 export type Polygon = Array<Point>;
 export type PolygonSet = Array<Polygon>;
@@ -64,4 +65,21 @@ export function polySetBounds(polygonSet:PolygonSet):Bounds {
         bounds.merge(polygonBounds(polygonSet[idx]));
     }
     return bounds;
+}
+
+export function unionPolygonSet(polygonSet:PolygonSet):PolygonSet {
+    let clipper = new cl.Clipper(100000000);
+    if (polygonSet.length < 2) {
+        return polygonSet;
+    }
+    clipper.AddPath2(polygonSet[0], cl.PathType.ptSubject);
+    for (let idx = 1; idx < polygonSet.length; idx++) {
+        clipper.AddPath2(polygonSet[idx], cl.PathType.ptClip);
+    }
+    let result = clipper.Execute(cl.ClipType.ctUnion, cl.FillRule.frNonZero);
+    if (result.success) {
+        return result.solution_closed.map(
+            poly => poly.map(p => new Point(p.x, p.y)));
+    }
+    return [];
 }
