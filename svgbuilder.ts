@@ -186,7 +186,7 @@ export class SVGBuilder {
             file.write(poly_end[1]);
             file.write(GetAlphaAsFrac(this.PolyInfoList[i].si.brushClr).toString());
             file.write(poly_end[2]);
-            file.write("evenodd"); // "evenodd"
+            file.write("nonzero"); // "evenodd"
             file.write(poly_end[3]);
             file.write(ColorToHtml(this.PolyInfoList[i].si.penClr));
             file.write(poly_end[4]);

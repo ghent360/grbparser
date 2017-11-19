@@ -20,7 +20,9 @@ import {
     translatePolygon,
     translatePolySet,
     rotatePolygon,
-    polySetBounds
+    polySetBounds,
+    unionPolygonSet,
+    subtractPolygonSet
 } from "./polygonSet";
 
 export enum FileUnits {
@@ -462,23 +464,23 @@ export class ApertureDefinition {
             }
             result.push(circleToPolygon(radius));
             if (this.modifiers.length == 2) {
-                result.push(circleToPolygon(this.modifiers[1] / 2));
+                result.push(circleToPolygon(this.modifiers[1] / 2).reverse());
             } else if (this.modifiers.length == 3) {
-                result.push(rectangleToPolygon(this.modifiers[1], this.modifiers[2]));
+                result.push(rectangleToPolygon(this.modifiers[1], this.modifiers[2]).reverse());
             }
         } else if (this.templateName === "R") {
             result.push(rectangleToPolygon(this.modifiers[0], this.modifiers[1]));
             if (this.modifiers.length == 3) {
-                result.push(circleToPolygon(this.modifiers[2] / 2));
+                result.push(circleToPolygon(this.modifiers[2] / 2).reverse());
             } else if (this.modifiers.length == 4) {
-                result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]));
+                result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]).reverse());
             }
         } else if (this.templateName === "O") {
             result.push(obroundToPolygon(this.modifiers[0], this.modifiers[1]));
             if (this.modifiers.length == 3) {
-                result.push(circleToPolygon(this.modifiers[2] / 2));
+                result.push(circleToPolygon(this.modifiers[2] / 2).reverse());
             } else if (this.modifiers.length == 4) {
-                result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]));
+                result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]).reverse());
             }
         } else if (this.templateName === "P") {
             if (this.modifiers.length == 2) {
@@ -487,9 +489,9 @@ export class ApertureDefinition {
                 result.push(circleToPolygon(this.modifiers[0] / 2, this.modifiers[1], this.modifiers[2]));
             }
             if (this.modifiers.length == 4) {
-                result.push(circleToPolygon(this.modifiers[3] / 2));
+                result.push(circleToPolygon(this.modifiers[3] / 2).reverse());
             } else if (this.modifiers.length == 5) {
-                result.push(rectangleToPolygon(this.modifiers[3], this.modifiers[4]));
+                result.push(rectangleToPolygon(this.modifiers[3], this.modifiers[4]).reverse());
             }
         } else {
             return this.macro.toPolygonSet(this.modifiers);
@@ -613,7 +615,12 @@ export class ApertureMacro {
                                 let innerDiameter = outerDiameter - ringThickness * 2;
                                 shape.push(rotatePolygon(translatePolygon(circleToPolygon(outerDiameter / 2), center), rotation));
                                 if (innerDiameter > Epsilon) {
-                                    shape.push(rotatePolygon(translatePolygon(circleToPolygon(innerDiameter / 2), center), rotation));
+                                    shape.push(
+                                        rotatePolygon(
+                                            translatePolygon(
+                                                circleToPolygon(innerDiameter / 2).reverse(),
+                                                center),
+                                            rotation));
                                 }
                                 outerDiameter = innerDiameter - gap * 2;
                             }
@@ -621,6 +628,7 @@ export class ApertureMacro {
                         if (crossLen > Epsilon && crossThickness > Epsilon) {
                             shape.push(rotatePolygon(translatePolygon(rectangleToPolygon(crossLen, crossThickness), center), rotation));
                             shape.push(rotatePolygon(translatePolygon(rectangleToPolygon(crossThickness, crossLen), center), rotation));
+                            shape = unionPolygonSet(shape, []);
                         }
                         if (shape.length < 1) {
                             console.log("Empty moire shape");
@@ -772,8 +780,7 @@ export class ApertureMacro {
                 }
             }
         }
-        let result:PolygonSet = positives;
-        return result;
+        return subtractPolygonSet(positives, negatives);
     }
 
     private static getValue(modifiers:Array<number>, idx:number):number {
