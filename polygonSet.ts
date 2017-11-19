@@ -76,10 +76,10 @@ export function unionPolygonSet(polygonSet:PolygonSet):PolygonSet {
     for (let idx = 1; idx < polygonSet.length; idx++) {
         clipper.AddPath2(polygonSet[idx], cl.PathType.ptClip);
     }
-    let result = clipper.Execute(cl.ClipType.ctUnion, cl.FillRule.frNonZero);
+    let result = clipper.Execute(cl.ClipType.ctUnion, cl.FillRule.frNonZero, Point);
+    clipper.delete();
     if (result.success) {
-        return result.solution_closed.map(
-            poly => poly.map(p => new Point(p.x, p.y)));
+        return result.solution_closed;
     }
     return [];
 }
