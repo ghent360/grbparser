@@ -69,9 +69,9 @@ export function polySetBounds(polygonSet:PolygonSet):Bounds {
 
 export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
     let clipper = new cl.Clipper<Point>(100000000);
-    clipper.addPaths(one, cl.PathType.ptSubject, false);
-    clipper.addPaths(other, cl.PathType.ptClip, false);
-    let result = clipper.execute(cl.ClipType.ctUnion, cl.FillRule.frNonZero, Point);
+    clipper.addPaths(one, cl.PathType.Subject, false);
+    clipper.addPaths(other, cl.PathType.Clip, false);
+    let result = clipper.execute(cl.ClipType.Union, cl.FillRule.NonZero, Point);
     clipper.delete();
     if (result.success) {
         return result.solution_closed;
@@ -81,9 +81,9 @@ export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
 
 export function subtractPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
     let clipper = new cl.Clipper<Point>(100000000);
-    clipper.addPaths(one, cl.PathType.ptSubject, false);
-    clipper.addPaths(other, cl.PathType.ptClip, false);
-    let result = clipper.execute(cl.ClipType.ctDifference, cl.FillRule.frNonZero, Point);
+    clipper.addPaths(one, cl.PathType.Subject, false);
+    clipper.addPaths(other, cl.PathType.Clip, false);
+    let result = clipper.execute(cl.ClipType.Difference, cl.FillRule.NonZero, Point);
     clipper.delete();
     if (result.success) {
         return result.solution_closed;
