@@ -74,7 +74,20 @@ export class CoordinateFormatSpec {
 }
 
 export class Point {
-    constructor (public x?:number, public y?:number) {
+    public x:number;
+    public y:number;
+
+    constructor (x?:number, y?:number) {
+        if (x != undefined) {
+            this.x = x;
+        } else {
+            this.x = 0;
+        }
+        if (y != undefined) {
+            this.y = y;
+        } else {
+            this.y = 0;
+        }
     }
 
     isValid():boolean {
