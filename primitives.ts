@@ -851,7 +851,7 @@ export interface GraphicsOperations {
     arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState);
     flash(center:Point, ctx:GerberState);
     close(ctx:GerberState);
-    block(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState);
+    region(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState);
 }
 
 export class GerberState {
@@ -1040,17 +1040,17 @@ export class GerberState {
         this.graphisOperationsConsumer_.close(this);
     }
 
-    startBlock() {
+    startRegion() {
         this.savedGraphisOperationsConsumer_ = this.graphisOperationsConsumer_;
-        this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
+        this.graphisOperationsConsumer_ = new RegionGraphicsOperationsConsumer();
     }
 
-    endBlock() {
-        let block = this.graphisOperationsConsumer_ as BlockGraphicsOperationsConsumer;
-        block.close(this);
+    endRegion() {
+        let region = this.graphisOperationsConsumer_ as RegionGraphicsOperationsConsumer;
+        region.close(this);
 
         this.graphisOperationsConsumer_ = this.savedGraphisOperationsConsumer_;
-        this.graphisOperationsConsumer_.block(block.blockContours, this);
+        this.graphisOperationsConsumer_.region(region.regionContours, this);
     }
 
     get graphicsOperations():GraphicsOperations {
@@ -1154,15 +1154,15 @@ export class ArcSegment {
     }
 }
 
-export type BlockSegment = LineSegment | CircleSegment | ArcSegment;
-export type BlockContour = Array<BlockSegment>;
+export type RegionSegment = LineSegment | CircleSegment | ArcSegment;
+export type RegionContour = Array<RegionSegment>;
 
-class BlockGraphicsOperationsConsumer implements GraphicsOperations {
-    private contour_:BlockContour = [];
-    private blockContours_:Array<BlockContour> = [];
+class RegionGraphicsOperationsConsumer implements GraphicsOperations {
+    private contour_:RegionContour = [];
+    private regionContours_:Array<RegionContour> = [];
 
-    get blockContours():Array<BlockContour> {
-        return this.blockContours_;
+    get regionContours():Array<RegionContour> {
+        return this.regionContours_;
     }
 
     line(from:Point, to:Point) {
@@ -1178,18 +1178,18 @@ class BlockGraphicsOperationsConsumer implements GraphicsOperations {
     }
 
     flash(center:Point, ctx:GerberState) {
-        ctx.error("Flashes are not allowed inside a block definition.");
+        ctx.error("Flashes are not allowed inside a region definition.");
     }
 
     close(ctx:GerberState) {
         if (this.contour_.length > 0) {
-            this.blockContours_.push(this.contour_);
+            this.regionContours_.push(this.contour_);
             this.contour_ = [];
         }
     }
 
-    block(contours:Array<BlockContour>, ctx:GerberState) {
-        ctx.error("Blocks are not allowed inside a block definition.");
+    region(contours:Array<RegionContour>, ctx:GerberState) {
+        ctx.error("Regions are not allowed inside a region definition.");
     }
 }
 
@@ -1275,13 +1275,13 @@ export function EmptyBounds():Bounds {
     return new Bounds(new Point(0, 0), new Point(0, 0));
 }
 
-export class Block {
+export class Region {
     constructor(
-        readonly contours:Array<BlockContour>) {
+        readonly contours:Array<RegionContour>) {
     }
 
     toString():string {
-        let result = "B[";
+        let result = "R[";
         let firstContour = true;
         this.contours.forEach(contour => {
             if (!firstContour) {
@@ -1307,12 +1307,12 @@ export class Block {
         if (this.contours.length == 0) {
             return EmptyBounds();
         }
-        let bounds = Block.contourBounds(this.contours[0]);
-        this.contours.forEach(c => bounds.merge(Block.contourBounds(c)));
+        let bounds = Region.contourBounds(this.contours[0]);
+        this.contours.forEach(c => bounds.merge(Region.contourBounds(c)));
         return bounds;
     }
 
-    private static contourBounds(contour:BlockContour):Bounds {
+    private static contourBounds(contour:RegionContour):Bounds {
         if (contour.length == 0) {
             return EmptyBounds();
         }
@@ -1322,7 +1322,7 @@ export class Block {
     }
 }
 
-export type GraphicsPrimitive = Line | Circle | Arc | Flash | Block;
+export type GraphicsPrimitive = Line | Circle | Arc | Flash | Region;
 
 export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
     private primitives_:Array<GraphicsPrimitive> = [];
@@ -1350,8 +1350,8 @@ export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
     close(ctx:GerberState) {
     }
 
-    block(contours:Array<BlockContour>, ctx:GerberState) {
-        this.primitives_.push(new Block(contours));
+    region(contours:Array<RegionContour>, ctx:GerberState) {
+        this.primitives_.push(new Region(contours));
     }
 }
 
