@@ -144,9 +144,16 @@ describe("Primitives tests", () => {
     it('Aperture macro - thermal', () => {
         let aperture = new pr.ApertureMacro("MACRO", [
             new pr.Primitive(7, perseExpressions(["50", "0", "10", "8.5", "1.1", "0"])),
-            new pr.Primitive(7, perseExpressions(["0", "50", "10", "0", "1.1", "0"])),
+            new pr.Primitive(7, perseExpressions(["0", "50", "10", "0", "1.1", "30"])),
         ]);
         let result = aperture.toPolygonSet([]);
         saveSVG(result, "macro_thermal.svg");
+    });
+    it('Aperture macro - vectorLine', () => {
+        let aperture = new pr.ApertureMacro("MACRO", [
+            new pr.Primitive(20, perseExpressions(["1", "2", "10", "10", "30", "15", "90"])),
+        ]);
+        let result = aperture.toPolygonSet([]);
+        saveSVG(result, "macro_vectorLine.svg");
     });
 });

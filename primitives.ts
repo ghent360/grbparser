@@ -561,6 +561,8 @@ export class ApertureMacro {
                 let rotation:number;
                 let gap:number;
                 let outerDiameter:number;
+                let width:number;
+                let height:number;
                 switch (primitive.code) {
                     case 1: // Circle (exposure, diameter, center x, center y, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
@@ -765,14 +767,35 @@ export class ApertureMacro {
                         break;
 
                     case 20: // Vector line (exposure, width, start x, start y, end x, end y, rotation)
-                        isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
-                        shape = [];
+                        isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
+                        width = ApertureMacro.getValue(modifiers, 1);
+                        let centerStart = new Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
+                        let centerEnd = new Point(ApertureMacro.getValue(modifiers, 4), ApertureMacro.getValue(modifiers, 5));
+                        rotation = ApertureMacro.getValue(modifiers, 6);
+                        let direction = unitVector(
+                            {x:centerEnd.x - centerStart.x, y:centerEnd.y - centerStart.y});
+                        let dirNormalCCW = scaleVector({x:-direction.y, y:direction.x}, width);
+                        let startLeft = new Point(
+                            centerStart.x + dirNormalCCW.x,
+                            centerStart.y + dirNormalCCW.y);
+                        let startRight = new Point(
+                            centerStart.x - dirNormalCCW.x,
+                            centerStart.y - dirNormalCCW.y);
+                        let endLeft = new Point(
+                            centerEnd.x + dirNormalCCW.x,
+                            centerEnd.y + dirNormalCCW.y);
+                        let endRight = new Point(
+                            centerEnd.x - dirNormalCCW.x,
+                            centerEnd.y - dirNormalCCW.y);
+                        shape = [rotatePolygon(
+                            [startLeft, startRight, endRight, endLeft, startLeft.clone()],
+                            rotation)];
                         break;
     
                     case 21: // Center line (exposure, width, height, center x, center y, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
-                        let width = ApertureMacro.getValue(modifiers, 1);
-                        let height = ApertureMacro.getValue(modifiers, 2);
+                        width = ApertureMacro.getValue(modifiers, 1);
+                        height = ApertureMacro.getValue(modifiers, 2);
                         center = new Point(ApertureMacro.getValue(modifiers, 3), ApertureMacro.getValue(modifiers, 4));
                         rotation = ApertureMacro.getValue(modifiers, 5);
                         if (width > Epsilon && height > Epsilon) {
