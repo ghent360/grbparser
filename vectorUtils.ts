@@ -1,3 +1,12 @@
+/**
+ * Gerber Parsing Library
+ * 
+ * Author: Venelin Efremov
+ * Copyright: Copyright (c) Venelin Efremov 2017
+ * 
+ * License: MIT License, see LICENSE.txt
+ */
+
 export function vectorLength(v:{x:number, y:number}):number {
     return Math.sqrt(v.x * v.x + v.y * v.y);
 }

@@ -1,3 +1,12 @@
+/**
+ * Gerber Parsing Library
+ * 
+ * Author: Venelin Efremov
+ * Copyright: Copyright (c) Venelin Efremov 2017
+ * 
+ * License: MIT License, see LICENSE.txt
+ */
+
 export class Memory {
     private variables:Array<number> = [];
 

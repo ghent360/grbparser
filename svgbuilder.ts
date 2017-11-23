@@ -1,4 +1,13 @@
-﻿import {Point} from "./primitives";
+﻿/**
+ * Gerber Parsing Library
+ * 
+ * Author: Venelin Efremov
+ * Copyright: Copyright (c) Venelin Efremov 2017
+ * 
+ * License: MIT License, see LICENSE.txt
+ */
+
+import {Point} from "./primitives";
 import {Polygon, PolygonSet} from "./polygonSet";
 import * as fs from "fs";
 

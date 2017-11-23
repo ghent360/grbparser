@@ -1,4 +1,13 @@
 /**
+ * Gerber Parsing Library
+ * 
+ * Author: Venelin Efremov
+ * Copyright: Copyright (c) Venelin Efremov 2017
+ * 
+ * License: MIT License, see LICENSE.txt
+ */
+
+/**
  * This file contains classes that convert graphics object primitives from the parset
  * to other formats for example - polygon sets, svg etc.
  */

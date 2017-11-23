@@ -1,4 +1,13 @@
 /**
+ * Gerber Parsing Library
+ * 
+ * Author: Venelin Efremov
+ * Copyright: Copyright (c) Venelin Efremov 2017
+ * 
+ * License: MIT License, see LICENSE.txt
+ */
+
+/**
  * This file contains some classes that abstract primitives in the Gerber
  * file format.
  * 

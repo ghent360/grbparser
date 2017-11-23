@@ -1,3 +1,12 @@
+/**
+ * Gerber Parsing Library
+ * 
+ * Author: Venelin Efremov
+ * Copyright: Copyright (c) Venelin Efremov 2017
+ * 
+ * License: MIT License, see LICENSE.txt
+ */
+
 export function formatFloat(n:number, precision:number):string {
     let s = n.toPrecision(precision);
     let dotIdx = s.indexOf('.');

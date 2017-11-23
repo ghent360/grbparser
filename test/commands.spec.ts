@@ -1,3 +1,12 @@
+/**
+ * Gerber Parsing Library
+ * 
+ * Author: Venelin Efremov
+ * Copyright: Copyright (c) Venelin Efremov 2017
+ * 
+ * License: MIT License, see LICENSE.txt
+ */
+
 import { GerberParseException } from '../primitives';
 import { AMCommand, D01Command, D02Command, D03Command, DCommand } from '../commands';
 import * as assert from 'assert';
