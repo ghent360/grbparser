@@ -6,7 +6,8 @@
  * 
  * License: MIT License, see LICENSE.txt
  */
-import {Point, Bounds, EmptyBounds} from "./primitives";
+import {Point} from "./point";
+import {Bounds, EmptyBounds} from "./primitives";
 import * as cl from "clipperjs";
 
 export type Polygon = Array<Point>;

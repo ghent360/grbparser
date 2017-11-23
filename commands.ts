@@ -38,8 +38,8 @@ import {
     GerberCommand,
     GerberState,
     Epsilon,
-    Point
 } from './primitives';
+import {Point} from "./point";
 import {
     vectorLength,
     scaleVector,
@@ -912,7 +912,7 @@ export class G36Command extends BaseGCodeCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        ctx.startBlock();
+        ctx.startRegion();
     }
 }
 
@@ -923,7 +923,7 @@ export class G37Command extends BaseGCodeCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        ctx.endBlock();
+        ctx.endRegion();
     }
 }
 

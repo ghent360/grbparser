@@ -8,11 +8,12 @@
  */
 
 import * as assert from 'assert';
+import {Point} from "../point";
 import * as pr from '../primitives';
 import * as ps from '../polygonSet';
 
-function arrayToPath(array:Array<Array<number>>):Array<pr.Point> {
-    return array.map(p => new pr.Point(p[0], p[1]))
+function arrayToPath(array:Array<Array<number>>):Array<Point> {
+    return array.map(p => new Point(p[0], p[1]))
 }
 
 describe("PolygonSet tests", () => {

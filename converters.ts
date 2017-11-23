@@ -19,14 +19,14 @@ import {
     Circle,
     Arc,
     Flash,
-    Block,
-    BlockSegment,
-    BlockContour,
+    Region,
+    RegionSegment,
+    RegionContour,
     GraphicsPrimitive,
     Bounds,
     EmptyBounds,
-    Point,
 } from "./primitives";
+import {Point} from "./point";
 import {PolygonSet} from "./polygonSet";
 import {formatFloat} from "./utils";
 
@@ -46,8 +46,8 @@ abstract class ConverterBase<T> {
             } else if (p instanceof Flash) {
                 let flash = p as Flash;
                 result.push(this.convertFlash(flash));
-            } else if (p instanceof Block) {
-                let block = p as Block;
+            } else if (p instanceof Region) {
+                let block = p as Region;
                 result.push(this.convertBlock(block));
             } else {
                 throw new Error("Unknown primitive " + p);
@@ -68,7 +68,7 @@ abstract class ConverterBase<T> {
     abstract convertArc(a:Arc):T;
     abstract convertCircle(c:Circle):T;
     abstract convertFlash(f:Flash):T;
-    abstract convertBlock(b:Block):T;
+    abstract convertBlock(b:Region):T;
 }
 
 export class DebugConverter {
@@ -105,7 +105,7 @@ export class SVGConverter extends ConverterBase<string> {
         return this.polySetToPath(polySet);
     }
 
-    convertBlock(b:Block):string {
+    convertBlock(b:Region):string {
         return "";
     }
 

@@ -20,9 +20,11 @@ import {
     scaleVector,
     unitVector,
     addVector,
-    negVector
+    negVector,
 } from "./vectorUtils";
-import {AritmeticOperation, Memory} from "./expressions";
+import {
+    AritmeticOperation,
+    Memory} from "./expressions";
 import {
     Polygon,
     PolygonSet,
@@ -31,8 +33,15 @@ import {
     rotatePolygon,
     polySetBounds,
     unionPolygonSet,
-    subtractPolygonSet
+    subtractPolygonSet,
 } from "./polygonSet";
+import {Point} from "./point";
+import {
+    arcToPolygon,
+    circleToPolygon,
+    rectangleToPolygon,
+    obroundToPolygon,
+} from "./polygonTools";
 
 export enum FileUnits {
     INCHES,
@@ -82,94 +91,6 @@ export class CoordinateFormatSpec {
         }
 }
 
-export class Point {
-    public x:number;
-    public y:number;
-
-    constructor (x?:number, y?:number) {
-        if (x != undefined) {
-            this.x = x;
-        } else {
-            this.x = 0;
-        }
-        if (y != undefined) {
-            this.y = y;
-        } else {
-            this.y = 0;
-        }
-    }
-
-    isValid():boolean {
-        return this.x != undefined && this.y != undefined;
-    }
-
-    toString():string {
-        return `(${formatFloat(this.x, 3)}, ${formatFloat(this.y, 3)})`;
-    }
-
-    add(other:Point):Point {
-        return new Point(this.x + other.x, this.y + other.y);
-    }
-
-    subtract(other:Point):Point {
-        return new Point(this.x - other.x, this.y - other.y);
-    }
-
-    scale(scale:number):Point {
-        return new Point(this.x * scale, this.y * scale);
-    }
-
-    distance1(other:Point):number {
-        let dx = this.x - other.x;
-        let dy = this.y - other.y;
-        return Math.abs(dx) + Math.abs(dy);
-    }
-
-    distance2(other:Point):number {
-        let dx = this.x - other.x;
-        let dy = this.y - other.y;
-        return dx * dx + dy * dy;
-    }
-
-    distance(other:Point):number {
-        return Math.sqrt(this.distance2(other));
-    }
-
-    clone():Point {
-        return new Point(this.x, this.y);
-    }
-
-    midPoint(other:Point):Point {
-        return new Point((this.x + other.x) / 2, (this.y + other.y) / 2);
-    }
-
-    // The angle of the vector (other - this) in radians 0..2PI
-    angleFrom(other:Point):number {
-        let angle = Math.atan2(other.y - this.y, other.x - this.x);
-        if (angle < 0) {
-            angle += Math.PI * 2;
-        }
-        return angle;
-    }
-
-    angleTo(other:Point):number {
-        let angle = Math.atan2(this.y - other.y, this.x - other.x);
-        if (angle < 0) {
-            angle += Math.PI * 2;
-        }
-        return angle;
-    }
-
-    // The angle of the vector (this - (0, 0)) in radians 0..2PI
-    angle():number {
-        let angle = Math.atan2(this.y, this.x);
-        if (angle < 0) {
-            angle += Math.PI * 2;
-        }
-        return angle;
-    }
-}
-
 export class GerberParseException {
     constructor(readonly message:string, readonly line?:number) {
     }
@@ -180,108 +101,6 @@ export class GerberParseException {
         }
         return `Error parsing gerber file: ${this.message}`;
     }
-}
-
-const PI2 = Math.PI * 2;
-export const NUMSTEPS = 40;
-const NUMSTEPS2 = NUMSTEPS / 2;
-const ZeroPoint = new Point(0, 0);
-
-function circleToPolygon(
-    radius:number,
-    nsteps:number = NUMSTEPS,
-    rotation:number = 0):Polygon {
-    let result:Polygon = new Array<Point>(nsteps + 1);
-    let step = PI2 / nsteps;
-    rotation = (PI2 * rotation) / 360;
-    for (let idx = 0; idx <= nsteps; idx++) {
-        let dx = Math.cos(idx * step - rotation) * radius;
-        let dy = Math.sin(idx * step - rotation) * radius;
-        result[idx] = new Point(dx, dy);
-    }
-    return result;
-}
-
-function rectangleToPolygon(width:number, height:number):Polygon {
-    let result:Polygon = new Array<Point>(5);
-    let width2 = width / 2;
-    let height2 = height / 2;
-
-    result[0] = new Point(width2, -height2);
-    result[1] = new Point(width2, height2);
-    result[2] = new Point(-width2, height2);
-    result[3] = new Point(-width2, -height2);
-    result[4] = new Point(result[0].x, result[0].y);
-    return result;
-}
-
-function obroundToPolygon(width:number, height:number):Polygon {
-    let result:Polygon = new Array<Point>(NUMSTEPS + 3);
-    if (width < height) {
-        let radius = width / 2;
-        let innerHeight = height - width;
-        let height2 = innerHeight / 2;
-        result[0] = new Point(radius, -height2);
-        let step = Math.PI / NUMSTEPS2;
-        for (let idx = 0; idx <= NUMSTEPS2; idx++) {
-            let dx = Math.cos(idx * step) * radius;
-            let dy = Math.sin(idx * step) * radius + height2;
-            result[idx + 1] = new Point(dx, dy);
-        }
-        for (let idx = 0; idx <= NUMSTEPS2; idx++) {
-            let dx = Math.cos(idx * step + Math.PI) * radius;
-            let dy = Math.sin(idx * step + Math.PI) * radius - height2;
-            result[idx + NUMSTEPS2 + 2] = new Point(dx, dy);
-        }
-    } else {
-        let radius = height / 2;
-        let innerWidth = width - height;
-        let width2 = innerWidth / 2;
-        result[0] = new Point(-width2, -radius);
-        let step = Math.PI / NUMSTEPS2;
-        for (let idx = 0; idx <= NUMSTEPS2; idx++) {
-            let dx = Math.sin(idx * step) * radius + width2;
-            let dy = -Math.cos(idx * step) * radius;
-            result[idx + 1] = new Point(dx, dy);
-        }
-        for (let idx = 0; idx <= NUMSTEPS2; idx++) {
-            let dx = -Math.sin(idx * step) * radius - width2;
-            let dy = Math.cos(idx * step) * radius;
-            result[idx + NUMSTEPS2 + 2] = new Point(dx, dy);
-        }
-    }
-    return result;
-}
-
-function arcToPolygon(
-    start:Point,
-    end:Point,
-    center:Point,
-    closeEnd:boolean = true,
-    closeStart:boolean = true):Polygon {
-    let result:Polygon = new Array<Point>(NUMSTEPS - ((closeStart) ? 0 : 1) - ((closeEnd) ? 0 : 1));
-    let startAngle = center.angleFrom(start);
-    let endAngle = center.angleFrom(end);
-    if (endAngle < startAngle) {
-        endAngle += Math.PI * 2;
-    }
-    let radius = (center.distance(start) + center.distance(end)) / 2;
-    let step = (endAngle - startAngle) / NUMSTEPS;
-    let startOffset = -1;
-    if (closeStart) {
-        result[0] = start.clone();
-        startOffset = 0;
-    }
-    for (let idx = 1; idx < NUMSTEPS; idx++) {
-        let angle = idx * step + startAngle;
-        let x = center.x + radius * Math.cos(angle);
-        let y = center.y + radius * Math.sin(angle);
-        result[idx + startOffset] = new Point(x, y);
-    }
-    if (closeEnd) {
-        result[NUMSTEPS - 1 + startOffset] = end.clone();
-    }
-    return result;
 }
 
 export class ApertureDefinition {
