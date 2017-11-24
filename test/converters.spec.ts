@@ -22,13 +22,14 @@ describe("Conveter tests", () => {
                                 && !filename.startsWith("4-6-4_Nested_blocks")
                                 && !filename.startsWith("test-image-offset-2")
                                 && !filename.startsWith("test-layer-mode-1"))
-            //.filter(fileName => fileName.endsWith("test-aperture-circle-flash-1.gbr"))
+            .filter(fileName => fileName.endsWith("test-polygon-fill-1.gbr"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 let parser = new gp.GerberParser();
                 parser.parseBlock(content);
                 let ctx = new pr.GerberState();
+                console.log(`Convers for ${fileName}`);
                 parser.execute(ctx);
                 let primitives = (ctx.graphicsOperations as pr.BaseGraphicsOperationsConsumer).primitives;
                 let cvt = new cv.SVGConverter();
@@ -42,7 +43,7 @@ describe("Conveter tests", () => {
                     }
                 });
                 stream.end();
-                //console.log(`Conversion result for ${fileName}: ${result}`);
+                console.log(`Conversion result for ${fileName}`);
             });
     });
 });

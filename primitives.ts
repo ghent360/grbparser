@@ -1016,7 +1016,8 @@ export class Line {
     constructor(
         readonly from:Point,
         readonly to:Point,
-        readonly aperture:ApertureDefinition) {
+        readonly aperture:ApertureDefinition,
+        readonly polarity:ObjectPolarity) {
     }
 
     toString():string {
@@ -1034,7 +1035,8 @@ export class Circle {
     constructor(
         readonly center:Point,
         readonly radius:number,
-        readonly aperture:ApertureDefinition) {
+        readonly aperture:ApertureDefinition,
+        readonly polarity:ObjectPolarity) {
     }
 
     toString():string {
@@ -1054,7 +1056,8 @@ export class Arc {
         readonly radius:number,
         readonly start:Point,
         readonly end:Point,
-        readonly aperture:ApertureDefinition) {
+        readonly aperture:ApertureDefinition,
+        readonly polarity:ObjectPolarity) {
     }
 
     toString():string {
@@ -1073,7 +1076,8 @@ export class Flash {
 
     constructor(
         readonly center:Point,
-        readonly aperture:ApertureDefinition) {
+        readonly aperture:ApertureDefinition,
+        readonly polarity:ObjectPolarity) {
         this.polygonSet_ = translatePolySet(aperture.toPolygonSet(), center);
     }
 
@@ -1098,7 +1102,8 @@ export class Region {
     private polygonSet_:PolygonSet;
     
     constructor(
-        readonly contours:Array<RegionContour>) {
+        readonly contours:Array<RegionContour>,
+        readonly polarity:ObjectPolarity) {
         this.polygonSet_ = Region.buildPolygonSet(contours);
     }
 
@@ -1174,6 +1179,7 @@ export class Region {
     }
 
     get polygonSet():PolygonSet {
+        console.log(` region ${this.toString()}`);
         return this.polygonSet_;
     }
 }
@@ -1188,26 +1194,26 @@ export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
     }
 
     line(from:Point, to:Point, ctx:GerberState) {
-        this.primitives_.push(new Line(from, to, ctx.getCurrentAperture()));
+        this.primitives_.push(new Line(from, to, ctx.getCurrentAperture(), ctx.objectPolarity));
     }
 
     circle(center:Point, radius:number, ctx:GerberState) {
-        this.primitives_.push(new Circle(center, radius, ctx.getCurrentAperture()));
+        this.primitives_.push(new Circle(center, radius, ctx.getCurrentAperture(), ctx.objectPolarity));
     }
 
     arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState) {
-        this.primitives_.push(new Arc(center, radius, start, end, ctx.getCurrentAperture()));
+        this.primitives_.push(new Arc(center, radius, start, end, ctx.getCurrentAperture(), ctx.objectPolarity));
     }
 
     flash(center:Point, ctx:GerberState) {
-        this.primitives_.push(new Flash(center, ctx.getCurrentAperture()));
+        this.primitives_.push(new Flash(center, ctx.getCurrentAperture(), ctx.objectPolarity));
     }
 
     close(ctx:GerberState) {
     }
 
     region(contours:Array<RegionContour>, ctx:GerberState) {
-        this.primitives_.push(new Region(contours));
+        this.primitives_.push(new Region(contours, ctx.objectPolarity));
     }
 }
 

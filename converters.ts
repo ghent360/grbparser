@@ -25,10 +25,12 @@ import {
     GraphicsPrimitive,
     Bounds,
     EmptyBounds,
+    ObjectPolarity,
 } from "./primitives";
 import {Point} from "./point";
 import {PolygonSet} from "./polygonSet";
 import {formatFloat} from "./utils";
+import {subtractPolygonSet} from "./polygonSet";
 
 abstract class ConverterBase<T> {
     convert(primitives:Array<GraphicsPrimitive>):Array<T> {
@@ -85,29 +87,62 @@ export class SVGConverter extends ConverterBase<string> {
     private margin_ = 10;
     private scale_ = 100;
     private offset_:Point;
+    private positive:PolygonSet = [];
+    private negative:PolygonSet = [];
 
     convertLine(l:Line):string {
         let polygon = l.aperture.generateLineDraw(l.from, l.to);
-        return this.polySetToPath([polygon]);
+        if (l.polarity == ObjectPolarity.DARK) {
+            this.updateImage();
+            this.positive.push(polygon);
+        } else {
+            this.negative.push(polygon);
+        }
+        return "";
     }
 
     convertArc(a:Arc):string {
         let polygon = a.aperture.generateArcDraw(a.start, a.end, a.center);
-        return this.polySetToPath([polygon]);
+        if (a.polarity == ObjectPolarity.DARK) {
+            this.updateImage();
+            this.positive.push(polygon);
+        } else {
+            this.negative.push(polygon);
+        }
+        return "";
     }
 
     convertCircle(c:Circle):string {
-        return this.polySetToPath(c.aperture.generateCircleDraw(c.center, c.radius));
+        let polySet = c.aperture.generateCircleDraw(c.center, c.radius);
+        if (c.polarity == ObjectPolarity.DARK) {
+            this.updateImage();
+            this.positive = this.positive.concat(polySet);
+        } else {
+            this.negative = this.negative.concat(polySet);
+        }
+        return "";
     }
 
     convertFlash(f:Flash):string {
         let polySet = f.polygonSet;
-        return this.polySetToPath(polySet);
+        if (f.polarity == ObjectPolarity.DARK) {
+            this.updateImage();
+            this.positive = this.positive.concat(polySet);
+        } else {
+            this.negative = this.negative.concat(polySet);
+        }
+        return "";
     }
 
     convertRegion(r:Region):string {
         let polySet = r.polygonSet;
-        return this.polySetToPath(polySet);
+        if (r.polarity == ObjectPolarity.DARK) {
+            this.updateImage();
+            this.positive = this.positive.concat(polySet);
+        } else {
+            this.negative = this.negative.concat(polySet);
+        }
+        return "";
     }
 
     header(primitives:Array<GraphicsPrimitive>):Array<string> {
@@ -127,8 +162,9 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     footer():Array<string> {
-        return ["</g>",
-                "</svg>"];
+        this.updateImage();
+        let svg = this.polySetToPath(this.positive);
+        return [svg, "</g>", "</svg>"];
     }
 
     private polySetToPath(polySet:PolygonSet):string {
@@ -141,7 +177,14 @@ export class SVGConverter extends ConverterBase<string> {
                 result += ` L ${point.x} ${point.y}`;
             }
         });
-        result += ' z" style="fill:#ff1f1c; fill-opacity:1; fill-rule:evenodd; stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
+        result += ' z" style="fill:#ff1f1c; fill-opacity:1; fill-rule:nonzero; stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
         return result;
+    }
+
+    private updateImage(final:boolean = false):void {
+        if (this.positive.length > 0 && this.negative.length > 0) {
+            this.positive = subtractPolygonSet(this.positive, this.negative);
+        }
+        this.negative = [];
     }
 }
