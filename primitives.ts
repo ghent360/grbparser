@@ -193,8 +193,8 @@ export class ApertureDefinition {
         if (this.templateName == "C" || this.templateName == "O" || this.templateName == "R") {
             let result:PolygonSet = [];
             let apertureRadius = this.modifiers[0] / 2;
-            result.push(translatePolygon(circleToPolygon(radius - apertureRadius), center));
             result.push(translatePolygon(circleToPolygon(radius + apertureRadius), center));
+            result.push(translatePolygon(circleToPolygon(radius - apertureRadius), center).reverse());
             return result;
         }
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
@@ -1179,7 +1179,7 @@ export class Region {
     }
 
     get polygonSet():PolygonSet {
-        console.log(` region ${this.toString()}`);
+        //console.log(` region ${this.toString()}`);
         return this.polygonSet_;
     }
 }
