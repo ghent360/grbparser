@@ -47,8 +47,8 @@ abstract class ConverterBase<T> {
                 let flash = p as Flash;
                 result.push(this.convertFlash(flash));
             } else if (p instanceof Region) {
-                let block = p as Region;
-                result.push(this.convertBlock(block));
+                let region = p as Region;
+                result.push(this.convertRegion(region));
             } else {
                 throw new Error("Unknown primitive " + p);
             }
@@ -68,7 +68,7 @@ abstract class ConverterBase<T> {
     abstract convertArc(a:Arc):T;
     abstract convertCircle(c:Circle):T;
     abstract convertFlash(f:Flash):T;
-    abstract convertBlock(b:Region):T;
+    abstract convertRegion(r:Region):T;
 }
 
 export class DebugConverter {
@@ -105,8 +105,9 @@ export class SVGConverter extends ConverterBase<string> {
         return this.polySetToPath(polySet);
     }
 
-    convertBlock(b:Region):string {
-        return "";
+    convertRegion(r:Region):string {
+        let polySet = r.polygonSet;
+        return this.polySetToPath(polySet);
     }
 
     header(primitives:Array<GraphicsPrimitive>):Array<string> {

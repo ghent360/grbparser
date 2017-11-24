@@ -1095,8 +1095,11 @@ export function EmptyBounds():Bounds {
 }
 
 export class Region {
+    private polygonSet_:PolygonSet;
+    
     constructor(
         readonly contours:Array<RegionContour>) {
+        this.polygonSet_ = Region.buildPolygonSet(contours);
     }
 
     toString():string {
@@ -1138,6 +1141,40 @@ export class Region {
         let bounds = contour[0].bounds;
         contour.forEach(s => bounds.merge(s.bounds));
         return bounds;
+    }
+
+    private static buildPolygonSet(contours:Array<RegionContour>):PolygonSet {
+        return contours.map(c => Region.buildPolygon(c));
+    }
+
+    private static buildPolygon(contour:RegionContour):Polygon {
+        let result:Polygon = [];
+        contour.forEach(
+            segment => {
+                if (segment instanceof LineSegment) {
+                    let line = segment as LineSegment;
+                    result.push(line.from);
+                    result.push(line.to);
+                } else if (segment instanceof ArcSegment) {
+                    let arc = segment as ArcSegment;
+                    result = result.concat(arcToPolygon(arc.start, arc.end, arc.center));
+                } else if (segment instanceof CircleSegment) {
+                    let circle = segment as CircleSegment;
+                    result = result.concat(translatePolygon(circleToPolygon(circle.radius), circle.center));
+                } else {
+                    throw new GerberParseException(`Unsupported segment type ${segment}`);
+                }
+            }
+        );
+        // Close the polygon if we have to
+        if (result[0].distance(result[result.length - 1]) > Epsilon) {
+            result.push(result[0].clone());
+        }
+        return result;
+    }
+
+    get polygonSet():PolygonSet {
+        return this.polygonSet_;
     }
 }
 
