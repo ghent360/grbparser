@@ -91,8 +91,8 @@ export class SVGConverter extends ConverterBase<string> {
     private negative:PolygonSet = [];
 
     convertLine(l:Line):string {
-        let polygon = l.aperture.generateLineDraw(l.from, l.to);
-        if (l.polarity == ObjectPolarity.DARK) {
+        let polygon = l.aperture.generateLineDraw(l.from, l.to, l.state);
+        if (l.state.polarity == ObjectPolarity.DARK) {
             this.updateImage();
             this.positive.push(polygon);
         } else {
@@ -102,8 +102,8 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     convertArc(a:Arc):string {
-        let polygon = a.aperture.generateArcDraw(a.start, a.end, a.center);
-        if (a.polarity == ObjectPolarity.DARK) {
+        let polygon = a.aperture.generateArcDraw(a.start, a.end, a.center, a.state);
+        if (a.state.polarity == ObjectPolarity.DARK) {
             this.updateImage();
             this.positive.push(polygon);
         } else {
@@ -113,8 +113,8 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     convertCircle(c:Circle):string {
-        let polySet = c.aperture.generateCircleDraw(c.center, c.radius);
-        if (c.polarity == ObjectPolarity.DARK) {
+        let polySet = c.aperture.generateCircleDraw(c.center, c.radius, c.state);
+        if (c.state.polarity == ObjectPolarity.DARK) {
             this.updateImage();
             this.positive = this.positive.concat(polySet);
         } else {
@@ -125,7 +125,7 @@ export class SVGConverter extends ConverterBase<string> {
 
     convertFlash(f:Flash):string {
         let polySet = f.polygonSet;
-        if (f.polarity == ObjectPolarity.DARK) {
+        if (f.state.polarity == ObjectPolarity.DARK) {
             this.updateImage();
             this.positive = this.positive.concat(polySet);
         } else {
@@ -136,7 +136,7 @@ export class SVGConverter extends ConverterBase<string> {
 
     convertRegion(r:Region):string {
         let polySet = r.polygonSet;
-        if (r.polarity == ObjectPolarity.DARK) {
+        if (r.state.polarity == ObjectPolarity.DARK) {
             this.updateImage();
             this.positive = this.positive.concat(polySet);
         } else {

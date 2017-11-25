@@ -653,7 +653,7 @@ export class D02Command implements GerberCommand {
         if (this.y != undefined) {
             ctx.currentPointY = this.y;
         }
-        ctx.close();
+        ctx.closeRegion();
     }
 }
 

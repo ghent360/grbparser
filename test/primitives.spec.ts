@@ -28,6 +28,8 @@ function perseExpressions(expressions:Array<string>):Array<exp.AritmeticOperatio
     return expressions.map(e => new exp.ExpressionParser(e).parse());
 }
 
+const defaultState = new pr.ObjectState();
+
 describe("Primitives tests", () => {
     it('Standard Circle Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "C", [10]);
@@ -97,27 +99,32 @@ describe("Primitives tests", () => {
     });
     it('Line draw with circular aperture', () => {
         let aperture = new pr.ApertureDefinition(10, "C", [15]);
-        let result = aperture.generateLineDraw(new Point(10, 10), new Point(100, 100));
+        let result = aperture.generateLineDraw(new Point(10, 10), new Point(100, 100), defaultState);
         saveSVG([result], "line_draw_circle.svg");
     });
     it('Line draw with rectangular aperture', () => {
         let aperture = new pr.ApertureDefinition(10, "R", [15, 6]);
-        let result1 = aperture.generateLineDraw(new Point(10, 10), new Point(100, 100));
-        let result2 = aperture.generateLineDraw(new Point(-20, 10), new Point(-20, 100));
-        let result3 = aperture.generateLineDraw(new Point(10, -10), new Point(100, -10));
+        let result1 = aperture.generateLineDraw(new Point(10, 10), new Point(100, 100), defaultState);
+        let result2 = aperture.generateLineDraw(new Point(-20, 10), new Point(-20, 100), defaultState);
+        let result3 = aperture.generateLineDraw(new Point(10, -10), new Point(100, -10), defaultState);
         saveSVG([result1, result2, result3], "line_draw_rectangle.svg");
     });
     it('Arc draw with circular aperture', () => {
         let aperture = new pr.ApertureDefinition(10, "C", [3]);
-        let result1 = aperture.generateArcDraw(new Point(10, 0), new Point(7.071, 7.071), new Point(0, 0));
-        let result2 = aperture.generateArcDraw(new Point(14.1421, 14.1421), new Point(20, 0), new Point(0, 0));
-        let result3 = aperture.generateArcDraw(new Point(7.071, 7.071), new Point(10, 0), new Point(17.1,7.071));
+        let result1 = aperture.generateArcDraw(
+            new Point(10, 0), new Point(7.071, 7.071), new Point(0, 0), defaultState);
+        let result2 = aperture.generateArcDraw(
+            new Point(14.1421, 14.1421), new Point(20, 0), new Point(0, 0), defaultState);
+        let result3 = aperture.generateArcDraw(
+            new Point(7.071, 7.071), new Point(10, 0), new Point(17.1,7.071), defaultState);
         saveSVG([result2, result3], "arc_draw_circle.svg");
     });
     it('Arc draw with rectangular aperture', () => {
         let aperture = new pr.ApertureDefinition(10, "R", [3, 6]);
-        let result2 = aperture.generateArcDraw(new Point(14.1421, 14.1421), new Point(20, 0), new Point(0, 0));
-        let result3 = aperture.generateArcDraw(new Point(7.071, 7.071), new Point(10, 0), new Point(17.1,7.071));
+        let result2 = aperture.generateArcDraw(
+            new Point(14.1421, 14.1421), new Point(20, 0), new Point(0, 0), defaultState);
+        let result3 = aperture.generateArcDraw(
+            new Point(7.071, 7.071), new Point(10, 0), new Point(17.1,7.071), defaultState);
         saveSVG([result2, result3], "arc_draw_rectangle.svg");
     });
     it('Aperture macro - circles', () => {

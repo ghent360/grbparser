@@ -7,14 +7,14 @@
  * License: MIT License, see LICENSE.txt
  */
 import {Point} from "./point";
-import {Bounds, EmptyBounds} from "./primitives";
+import {ObjectMirroring, Bounds, EmptyBounds, Epsilon} from "./primitives";
 import * as cl from "clipperjs";
 
 export type Polygon = Array<Point>;
 export type PolygonSet = Array<Polygon>;
 
 export function rotatePolygon(poly:Polygon, angle:number):Polygon {
-    if (angle == 0) {
+    if (Math.abs(angle) < Epsilon) {
         return poly;
     }
     let angleRadians = angle * (Math.PI * 2.0) / 360;
@@ -26,32 +26,56 @@ export function rotatePolygon(poly:Polygon, angle:number):Polygon {
         point.x * sinA + point.y * cosA));
 }
 
+export function rotatePolySet(polySet:PolygonSet, angle:number):PolygonSet {
+    if (Math.abs(angle) < Epsilon) {
+        return polySet;
+    }
+    return polySet.map(polygon => rotatePolygon(polygon, angle));
+}
+
 export function translatePolygon(poly:Polygon, offset:Point):Polygon {
-    if (offset.x == 0 && offset.y == 0) {
+    if (Math.abs(offset.x) < Epsilon
+        && Math.abs(offset.y) < Epsilon) {
         return poly;
     }
     return poly.map(point => point.add(offset));
 }
 
 export function translatePolySet(polySet:PolygonSet, offset:Point):PolygonSet {
-    if (offset.x == 0 && offset.y == 0) {
+    if (Math.abs(offset.x) < Epsilon
+        && Math.abs(offset.y) < Epsilon) {
         return polySet;
     }
     return polySet.map(polygon => translatePolygon(polygon, offset));
 }
 
 export function scalePolygon(poly:Polygon, scale:number):Polygon {
-    if (scale == 1) {
+    if (Math.abs(scale - 1) < Epsilon) {
         return poly;
     }
     return poly.map(point => point.scale(scale));
 }
 
 export function scalePolySet(polySet:PolygonSet, scale:number):PolygonSet {
-    if (scale == 1) {
+    if (Math.abs(scale - 1) < Epsilon) {
         return polySet;
     }
     return polySet.map(polygon => scalePolygon(polygon, scale));
+}
+
+
+export function mirrorPolygon(poly:Polygon, mirror:ObjectMirroring):Polygon {
+    if (mirror == ObjectMirroring.NONE) {
+        return poly;
+    }
+    return poly.map(point => point.mirror(mirror));
+}
+
+export function mirrorPolySet(polySet:PolygonSet, mirror:ObjectMirroring):PolygonSet {
+    if (mirror == ObjectMirroring.NONE) {
+        return polySet;
+    }
+    return polySet.map(polygon => mirrorPolygon(polygon, mirror));
 }
 
 export function polygonBounds(poly:Polygon):Bounds {

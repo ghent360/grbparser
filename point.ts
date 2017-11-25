@@ -7,6 +7,7 @@
  * License: MIT License, see LICENSE.txt
  */
 import {formatFloat} from "./utils";
+import {ObjectMirroring} from "./primitives";
 
 export class Point {
     public x:number;
@@ -43,6 +44,19 @@ export class Point {
 
     scale(scale:number):Point {
         return new Point(this.x * scale, this.y * scale);
+    }
+
+    mirror(mirror:ObjectMirroring):Point {
+        switch (mirror) {
+            case ObjectMirroring.NONE:
+                return this.clone();
+            case ObjectMirroring.X_AXIS:
+                return new Point(-this.x, this.y);
+            case ObjectMirroring.Y_AXIS:
+                return new Point(this.x, -this.y);
+            case ObjectMirroring.XY_AXIS:
+                return new Point(-this.x, -this.y);
+        }
     }
 
     distance1(other:Point):number {
