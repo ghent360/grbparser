@@ -107,7 +107,44 @@ export class GerberParseException {
     }
 }
 
-export class ApertureDefinition {
+export interface ApertureBase {
+    readonly apertureId:number;
+
+    isDrawable():boolean;
+    toPolygonSet():PolygonSet;
+    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):Polygon;
+    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSet;
+    generateLineDraw(start:Point, end:Point, state:ObjectState):Polygon;
+}
+
+export class BlockAperture implements ApertureBase {
+    constructor(
+        readonly apertureId:number,
+        readonly polygonSet:PolygonSet) {
+    }
+
+    isDrawable():boolean {
+        return false;
+    }
+
+    toPolygonSet():PolygonSet {
+        return this.polygonSet;
+    }
+
+    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):Polygon {
+        throw new GerberParseException("Draw with block aperture is not supported.");
+    }
+
+    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSet {
+        throw new GerberParseException("Draw with block aperture is not supported.");
+    }
+
+    generateLineDraw(start:Point, end:Point, state:ObjectState):Polygon {
+        throw new GerberParseException("Draw with block aperture is not supported.");
+    }
+}
+
+export class ApertureDefinition implements ApertureBase {
     private macro_:ApertureMacro = undefined;
     private static standardTemplates = ["C", "R", "O", "P"];
     private polygonSet_:PolygonSet = undefined;
@@ -687,7 +724,6 @@ export interface GraphicsOperations {
     circle(center:Point, radius:number, ctx:GerberState);
     arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState);
     flash(center:Point, ctx:GerberState);
-    closeRegion(ctx:GerberState);
     region(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState);
 }
 
@@ -703,10 +739,11 @@ export class GerberState {
     public objectMirroring:ObjectMirroring = ObjectMirroring.NONE;
     public objectRotation:number = 0;
     public objectScaling:number = 1.0;
-    private apertures:{[id:number]:ApertureDefinition} = {};
+    private apertures:{[id:number]:ApertureBase} = {};
     private apertureMacros:{[name:string]:ApertureMacro} = {};
     private graphisOperationsConsumer_:GraphicsOperations = new BaseGraphicsOperationsConsumer();
-    private savedGraphisOperationsConsumer_:GraphicsOperations;
+    private savedGraphisOperationsConsumer_:Array<GraphicsOperations> = [];
+    private blockApertures_:Array<number> = [];
     
     get coordinateFormatSpec():CoordinateFormatSpec {
         if (this.coordinateFormat_ == undefined) {
@@ -810,7 +847,7 @@ export class GerberState {
             this.objectRotation);
     }
 
-    getAperture(id:number):ApertureDefinition {
+    getAperture(id:number):ApertureBase {
         if (id < 10) {
             this.error(`Invalid aprture ID ${id}`);
         }
@@ -820,7 +857,7 @@ export class GerberState {
         return this.apertures[id];
     }
 
-    getCurrentAperture():ApertureDefinition {
+    getCurrentAperture():ApertureBase {
         let id = this.currentAppretureId
         if (this.apertures[id] == undefined) {
             this.error(`Aprture ID ${id} is not defined yet`);
@@ -828,7 +865,7 @@ export class GerberState {
         return this.apertures[id];
     }
 
-    setAperture(ap:ApertureDefinition) {
+    setAperture(ap:ApertureBase) {
         if (this.apertures[ap.apertureId] != undefined) {
             this.error(`Overriding aperture ${ap.apertureId}`);
         }
@@ -881,25 +918,56 @@ export class GerberState {
         this.graphisOperationsConsumer_.flash(center, this);
     }
 
-    closeRegion() {
-        this.graphisOperationsConsumer_.closeRegion(this);
+    closeRegionContour() {
+        if (this.graphisOperationsConsumer_ instanceof RegionGraphicsOperationsConsumer) {
+            let regionConsumer = this.graphisOperationsConsumer_ as RegionGraphicsOperationsConsumer;
+            regionConsumer.closeRegionContour(this);
+        }
     }
 
     startRegion() {
-        this.savedGraphisOperationsConsumer_ = this.graphisOperationsConsumer_;
+        this.saveGraphicsConsumer();
         this.graphisOperationsConsumer_ = new RegionGraphicsOperationsConsumer();
     }
 
     endRegion() {
         let region = this.graphisOperationsConsumer_ as RegionGraphicsOperationsConsumer;
-        region.closeRegion(this);
+        region.closeRegionContour(this);
 
-        this.graphisOperationsConsumer_ = this.savedGraphisOperationsConsumer_;
+        this.restoreGraphicsConsumer();
         this.graphisOperationsConsumer_.region(region.regionContours, this);
+    }
+
+    saveGraphicsConsumer() {
+        this.savedGraphisOperationsConsumer_.push(this.graphisOperationsConsumer_);
+    }
+
+    restoreGraphicsConsumer() {
+        if (this.savedGraphisOperationsConsumer_.length == 0) {
+            throw new GerberParseException("Invalid parsing state, can't restore operations consumer");
+        }
+        this.graphisOperationsConsumer_ = this.savedGraphisOperationsConsumer_.pop();
     }
 
     get graphicsOperations():GraphicsOperations {
         return this.graphisOperationsConsumer_;
+    }
+
+    startBlockAperture(blockId:number) {
+        this.saveGraphicsConsumer();
+        this.blockApertures_.push(blockId);
+        this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
+    }
+
+    endBlockAperture() {
+        if (this.blockApertures_.length == 0) {
+            throw new GerberParseException('Closing aperture block without mathing opening.');
+        }
+        let blockId = this.blockApertures_.pop();
+        let blockConsumer = this.graphisOperationsConsumer_ as BlockGraphicsOperationsConsumer;
+        let aperture = new BlockAperture(blockId, blockConsumer.polygonSet);
+        this.setAperture(aperture);
+        this.restoreGraphicsConsumer();
     }
 }
 
@@ -1026,7 +1094,7 @@ class RegionGraphicsOperationsConsumer implements GraphicsOperations {
         ctx.error("Flashes are not allowed inside a region definition.");
     }
 
-    closeRegion(ctx:GerberState) {
+    closeRegionContour(ctx:GerberState) {
         if (this.contour_.length > 0) {
             this.regionContours_.push(this.contour_);
             this.contour_ = [];
@@ -1051,7 +1119,7 @@ export class Line {
     constructor(
         readonly from:Point,
         readonly to:Point,
-        readonly aperture:ApertureDefinition,
+        readonly aperture:ApertureBase,
         readonly state:ObjectState) {
     }
 
@@ -1070,7 +1138,7 @@ export class Circle {
     constructor(
         readonly center:Point,
         readonly radius:number,
-        readonly aperture:ApertureDefinition,
+        readonly aperture:ApertureBase,
         readonly state:ObjectState) {
     }
 
@@ -1091,7 +1159,7 @@ export class Arc {
         readonly radius:number,
         readonly start:Point,
         readonly end:Point,
-        readonly aperture:ApertureDefinition,
+        readonly aperture:ApertureBase,
         readonly state:ObjectState) {
     }
 
@@ -1111,7 +1179,7 @@ export class Flash {
 
     constructor(
         readonly center:Point,
-        readonly aperture:ApertureDefinition,
+        readonly aperture:ApertureBase,
         readonly state:ObjectState) {
         this.polygonSet_ = 
             translatePolySet(
@@ -1256,11 +1324,77 @@ export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
         this.primitives_.push(new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState()));
     }
 
-    closeRegion(ctx:GerberState) {
+    region(contours:Array<RegionContour>, ctx:GerberState) {
+        this.primitives_.push(new Region(contours, ctx.getObjectState()));
+    }
+}
+
+export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
+    private positive:PolygonSet = [];
+    private negative:PolygonSet = [];
+
+    get polygonSet():PolygonSet {
+        this.updateImage();
+        return this.positive;
+    }
+
+    line(from:Point, to:Point, ctx:GerberState) {
+        let l = new Line(
+            from,
+            to,
+            ctx.getCurrentAperture(),
+            ctx.getObjectState());
+        let polygon = l.aperture.generateLineDraw(l.from, l.to, l.state);
+        this.applyPolygon(polygon, l.state.polarity);
+    }
+
+    circle(center:Point, radius:number, ctx:GerberState) {
+        let c = new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState());
+        let polySet = c.aperture.generateCircleDraw(c.center, c.radius, c.state);
+        this.applyPolySet(polySet, c.state.polarity);
+    }
+
+    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState) {
+        let a = new Arc(center, radius, start, end, ctx.getCurrentAperture(), ctx.getObjectState());
+        let polygon = a.aperture.generateArcDraw(a.start, a.end, a.center, a.state);
+        this.applyPolygon(polygon, a.state.polarity);
+    }
+
+    flash(center:Point, ctx:GerberState) {
+        let f = new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState());
+        this.applyPolySet(f.polygonSet, f.state.polarity);
     }
 
     region(contours:Array<RegionContour>, ctx:GerberState) {
-        this.primitives_.push(new Region(contours, ctx.getObjectState()));
+        let r = new Region(contours, ctx.getObjectState());
+        this.applyPolySet(r.polygonSet, r.state.polarity);
+    }
+
+    private applyPolySet(polySet:PolygonSet, polarity:ObjectPolarity) {
+        if (polarity == ObjectPolarity.DARK) {
+            this.updateImage();
+            this.positive = this.positive.concat(polySet);
+        } else {
+            this.negative = this.negative.concat(polySet);
+        }        
+    }
+
+    private applyPolygon(polygon:Polygon, polarity:ObjectPolarity) {
+        if (polarity == ObjectPolarity.DARK) {
+            this.updateImage();
+            this.positive.push(polygon);
+        } else {
+            this.negative.push(polygon);
+        }        
+    }
+
+    private updateImage():void {
+        if (this.positive.length > 0 && this.negative.length > 0) {
+            this.positive = subtractPolygonSet(this.positive, this.negative);
+        }
+        if (this.negative.length > 0) {
+            this.negative = [];
+        }
     }
 }
 

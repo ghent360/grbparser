@@ -181,7 +181,7 @@ export class SVGConverter extends ConverterBase<string> {
         return result;
     }
 
-    private updateImage(final:boolean = false):void {
+    private updateImage():void {
         if (this.positive.length > 0 && this.negative.length > 0) {
             this.positive = subtractPolygonSet(this.positive, this.negative);
         }

@@ -1,0 +1,52 @@
+G04 Ucamco copyright*
+%TF.GenerationSoftware,Ucamco,UcamX,2016.04-160425*%
+%TF.CreationDate,2016-04-25T00:00;00+01:00*%
+%FSLAX32Y32*%
+%MOMM*%
+G04 Define standard apertures*
+%ADD10C,7.500000*%
+%ADD11C,15*%
+%ADD12R,20X10*%
+%ADD13R,10X20*%
+G04 Define block aperture D100, consisting of two draws and a round dot*
+%ABD100*%
+D10*
+X6500Y1700D02*
+Y6500D01*
+X-360D01*
+D11*
+X-360Y1700D03*
+%AB*%
+G04 Define block aperture D101, consisting of 2x2 flashes of D100*
+%ABD101*%
+D100*
+X-3000Y1000D03*
+X-3000Y8000D03*
+X6000Y1000D03*
+X6000Y8000D03*
+%AB*%
+G04 Define block aperture  D102, consisting of 2x3 flashes of D101 and 1 flash of D12*
+%ABD102*%
+D101*
+X-3000Y1000D03*
+X-3000Y15000D03*
+X-3000Y29000D03*
+X16000Y1000D03*
+X16000Y15000D03*
+X16000Y29000D03*
+D12*
+X-5000Y1200D03*
+%AB*%
+G04 Flash D13 twice outside of blocks*
+D13*
+X-9000Y4000D03*
+X14300Y0D03*
+G04 Flash block D102 3x2 times*
+D102*
+X0Y1200D03*
+X0Y51200D03*
+X40000Y1200D03*
+X40000Y51200D03*
+X80000Y1200D03*
+X80000Y51200D03*
+M02*

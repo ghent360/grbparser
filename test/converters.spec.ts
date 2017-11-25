@@ -19,7 +19,6 @@ describe("Conveter tests", () => {
         fs.readdirSync(folder)
             .filter(fileName => fileName.endsWith(".gbr"))
             .filter(filename => !filename.startsWith("4-11-6_Block_with_different_orientations")
-                                && !filename.startsWith("4-6-4_Nested_blocks")
                                 && !filename.startsWith("test-image-offset-2")
                                 && !filename.startsWith("test-layer-mode-1"))
             //.filter(fileName => fileName.endsWith("test-polygon-fill-1.gbr"))
@@ -29,7 +28,7 @@ describe("Conveter tests", () => {
                 let parser = new gp.GerberParser();
                 parser.parseBlock(content);
                 let ctx = new pr.GerberState();
-                //console.log(`Convers for ${fileName}`);
+                console.log(`Convert ${fileName}`);
                 parser.execute(ctx);
                 let primitives = (ctx.graphicsOperations as pr.BaseGraphicsOperationsConsumer).primitives;
                 let cvt = new cv.SVGConverter();

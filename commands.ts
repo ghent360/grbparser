@@ -403,7 +403,11 @@ export class ABCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        console.log("AB commant not implemented");
+        if (this.blockId >= 10) {
+            ctx.startBlockAperture(this.blockId);
+        } else {
+            ctx.endBlockAperture();
+        }
     }
 }
 
@@ -653,7 +657,7 @@ export class D02Command implements GerberCommand {
         if (this.y != undefined) {
             ctx.currentPointY = this.y;
         }
-        ctx.closeRegion();
+        ctx.closeRegionContour();
     }
 }
 
