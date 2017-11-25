@@ -37,6 +37,7 @@ import {
     unionPolygonSet,
     subtractPolygonSet,
     scalePolySet,
+    mirrorPolygon,
 } from "./polygonSet";
 import {Point} from "./point";
 import {
@@ -153,7 +154,7 @@ export class ApertureDefinition {
         let startVector = {x:start.x - center.x, y:start.y - center.y};
         let endVector = {x:end.x - center.x, y:end.y - center.y};
         // This is the radius of the aperture, not the arc itself
-        let radius = this.modifiers[0] / 2;
+        let radius = state.scale * this.modifiers[0] / 2;
         let rStartVector = scaleVector(unitVector(startVector), radius);
         let rEndVector = scaleVector(unitVector(endVector), radius);
         let innerStartVector = addVector(startVector, negVector(rStartVector));
@@ -171,6 +172,10 @@ export class ApertureDefinition {
             result = result.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
             return result;
         } else if (this.templateName == "R") {
+            if (Math.abs(state.rotation) > Epsilon
+                || state.mirroring != ObjectMirroring.NONE) {
+                throw new GerberParseException(`Unimplemented rotation or mirroring with rectangular apertures`)
+            }
             let startLine = {x:outerStart.x - innerStart.x, y:outerStart.y - innerStart.y};
             let endLine = {x:outerEnd.x - innerEnd.x, y:outerEnd.y - innerEnd.y};
             let pStartLineCCW = scaleVector(unitVector({x:startLine.y, y:-startLine.x}), this.modifiers[1]);
@@ -195,7 +200,7 @@ export class ApertureDefinition {
     generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSet {
         if (this.templateName == "C" || this.templateName == "O" || this.templateName == "R") {
             let result:PolygonSet = [];
-            let apertureRadius = this.modifiers[0] / 2;
+            let apertureRadius = state.scale * this.modifiers[0] / 2;
             result.push(translatePolygon(circleToPolygon(radius + apertureRadius), center));
             result.push(translatePolygon(circleToPolygon(radius - apertureRadius), center).reverse());
             return result;
@@ -208,11 +213,17 @@ export class ApertureDefinition {
         if (start.distance(end) < Epsilon) {
             if (this.templateName == "C" || this.templateName == "O") {
                 return translatePolygon(
-                    circleToPolygon(this.modifiers[0] / 2),
+                    circleToPolygon(state.scale * this.modifiers[0] / 2),
                     start.midPoint(end));
             } else if (this.templateName == "R") {
                 return translatePolygon(
-                    rectangleToPolygon(this.modifiers[0], this.modifiers[1]),
+                    rotatePolygon(
+                        mirrorPolygon(
+                            rectangleToPolygon(
+                                state.scale * this.modifiers[0],
+                                state.scale * this.modifiers[1]),
+                            state.mirroring),
+                        state.rotation),
                     start.midPoint(end));
             }
             throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
@@ -220,7 +231,7 @@ export class ApertureDefinition {
         let angle = start.angleFrom(end);
 
         if (this.templateName == "C" || this.templateName == "O") {
-            let radius = this.modifiers[0] / 2;
+            let radius = state.scale * this.modifiers[0] / 2;
             let vector = {x:end.x - start.x, y:end.y - start.y};
             let uVector = unitVector(vector);
 
@@ -242,8 +253,12 @@ export class ApertureDefinition {
             result.push(new Point(startLeft.x, startLeft.y));
             return result;
         } else if (this.templateName == "R") {
-            let width2 = this.modifiers[0] / 2;
-            let height2 = this.modifiers[1] / 2;
+            if (Math.abs(state.rotation) > Epsilon
+                || state.mirroring != ObjectMirroring.NONE) {
+                throw new GerberParseException(`Unimplemented rotation or mirroring with rectangular apertures`)
+            }
+            let width2 = state.scale * this.modifiers[0] / 2;
+            let height2 = state.scale * this.modifiers[1] / 2;
             if (Math.abs(start.x - end.x) < Epsilon) { // Vertical Line
                 return translatePolygon(
                     rectangleToPolygon(this.modifiers[0], Math.abs(end.y - start.y) + this.modifiers[1]),
@@ -1027,7 +1042,7 @@ export class ObjectState {
     constructor(
         readonly polarity:ObjectPolarity = ObjectPolarity.DARK,
         readonly mirroring:ObjectMirroring = ObjectMirroring.NONE,
-        readonly scale:number = 0,
+        readonly scale:number = 1,
         readonly rotation:number = 0) {
     }
 }
