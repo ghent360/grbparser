@@ -1542,7 +1542,7 @@ export function composeImage(objects:GraphicsObjects):PolygonSet {
             image = subtractPolygonSet(image, clear);
         }
     }
-    image = unionPolygonSet(image, []);
+    //image = unionPolygonSet(image, []);
     return image;
 }
 
