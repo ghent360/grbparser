@@ -21,12 +21,12 @@ describe("PolygonSet tests", () => {
         let poly1 = arrayToPath([[0, 0], [10, 0], [10, 20], [0, 20], [0, 0]]);
         let poly2 = arrayToPath([[0, 0], [20, 0], [20, 10], [0, 10], [0, 0]]);
         let result = ps.unionPolygonSet([poly1], [poly2]);
-        console.log(result);
+        //console.log(result);
     });
     it('Subtract Tests', () => {
         let poly1 = arrayToPath([[0, 0], [10, 0], [10, 20], [0, 20], [0, 0]]);
         let poly2 = arrayToPath([[0, 0], [20, 0], [20, 10], [0, 10], [0, 0]]);
         let result = ps.subtractPolygonSet([poly1], [poly2]);
-        console.log(result);
+        //console.log(result);
     });
 });

@@ -141,6 +141,6 @@ describe("Commands tests", () => {
         cmd.execute(ctx);
         let primitives = (ctx.graphicsOperations as pr.BaseGraphicsOperationsConsumer).primitives;
         assert.equal(primitives.length, 1);
-        console.log(`arc: ${primitives[0]}`);
+        //console.log(`arc: ${primitives[0]}`);
     });
 });

@@ -24,7 +24,7 @@ describe("Conveter tests", () => {
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
-                console.log(`Convert ${fileName}`);
+                //console.log(`Convert ${fileName}`);
                 let result = cv.SVGConverter.GerberToSvg(content);
                 let outputFileName = folder + "/" + fileName.replace(".gbr", ".svg");
                 let stream = fs.createWriteStream(outputFileName);
