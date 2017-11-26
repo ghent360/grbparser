@@ -26,6 +26,9 @@ import {
     Bounds,
     EmptyBounds,
     ObjectPolarity,
+    GraphicsObjects,
+    composeImage,
+    Repeat,
 } from "./primitives";
 import {Point} from "./point";
 import {PolygonSet} from "./polygonSet";
@@ -51,6 +54,9 @@ abstract class ConverterBase<T> {
             } else if (p instanceof Region) {
                 let region = p as Region;
                 result.push(this.convertRegion(region));
+            } else if (p instanceof Repeat) {
+                let repeat = p as Repeat;
+                result.push(this.convertRepeat(repeat));
             } else {
                 throw new Error("Unknown primitive " + p);
             }
@@ -71,6 +77,7 @@ abstract class ConverterBase<T> {
     abstract convertCircle(c:Circle):T;
     abstract convertFlash(f:Flash):T;
     abstract convertRegion(r:Region):T;
+    abstract convertRepeat(r:Repeat):T;
 }
 
 export class DebugConverter {
@@ -87,61 +94,38 @@ export class SVGConverter extends ConverterBase<string> {
     private margin_ = 10;
     private scale_ = 100;
     private offset_:Point;
-    private positive:PolygonSet = [];
-    private negative:PolygonSet = [];
+    private objects_:GraphicsObjects = [];
 
     convertLine(l:Line):string {
         let polygon = l.aperture.generateLineDraw(l.from, l.to, l.state);
-        if (l.state.polarity == ObjectPolarity.DARK) {
-            this.updateImage();
-            this.positive.push(polygon);
-        } else {
-            this.negative.push(polygon);
-        }
+        this.objects_ = this.objects_.concat(l.objects);
         return "";
     }
 
     convertArc(a:Arc):string {
         let polygon = a.aperture.generateArcDraw(a.start, a.end, a.center, a.state);
-        if (a.state.polarity == ObjectPolarity.DARK) {
-            this.updateImage();
-            this.positive.push(polygon);
-        } else {
-            this.negative.push(polygon);
-        }
+        this.objects_ = this.objects_.concat(a.objects);
         return "";
     }
 
     convertCircle(c:Circle):string {
         let polySet = c.aperture.generateCircleDraw(c.center, c.radius, c.state);
-        if (c.state.polarity == ObjectPolarity.DARK) {
-            this.updateImage();
-            this.positive = this.positive.concat(polySet);
-        } else {
-            this.negative = this.negative.concat(polySet);
-        }
+        this.objects_ = this.objects_.concat(c.objects);
         return "";
     }
 
     convertFlash(f:Flash):string {
-        let polySet = f.polygonSet;
-        if (f.state.polarity == ObjectPolarity.DARK) {
-            this.updateImage();
-            this.positive = this.positive.concat(polySet);
-        } else {
-            this.negative = this.negative.concat(polySet);
-        }
+        this.objects_ = this.objects_.concat(f.objects);
         return "";
     }
 
     convertRegion(r:Region):string {
-        let polySet = r.polygonSet;
-        if (r.state.polarity == ObjectPolarity.DARK) {
-            this.updateImage();
-            this.positive = this.positive.concat(polySet);
-        } else {
-            this.negative = this.negative.concat(polySet);
-        }
+        this.objects_ = this.objects_.concat(r.objects);
+        return "";
+    }
+
+    convertRepeat(r:Repeat):string {
+        this.objects_ = this.objects_.concat(r.objects);
         return "";
     }
 
@@ -162,8 +146,7 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     footer():Array<string> {
-        this.updateImage();
-        let svg = this.polySetToPath(this.positive);
+        let svg = this.polySetToPath(composeImage(this.objects_));
         return [svg, "</g>", "</svg>"];
     }
 
@@ -179,12 +162,5 @@ export class SVGConverter extends ConverterBase<string> {
         });
         result += ' z" style="fill:#ff1f1c; fill-opacity:1; fill-rule:nonzero; stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
         return result;
-    }
-
-    private updateImage():void {
-        if (this.positive.length > 0 && this.negative.length > 0) {
-            this.positive = subtractPolygonSet(this.positive, this.negative);
-        }
-        this.negative = [];
     }
 }

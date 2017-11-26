@@ -38,6 +38,8 @@ import {
     subtractPolygonSet,
     scalePolySet,
     mirrorPolygon,
+    objectsBounds,
+    translateObjects,
 } from "./polygonSet";
 import {Point} from "./point";
 import {
@@ -81,6 +83,22 @@ export enum AttributeType {
     OBJECT
 }
 
+export type PolySetWithPolarity = {polySet:PolygonSet, polarity:ObjectPolarity};
+export type GraphicsObjects = Array<PolySetWithPolarity>;
+
+function reversePolarity(polarity:ObjectPolarity):ObjectPolarity {
+    if (polarity === ObjectPolarity.DARK) {
+        return ObjectPolarity.LIGHT;
+    }
+    return ObjectPolarity.DARK;
+}
+
+function reverseObjectsPolarity(objects:GraphicsObjects):GraphicsObjects {
+    return objects.map(o => {
+        return {polySet:o.polySet, polarity:reversePolarity(o.polarity)};
+    });
+}
+
 export class CoordinateFormatSpec {
     readonly xPow:number;  // The power of 1 to multiply the X coordinate by 10^(-xNumDecPos)
     readonly yPow:number;  // The power of 1 to multiply the Y coordinate by 10^(-yNumDecPos)
@@ -109,26 +127,32 @@ export class GerberParseException {
 
 export interface ApertureBase {
     readonly apertureId:number;
-
+    
     isDrawable():boolean;
-    toPolygonSet():PolygonSet;
+    objects(polarity:ObjectPolarity):GraphicsObjects;
     generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):Polygon;
     generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSet;
     generateLineDraw(start:Point, end:Point, state:ObjectState):Polygon;
 }
 
 export class BlockAperture implements ApertureBase {
+    private objects_:GraphicsObjects;
+
     constructor(
         readonly apertureId:number,
-        readonly polygonSet:PolygonSet) {
+        objects:GraphicsObjects) {
+        this.objects_ = objects;
     }
 
     isDrawable():boolean {
         return false;
     }
 
-    toPolygonSet():PolygonSet {
-        return this.polygonSet;
+    objects(polarity:ObjectPolarity):GraphicsObjects {
+        if (polarity === ObjectPolarity.LIGHT) {
+            return reverseObjectsPolarity(this.objects_);
+        }
+        return this.objects_;
     }
 
     generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):Polygon {
@@ -346,7 +370,11 @@ export class ApertureDefinition implements ApertureBase {
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
 
-    toPolygonSet():PolygonSet {
+    objects(polarity:ObjectPolarity):GraphicsObjects {
+        return [{polySet:this.toPolySet(), polarity:polarity}];
+    }
+
+    toPolySet():PolygonSet {
         if (this.polygonSet_ != undefined) {
             return this.polygonSet_;
         }
@@ -719,12 +747,33 @@ export class Attribute {
     }
 }
 
+export class BlockParams {
+    constructor(
+        readonly xRepeat:number,
+        readonly yRepeat:number,
+        readonly xDelta:number,
+        readonly yDelta:number) {
+    }
+}
+
+export class Block {
+    constructor(
+        readonly xRepeat:number,
+        readonly yRepeat:number,
+        readonly xDelta:number,
+        readonly yDelta:number,
+        readonly primitives:Array<GraphicsPrimitive>,
+        readonly objects:GraphicsObjects) {
+    }
+}
+
 export interface GraphicsOperations {
     line(from:Point, to:Point, ctx:GerberState);
     circle(center:Point, radius:number, ctx:GerberState);
     arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState);
     flash(center:Point, ctx:GerberState);
     region(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState);
+    block(block:Block, ctx:GerberState);
 }
 
 export class GerberState {
@@ -744,6 +793,7 @@ export class GerberState {
     private graphisOperationsConsumer_:GraphicsOperations = new BaseGraphicsOperationsConsumer();
     private savedGraphisOperationsConsumer_:Array<GraphicsOperations> = [];
     private blockApertures_:Array<number> = [];
+    private blockParams_:Array<BlockParams> = [];
     
     get coordinateFormatSpec():CoordinateFormatSpec {
         if (this.coordinateFormat_ == undefined) {
@@ -965,9 +1015,44 @@ export class GerberState {
         }
         let blockId = this.blockApertures_.pop();
         let blockConsumer = this.graphisOperationsConsumer_ as BlockGraphicsOperationsConsumer;
-        let aperture = new BlockAperture(blockId, blockConsumer.polygonSet);
+        let aperture = new BlockAperture(blockId, blockConsumer.objects);
         this.setAperture(aperture);
         this.restoreGraphicsConsumer();
+    }
+
+    startRepeat(params:BlockParams) {
+        this.saveGraphicsConsumer();
+        this.blockParams_.push(params);
+        this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
+    }
+
+    tryEndRepeat() {
+        if (this.blockParams_.length > 0) {
+            this.endRepeat();
+        }
+    }
+
+    endRepeat() {
+        if (this.blockParams_.length == 0) {
+            throw new GerberParseException('Closing repeat block without mathing opening.');
+        }
+        let params = this.blockParams_.pop();
+        let blockConsumer = this.graphisOperationsConsumer_ as BlockGraphicsOperationsConsumer;
+        let block = new Block(
+            params.xRepeat,
+            params.yRepeat,
+            params.xDelta,
+            params.yDelta,
+            blockConsumer.primitives,
+            blockConsumer.objects);
+        this.restoreGraphicsConsumer();
+        this.graphisOperationsConsumer_.block(block, this);
+    }
+
+    endFile() {
+        while (this.blockParams_.length > 0) {
+            this.endRepeat();
+        }
     }
 }
 
@@ -1104,6 +1189,10 @@ class RegionGraphicsOperationsConsumer implements GraphicsOperations {
     region(contours:Array<RegionContour>, ctx:GerberState) {
         ctx.error("Regions are not allowed inside a region definition.");
     }
+
+    block(block:Block, ctx:GerberState) {
+        ctx.error("Blocks are not allowed inside a region definition.");
+    }
 }
 
 export class ObjectState {
@@ -1116,44 +1205,58 @@ export class ObjectState {
 }
 
 export class Line {
+    private objects_:GraphicsObjects;
+    
     constructor(
         readonly from:Point,
         readonly to:Point,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
+        let polygon = aperture.generateLineDraw(from, to, state);
+        this.objects_ = [{polySet:[polygon], polarity:state.polarity}];
     }
 
     toString():string {
         return `L(${this.from}, ${this.to})`;
     }
 
+    get objects():GraphicsObjects {
+        return this.objects_;
+    }
+
     get bounds():Bounds {
-        return new Bounds(
-            new Point(Math.min(this.from.x, this.to.x), Math.min(this.from.y, this.to.y)),
-            new Point(Math.max(this.from.x, this.to.x), Math.max(this.from.y, this.to.y)));
+        return objectsBounds(this.objects_);
     }
 }
 
 export class Circle {
+    private objects_:GraphicsObjects;
+    
     constructor(
         readonly center:Point,
         readonly radius:number,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
+        let polygonSet = aperture.generateCircleDraw(center, radius, state);
+        this.objects_ = [{polySet:polygonSet, polarity:state.polarity}];
     }
 
     toString():string {
         return `C(${this.center}R${formatFloat(this.radius, 3)})`;
     }
 
+    get objects():GraphicsObjects {
+        return this.objects_;
+    }
+
     get bounds():Bounds {
-        return new Bounds(
-            new Point(this.center.x - this.radius, this.center.y - this.radius),
-            new Point(this.center.x + this.radius, this.center.y + this.radius));
+        return objectsBounds(this.objects_);
     }
 }
 
 export class Arc {
+    private objects_:GraphicsObjects;
+
     constructor(
         readonly center:Point,
         readonly radius:number,
@@ -1161,60 +1264,63 @@ export class Arc {
         readonly end:Point,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
+        let polygon = aperture.generateArcDraw(start, end, center, state);
+        this.objects_ = [{polySet:[polygon], polarity:state.polarity}];
     }
 
     toString():string {
         return `A(${this.start}, ${this.end}@${this.center}R${formatFloat(this.radius, 3)})`;
     }
 
+    get objects():GraphicsObjects {
+        return this.objects_;
+    }
+
     get bounds():Bounds {
-        return new Bounds(
-            new Point(Math.min(this.start.x, this.end.x), Math.min(this.start.y, this.end.y)),
-            new Point(Math.max(this.start.x, this.end.x), Math.max(this.start.y, this.end.y)));
+        return objectsBounds(this.objects_);
     }
 }
 
 export class Flash {
-    private polygonSet_:PolygonSet;
+    private objects_:GraphicsObjects;
 
     constructor(
         readonly center:Point,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
-        this.polygonSet_ = 
-            translatePolySet(
-                scalePolySet(
-                    rotatePolySet(
-                        mirrorPolySet(aperture.toPolygonSet(), state.mirroring),
-                        state.rotation),
-                    state.scale),
-                center);
+        this.objects_ = aperture.objects(state.polarity).map(o => {
+            return {
+                polySet:translatePolySet(
+                    scalePolySet(
+                        rotatePolySet(
+                            mirrorPolySet(o.polySet, state.mirroring),
+                            state.rotation),
+                        state.scale),
+                    center),
+                polarity: (state.polarity === ObjectPolarity.DARK) ? o.polarity : reversePolarity(o.polarity)};
+        });
     }
 
     toString():string {
         return `F(${this.aperture.apertureId}@${this.center})`;
     }
 
-    get polygonSet():PolygonSet {
-        return this.polygonSet_;
+    get objects():GraphicsObjects {
+        return this.objects_;
     }
 
     get bounds():Bounds {
-        return polySetBounds(this.polygonSet_);
+        return objectsBounds(this.objects_);
     }
 }
 
-export function EmptyBounds():Bounds {
-    return new Bounds(new Point(0, 0), new Point(0, 0));
-}
-
 export class Region {
-    private polygonSet_:PolygonSet;
+    private objects_:GraphicsObjects;
     
     constructor(
         readonly contours:Array<RegionContour>,
         readonly state:ObjectState) {
-        this.polygonSet_ = Region.buildPolygonSet(contours);
+        this.objects_ = [{polySet:Region.buildPolygonSet(contours), polarity:state.polarity}];
     }
 
     toString():string {
@@ -1238,24 +1344,6 @@ export class Region {
         });
         result += "]";
         return result;
-    }
-
-    get bounds():Bounds {
-        if (this.contours.length == 0) {
-            return EmptyBounds();
-        }
-        let bounds = Region.contourBounds(this.contours[0]);
-        this.contours.forEach(c => bounds.merge(Region.contourBounds(c)));
-        return bounds;
-    }
-
-    private static contourBounds(contour:RegionContour):Bounds {
-        if (contour.length == 0) {
-            return EmptyBounds();
-        }
-        let bounds = contour[0].bounds;
-        contour.forEach(s => bounds.merge(s.bounds));
-        return bounds;
     }
 
     private static buildPolygonSet(contours:Array<RegionContour>):PolygonSet {
@@ -1288,13 +1376,57 @@ export class Region {
         return result;
     }
 
-    get polygonSet():PolygonSet {
-        //console.log(` region ${this.toString()}`);
-        return this.polygonSet_;
+    get objects():GraphicsObjects {
+        return this.objects_;
+    }
+
+    get bounds():Bounds {
+        return objectsBounds(this.objects_);
     }
 }
 
-export type GraphicsPrimitive = Line | Circle | Arc | Flash | Region;
+export class Repeat {
+    private objects_:GraphicsObjects = [];
+    private primitives_:Array<GraphicsPrimitive> = [];
+
+    constructor(readonly block:Block) {
+        let xOffset = 0;
+        for (let xCnt = 0; xCnt < block.xRepeat; xCnt++) {
+            let yOffset = 0;
+            for (let yCnt = 0; yCnt < block.yRepeat; yCnt++) {
+                let translateVector = new Point(xOffset, yOffset);
+                this.objects_ = this.objects_.concat(
+                    translateObjects(block.objects, translateVector));
+                this.primitives_ = this.primitives_.concat(
+                    translatePrimitives(block.primitives, translateVector));
+                yOffset += block.yDelta;
+            }
+            xOffset += block.xDelta;
+        }
+    }
+
+    toString():string {
+        return `B(${this.block.xRepeat}, ${this.block.yRepeat}:${this.block.xDelta}, ${this.block.yDelta})`;
+    }
+
+    get objects():GraphicsObjects {
+        return this.objects_;
+    }
+
+    get bounds():Bounds {
+        return objectsBounds(this.objects_);
+    }
+}
+
+function translatePrimitives(primitives:Array<GraphicsPrimitive>, vector:Point):Array<GraphicsPrimitive> {
+    return [];
+}
+
+export type GraphicsPrimitive = Line | Circle | Arc | Flash | Region | Repeat;
+
+export function EmptyBounds():Bounds {
+    return new Bounds(new Point(0, 0), new Point(0, 0));
+}
 
 export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
     private primitives_:Array<GraphicsPrimitive> = [];
@@ -1327,15 +1459,22 @@ export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
     region(contours:Array<RegionContour>, ctx:GerberState) {
         this.primitives_.push(new Region(contours, ctx.getObjectState()));
     }
+
+    block(block:Block, ctx:GerberState) {
+        this.primitives_.push(new Repeat(block));
+    }
 }
 
 export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
-    private positive:PolygonSet = [];
-    private negative:PolygonSet = [];
-
-    get polygonSet():PolygonSet {
-        this.updateImage();
-        return this.positive;
+    private objects_:GraphicsObjects = [];
+    private primitives_:Array<GraphicsPrimitive> = [];
+    
+    get primitives():Array<GraphicsPrimitive> {
+        return this.primitives_;
+    }
+    
+    get objects():GraphicsObjects {
+        return this.objects_;
     }
 
     line(from:Point, to:Point, ctx:GerberState) {
@@ -1344,58 +1483,67 @@ export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
             to,
             ctx.getCurrentAperture(),
             ctx.getObjectState());
-        let polygon = l.aperture.generateLineDraw(l.from, l.to, l.state);
-        this.applyPolygon(polygon, l.state.polarity);
+        this.primitives_.push(l);
+        this.objects_ = this.objects_.concat(l.objects);
     }
 
     circle(center:Point, radius:number, ctx:GerberState) {
         let c = new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState());
-        let polySet = c.aperture.generateCircleDraw(c.center, c.radius, c.state);
-        this.applyPolySet(polySet, c.state.polarity);
+        this.primitives_.push(c);
+        this.objects_ = this.objects_.concat(c.objects);
     }
 
     arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState) {
         let a = new Arc(center, radius, start, end, ctx.getCurrentAperture(), ctx.getObjectState());
-        let polygon = a.aperture.generateArcDraw(a.start, a.end, a.center, a.state);
-        this.applyPolygon(polygon, a.state.polarity);
+        this.primitives_.push(a);
+        this.objects_ = this.objects_.concat(a.objects);
     }
 
     flash(center:Point, ctx:GerberState) {
         let f = new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState());
-        this.applyPolySet(f.polygonSet, f.state.polarity);
+        this.primitives_.push(f);
+        this.objects_ = this.objects_.concat(f.objects);
     }
 
     region(contours:Array<RegionContour>, ctx:GerberState) {
         let r = new Region(contours, ctx.getObjectState());
-        this.applyPolySet(r.polygonSet, r.state.polarity);
+        this.primitives_.push(r);
+        this.objects_ = this.objects_.concat(r.objects);
     }
 
-    private applyPolySet(polySet:PolygonSet, polarity:ObjectPolarity) {
-        if (polarity == ObjectPolarity.DARK) {
-            this.updateImage();
-            this.positive = this.positive.concat(polySet);
+    block(block:Block, ctx:GerberState) {
+        let r = new Repeat(block);
+        this.primitives_.push(r);
+        this.objects_ = this.objects_.concat(r.objects);
+    }
+}
+
+export function composeImage(objects:GraphicsObjects):PolygonSet {
+    if (objects.length == 0) {
+        return [];
+    }
+    let image:PolygonSet = [];
+    let clear:PolygonSet = [];
+    objects.forEach(o => {
+        if (o.polarity === ObjectPolarity.DARK) {
+            if (clear.length > 0) {
+                if (image.length > 0) {
+                    image = subtractPolygonSet(image, clear);
+                }
+                clear = [];
+            }
+            image = image.concat(o.polySet);
         } else {
-            this.negative = this.negative.concat(polySet);
-        }        
-    }
-
-    private applyPolygon(polygon:Polygon, polarity:ObjectPolarity) {
-        if (polarity == ObjectPolarity.DARK) {
-            this.updateImage();
-            this.positive.push(polygon);
-        } else {
-            this.negative.push(polygon);
-        }        
-    }
-
-    private updateImage():void {
-        if (this.positive.length > 0 && this.negative.length > 0) {
-            this.positive = subtractPolygonSet(this.positive, this.negative);
+            clear = clear.concat(o.polySet);
         }
-        if (this.negative.length > 0) {
-            this.negative = [];
+    });
+    if (clear.length > 0) {
+        if (image.length > 0) {
+            image = subtractPolygonSet(image, clear);
         }
     }
+    image = unionPolygonSet(image, []);
+    return image;
 }
 
 export interface GerberCommand {

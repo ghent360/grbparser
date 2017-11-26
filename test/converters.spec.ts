@@ -20,7 +20,7 @@ describe("Conveter tests", () => {
             .filter(fileName => fileName.endsWith(".gbr"))
             .filter(filename => !filename.startsWith("test-image-offset-2")
                                 && !filename.startsWith("test-layer-mode-1"))
-            //.filter(fileName => fileName.endsWith("test-polygon-fill-1.gbr"))
+            //.filter(fileName => fileName.endsWith("sample_macro.gbr"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();

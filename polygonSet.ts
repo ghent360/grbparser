@@ -7,7 +7,7 @@
  * License: MIT License, see LICENSE.txt
  */
 import {Point} from "./point";
-import {ObjectMirroring, Bounds, EmptyBounds, Epsilon} from "./primitives";
+import {ObjectMirroring, Bounds, EmptyBounds, Epsilon, GraphicsObjects} from "./primitives";
 import * as cl from "clipperjs";
 
 export type Polygon = Array<Point>;
@@ -47,6 +47,16 @@ export function translatePolySet(polySet:PolygonSet, offset:Point):PolygonSet {
         return polySet;
     }
     return polySet.map(polygon => translatePolygon(polygon, offset));
+}
+
+export function translateObjects(objects:GraphicsObjects, offset:Point):GraphicsObjects {
+    if (Math.abs(offset.x) < Epsilon
+        && Math.abs(offset.y) < Epsilon) {
+        return objects;
+    }
+    return objects.map(object => {
+        return {polySet:translatePolySet(object.polySet, offset), polarity:object.polarity};
+    });
 }
 
 export function scalePolygon(poly:Polygon, scale:number):Polygon {
@@ -96,6 +106,17 @@ export function polySetBounds(polygonSet:PolygonSet):Bounds {
     let bounds = polygonBounds(polygonSet[0]);
     for (let idx = 1; idx < polygonSet.length; idx++) {
         bounds.merge(polygonBounds(polygonSet[idx]));
+    }
+    return bounds;
+}
+
+export function objectsBounds(objects:GraphicsObjects):Bounds {
+    if (objects.length == 0) {
+        return EmptyBounds();
+    }
+    let bounds = polySetBounds(objects[0].polySet);
+    for (let idx = 1; idx < objects.length; idx++) {
+        bounds.merge(polySetBounds(objects[idx].polySet));
     }
     return bounds;
 }

@@ -38,6 +38,7 @@ import {
     GerberCommand,
     GerberState,
     Epsilon,
+    BlockParams,
 } from './primitives';
 import {Point} from "./point";
 import {
@@ -970,7 +971,13 @@ export class SRCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        console.log("SR command is not implemnted");
+        if (this.x !== undefined) {
+            ctx.tryEndRepeat();
+            let params = new BlockParams(this.x, this.y, this.i, this.j);
+            ctx.startRepeat(params);
+        } else {
+            ctx.endRepeat();
+        }
     }
 }
 
@@ -988,7 +995,8 @@ export class M02Command implements GerberCommand {
         return "M02";
     }
 
-    execute() {
+    execute(ctx:GerberState) {
+        ctx.endFile();
     }
 }
 
@@ -1040,7 +1048,8 @@ export class TCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        console.log("Tx command is not implemnted");
+        //TODO(vne): implement attributes.
+        //console.log("Tx command is not implemnted");
     }
 }
 
@@ -1063,6 +1072,7 @@ export class TDCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        console.log("TD command is not implemnted");
+        //TODO(vne): implement attributes.
+        //console.log("TD command is not implemnted");
     }
 }
