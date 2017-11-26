@@ -1518,7 +1518,7 @@ export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
     }
 }
 
-export function composeImage(objects:GraphicsObjects):PolygonSet {
+export function composeImage(objects:GraphicsObjects, union:boolean = false):PolygonSet {
     if (objects.length == 0) {
         return [];
     }
@@ -1542,7 +1542,9 @@ export function composeImage(objects:GraphicsObjects):PolygonSet {
             image = subtractPolygonSet(image, clear);
         }
     }
-    //image = unionPolygonSet(image, []);
+    if (union) {
+        image = unionPolygonSet(image, []);
+    }
     return image;
 }
 
