@@ -794,6 +794,8 @@ export class GerberState {
     private savedGraphisOperationsConsumer_:Array<GraphicsOperations> = [];
     private blockApertures_:Array<number> = [];
     private blockParams_:Array<BlockParams> = [];
+    private primitives_:Array<GraphicsPrimitive>;
+    private isDone_:boolean = false;
     
     get coordinateFormatSpec():CoordinateFormatSpec {
         if (this.coordinateFormat_ == undefined) {
@@ -887,6 +889,17 @@ export class GerberState {
 
     set quadrantMode(value:QuadrantMode) {
         this.quadrantMode_ = value;        
+    }
+
+    get isDone():boolean {
+        return this.isDone_;
+    }
+
+    get primitives():Array<GraphicsPrimitive> {
+        if (!this.isDone_) {
+            throw new GerberParseException("Parsing is not complete");
+        }
+        return this.primitives_;
     }
 
     getObjectState():ObjectState {
@@ -1053,6 +1066,9 @@ export class GerberState {
         while (this.blockParams_.length > 0) {
             this.endRepeat();
         }
+        let topConsumer = this.graphisOperationsConsumer_ as BaseGraphicsOperationsConsumer;
+        this.primitives_ = topConsumer.primitives;
+        this.isDone_ = true;
     }
 }
 

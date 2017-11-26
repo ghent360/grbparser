@@ -24,24 +24,13 @@ describe("Conveter tests", () => {
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
-                let parser = new gp.GerberParser();
-                parser.parseBlock(content);
-                let ctx = new pr.GerberState();
                 console.log(`Convert ${fileName}`);
-                parser.execute(ctx);
-                let primitives = (ctx.graphicsOperations as pr.BaseGraphicsOperationsConsumer).primitives;
-                let cvt = new cv.SVGConverter();
-                let result = cvt.convert(primitives);
+                let result = cv.SVGConverter.GerberToSvg(content);
                 let outputFileName = folder + "/" + fileName.replace(".gbr", ".svg");
                 let stream = fs.createWriteStream(outputFileName);
-                result.forEach(l => {
-                    if (l.length > 0) {
-                        stream.write(l);
-                        stream.write("\n");
-                    }
-                });
+                stream.write(result);
                 stream.end();
-                console.log(`Conversion result for ${fileName}`);
+                //console.log(`Conversion result for ${fileName}`);
             });
     });
 });

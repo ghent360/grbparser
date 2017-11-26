@@ -29,11 +29,13 @@ import {
     GraphicsObjects,
     composeImage,
     Repeat,
+    GerberState,
 } from "./primitives";
 import {Point} from "./point";
 import {PolygonSet} from "./polygonSet";
 import {formatFloat} from "./utils";
 import {subtractPolygonSet} from "./polygonSet";
+import { GerberParser } from "./grbparser";
 
 abstract class ConverterBase<T> {
     convert(primitives:Array<GraphicsPrimitive>):Array<T> {
@@ -161,6 +163,21 @@ export class SVGConverter extends ConverterBase<string> {
             }
         });
         result += ' z" style="fill:#ff1f1c; fill-opacity:1; fill-rule:nonzero; stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
+        return result;
+    }
+
+    public static GerberToSvg(content:string):string {
+        let parser = new GerberParser();
+        parser.parseBlock(content);
+        let ctx = new GerberState();
+        parser.execute(ctx);
+        let primitives = ctx.primitives;
+        let cvt = new SVGConverter();
+        let result = "";
+        let svg = cvt.convert(primitives);
+        svg.forEach(l => {
+            result = result.concat(l);
+        });
         return result;
     }
 }
