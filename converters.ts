@@ -93,8 +93,12 @@ export class DebugConverter {
 }
 
 export class SVGConverter extends ConverterBase<string> {
-    private margin_ = 10;
-    private scale_ = 100;
+    public scale = 100;
+    public margin = 10;
+    public layerColor = 0xff1f1c;
+    private bounds_:Bounds;
+    private width_:number;
+    private height_:number
     private offset_:Point;
     private objects_:GraphicsObjects = [];
 
@@ -132,18 +136,21 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     header(primitives:Array<GraphicsPrimitive>):Array<string> {
-        let bounds = primitives[0].bounds;
-        primitives.forEach(p => bounds.merge(p.bounds));
-        let width = bounds.width * this.scale_ + this.margin_ * 2;
-        let height = bounds.height * this.scale_ + this.margin_ * 2;
+        this.bounds_ = primitives[0].bounds;
+        primitives.forEach(p => this.bounds_.merge(p.bounds));
+        this.width_ = this.bounds_.width * this.scale + this.margin * 2;
+        this.height_ = this.bounds_.height * this.scale + this.margin * 2;
         this.offset_ = new Point(
-            -bounds.min.x * this.scale_  + this.margin_,
-            -bounds.min.y * this.scale_ + this.margin_);
+            -this.bounds_.min.x * this.scale  + this.margin,
+            -this.bounds_.min.y * this.scale + this.margin);
         
         return ['<?xml version="1.0" standalone="no"?>',
                 '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">',
-                `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" version="1.1" xmlns="http://www.w3.org/2000/svg">`,
-                `<rect x="${this.margin_}" y="${this.margin_}" width="${bounds.width * this.scale_}" height="${bounds.height * this.scale_}" stroke="green" stroke-width="1" fill="none"/>`,
+                `<svg width="100%" height="100%" viewBox="0 0 ${this.width_} ${this.height_}"
+                      version="1.1" xmlns="http://www.w3.org/2000/svg">`,
+                /*`<rect x="${this.margin}" y="${this.margin}"
+                       width="${bounds.width * this.scale}" height="${bounds.height * this.scale}"
+                       stroke="green" stroke-width="1" fill="none"/>`,*/
                 '<g stroke="black">'];
     }
 
@@ -154,30 +161,52 @@ export class SVGConverter extends ConverterBase<string> {
 
     private polySetToPath(polySet:PolygonSet):string {
         let result = '<path d="';
-        polySet.filter(polygon => polygon.length > 2).forEach(polygon => {
-            let start = polygon[0].scale(this.scale_).add(this.offset_);
-            result += ` M ${start.x} ${start.y}`;
-            for (let idx = 1; idx < polygon.length; idx++) {
-                let point = polygon[idx].scale(this.scale_).add(this.offset_);
-                result += ` L ${point.x} ${point.y}`;
-            }
-        });
-        result += ' z" style="fill:#ff1f1c; fill-opacity:1; fill-rule:nonzero; stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
+        polySet
+            .filter(polygon => polygon.length > 2)
+            .forEach(polygon => {
+                let start = polygon[0].scale(this.scale).add(this.offset_);
+                result += ` M ${start.x} ${this.height_ - start.y}`;
+                for (let idx = 1; idx < polygon.length; idx++) {
+                    let point = polygon[idx].scale(this.scale).add(this.offset_);
+                    result += ` L ${point.x} ${this.height_ - point.y}`;
+                }
+            });
+        result += ' z" ';
+        result += `style="fill:${SVGConverter.colorToHtml(this.layerColor)}; fill-opacity:1; fill-rule:nonzero; ` +
+            'stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
         return result;
     }
 
-    public static GerberToSvg(content:string):string {
+    private static toString2(n:number):string {
+        return ((n >>> 4) & 0xf).toString(16) +
+            (n & 0xf).toString(16);
+    }
+    
+    private static colorToHtml(clr:number):string {
+        let ss:string;
+        ss = '#' + SVGConverter.toString2((clr >>> 16) & 0xff)
+            + SVGConverter.toString2((clr >>> 8) & 0xff)
+            + SVGConverter.toString2(clr & 0xff);
+        return ss;
+    }
+
+    public static GerberToSvg(
+        content:string,
+        layerColor:number = 0xff1f1c,
+        scale:number = 100,
+        margin:number = 10):string {
         let parser = new GerberParser();
         parser.parseBlock(content);
         let ctx = new GerberState();
         parser.execute(ctx);
         let primitives = ctx.primitives;
         let cvt = new SVGConverter();
-        let result = "";
+        cvt.layerColor = layerColor;
+        cvt.scale = scale;
+        cvt.margin = margin;
         let svg = cvt.convert(primitives);
-        svg.forEach(l => {
-            result = result.concat(l);
-        });
+        let result = "";
+        svg.forEach(l => result = result.concat(l));
         return result;
     }
 }
