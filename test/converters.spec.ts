@@ -33,4 +33,19 @@ describe("Conveter tests", () => {
                 //console.log(`Conversion result for ${fileName}`);
             });
     });
+    it('parse and convert eagle files', () => {
+        let folder = "test/Gerber_File_Format_Examples/eagle";
+        fs.readdirSync(folder)
+            .filter(fileName => fileName.match(/\.G[BT][LOPS]$/))
+            .forEach(fileName => {
+                let fullFileName = folder + "/" + fileName;
+                let content = fs.readFileSync(fullFileName).toString();
+                console.log(`Convert ${fileName}`);
+                let result = cv.SVGConverter.GerberToSvg(content);
+                let outputFileName = folder + "/" + fileName + ".svg";
+                let stream = fs.createWriteStream(outputFileName);
+                stream.write(result);
+                stream.end();
+            });
+    });
 });

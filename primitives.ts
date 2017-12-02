@@ -202,12 +202,18 @@ export class ApertureDefinition implements ApertureBase {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {
             if (this.templateName == "C" || this.templateName == "O") {
+                let radius = state.scale * this.modifiers[0] / 2;
+                if (radius < Epsilon) {
+                    return [];
+                }
                 return translatePolygon(
-                    circleToPolygon(this.modifiers[0] / 2),
+                    circleToPolygon(radius),
                     start.midPoint(end));
             } else if (this.templateName == "R") {
                 return translatePolygon(
-                    rectangleToPolygon(this.modifiers[0], this.modifiers[1]),
+                    rectangleToPolygon(
+                        state.scale * this.modifiers[0],
+                        state.scale * this.modifiers[1]),
                     start.midPoint(end));
             }
             throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
@@ -215,9 +221,9 @@ export class ApertureDefinition implements ApertureBase {
         let startVector = {x:start.x - center.x, y:start.y - center.y};
         let endVector = {x:end.x - center.x, y:end.y - center.y};
         // This is the radius of the aperture, not the arc itself
-        let radius = state.scale * this.modifiers[0] / 2;
-        let rStartVector = scaleVector(unitVector(startVector), radius);
-        let rEndVector = scaleVector(unitVector(endVector), radius);
+        let apertureRadius = state.scale * this.modifiers[0] / 2;
+        let rStartVector = scaleVector(unitVector(startVector), apertureRadius);
+        let rEndVector = scaleVector(unitVector(endVector), apertureRadius);
         let innerStartVector = addVector(startVector, negVector(rStartVector));
         let outerStartVector = addVector(startVector, rStartVector);
         let innerEndVector = addVector(endVector, negVector(rEndVector));
@@ -227,6 +233,9 @@ export class ApertureDefinition implements ApertureBase {
         let innerEnd = new Point(innerEndVector.x + center.x, innerEndVector.y + center.y);
         let outerEnd = new Point(outerEndVector.x + center.x, outerEndVector.y + center.y);
         if (this.templateName == "C" || this.templateName == "O") {
+            if (apertureRadius < Epsilon) {
+                return arcToPolygon(start, end, center);
+            }
             result = arcToPolygon(innerStart, outerStart, innerStart.midPoint(outerStart), false);
             result = result.concat(arcToPolygon(outerStart, outerEnd, center, false));
             result = result.concat(arcToPolygon(outerEnd, innerEnd, outerEnd.midPoint(innerEnd), false));
@@ -262,6 +271,9 @@ export class ApertureDefinition implements ApertureBase {
         if (this.templateName == "C" || this.templateName == "O" || this.templateName == "R") {
             let result:PolygonSet = [];
             let apertureRadius = state.scale * this.modifiers[0] / 2;
+            if (apertureRadius < Epsilon) {
+                return [translatePolygon(circleToPolygon(radius), center)];
+            }
             result.push(translatePolygon(circleToPolygon(radius + apertureRadius), center));
             result.push(translatePolygon(circleToPolygon(radius - apertureRadius), center).reverse());
             return result;
@@ -273,8 +285,12 @@ export class ApertureDefinition implements ApertureBase {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {
             if (this.templateName == "C" || this.templateName == "O") {
+                let radius = state.scale * this.modifiers[0] / 2;
+                if (radius < Epsilon) {
+                    return [];
+                }
                 return translatePolygon(
-                    circleToPolygon(state.scale * this.modifiers[0] / 2),
+                    circleToPolygon(radius),
                     start.midPoint(end));
             } else if (this.templateName == "R") {
                 return translatePolygon(
@@ -293,6 +309,9 @@ export class ApertureDefinition implements ApertureBase {
 
         if (this.templateName == "C" || this.templateName == "O") {
             let radius = state.scale * this.modifiers[0] / 2;
+            if (radius < Epsilon) {
+                return [start.clone(), end.clone()];
+            }
             let vector = {x:end.x - start.x, y:end.y - start.y};
             let uVector = unitVector(vector);
 
