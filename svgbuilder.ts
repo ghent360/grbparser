@@ -175,18 +175,18 @@ export class SVGBuilder {
                 }
                 file.write(" M ");
                 file.write( 
-                    (this.PolyInfoList[i].polygons[j][0].x * scale + offsetX).toString());
+                    (this.PolyInfoList[i].polygons[j][0].x * scale + offsetX).toFixed(3));
                 file.write(" ");
                 file.write(
-                    (this.PolyInfoList[i].polygons[j][0].y * scale + offsetY).toString());
+                    (this.PolyInfoList[i].polygons[j][0].y * scale + offsetY).toFixed(3));
                 for (let k = 1; k < this.PolyInfoList[i].polygons[j].length; ++k) {
                     let ip = this.PolyInfoList[i].polygons[j][k];
                     let x = ip.x * scale;
                     let y = ip.y * scale;
                     file.write(" L ");
-                    file.write((x + offsetX).toString());
+                    file.write((x + offsetX).toFixed(3));
                     file.write(" ");
-                    file.write((y + offsetY).toString());
+                    file.write((y + offsetY).toFixed(3));
                 }
                 file.write(" z");
             }
@@ -217,9 +217,9 @@ export class SVGBuilder {
                         file.write("\" y=\"");
                         file.write(Math.trunc(ip.y * scale + offsetY).toString());
                         file.write("\">");
-                        file.write(ip.x.toString());
+                        file.write(ip.x.toFixed(3));
                         file.write(",");
-                        file.write(ip.y.toString());
+                        file.write(ip.y.toFixed(3));
                         file.write("</text>\n\n");
                     }
                 }

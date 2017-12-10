@@ -8,7 +8,7 @@
  */
 
 export function formatFloat(n:number, precision:number):string {
-    let s = n.toPrecision(precision);
+    let s = n.toFixed(precision);
     let dotIdx = s.indexOf('.');
     if (dotIdx >= 0 && s.indexOf('e') < 0) {
         let idx:number;

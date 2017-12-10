@@ -151,7 +151,7 @@ export class ADCommand implements GerberCommand {
             } else {
                 result += "X";
             }
-            result += m.toPrecision();
+            result += m.toString();
         }
         result += "*";
         return result;
@@ -963,8 +963,8 @@ export class SRCommand implements GerberCommand {
         if (this.x != undefined) {
             result += "X" + this.x.toString();
             result += "Y" + this.y.toString();
-            result += "I" + this.i.toPrecision();
-            result += "J" + this.j.toPrecision();
+            result += "I" + this.i.toString();
+            result += "J" + this.j.toString();
         }
         result += "*";
         return result;

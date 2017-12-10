@@ -54,7 +54,7 @@ class ConstantNumber implements AritmeticOperation {
     }
 
     toString():string {
-        return this.value.toPrecision();
+        return this.value.toString();
     }
 }
 

@@ -92,10 +92,16 @@ export class DebugConverter {
     }
 }
 
+export const Init = waitClipperLoad();
+export function WaitInit(callback:() => void) {
+    Promise.resolve(waitClipperLoad()).then(() => callback());
+}
+
 export class SVGConverter extends ConverterBase<string> {
     public scale = 100;
     public margin = 10;
     public layerColor = 0xff1f1c;
+    public precision:number = 3;
     private bounds_:Bounds;
     private width_:number;
     private height_:number
@@ -162,10 +168,12 @@ export class SVGConverter extends ConverterBase<string> {
             .filter(polygon => polygon.length > 2)
             .forEach(polygon => {
                 let start = polygon[0].scale(this.scale).add(this.offset_);
-                result += ` M ${start.x} ${this.height_ - start.y}`;
+                result += ` M ${start.x.toFixed(this.precision)} `
+                    + `${(this.height_ - start.y).toFixed(this.precision)}`;
                 for (let idx = 1; idx < polygon.length; idx++) {
                     let point = polygon[idx].scale(this.scale).add(this.offset_);
-                    result += ` L ${point.x} ${this.height_ - point.y}`;
+                    result += ` L ${point.x.toFixed(this.precision)} `
+                        + `${(this.height_ - point.y).toFixed(this.precision)}`;
                 }
             });
         result += ' z" ';
@@ -205,9 +213,5 @@ export class SVGConverter extends ConverterBase<string> {
         let result = "";
         svg.forEach(l => result = result.concat(l));
         return result;
-    }
-
-    public static WaitInit(callback:() => void) {
-        Promise.resolve(waitClipperLoad()).then(() => callback());
     }
 }
