@@ -787,12 +787,12 @@ export class Block {
 }
 
 export interface GraphicsOperations {
-    line(from:Point, to:Point, ctx:GerberState);
-    circle(center:Point, radius:number, ctx:GerberState);
-    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState);
-    flash(center:Point, ctx:GerberState);
-    region(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState);
-    block(block:Block, ctx:GerberState);
+    line(from:Point, to:Point, ctx:GerberState):void;
+    circle(center:Point, radius:number, ctx:GerberState):void;
+    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState):void;
+    flash(center:Point, ctx:GerberState):void;
+    region(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState):void;
+    block(block:Block, ctx:GerberState):void;
 }
 
 export class GerberState {
@@ -1587,7 +1587,7 @@ export interface GerberCommand {
     readonly name:string;
     readonly isAdvanced:boolean;
     formatOutput(fmt:CoordinateFormatSpec):string;
-    execute(ctx:GerberState);
+    execute(ctx:GerberState):void;
 }
 
 export const Epsilon = 1E-12;
