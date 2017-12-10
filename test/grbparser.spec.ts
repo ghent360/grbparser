@@ -11,8 +11,10 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as gp from '../grbparser';
 import * as pr from '../primitives';
+import * as ps from '../polygonSet';
 
 describe("GerberParser tests", () => {
+    it('Wait for Clipper', () => ps.waitClipperLoad());
     it('G01', () => {
         let commands:string[] = [];
         let cmdParser = new gp.CommandParser();

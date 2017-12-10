@@ -27,15 +27,15 @@ import {
     EmptyBounds,
     ObjectPolarity,
     GraphicsObjects,
-    composeImage,
+    composeSolidImage,
     Repeat,
     GerberState,
 } from "./primitives";
 import {Point} from "./point";
-import {PolygonSet} from "./polygonSet";
+import {PolygonSet, waitClipperLoad} from "./polygonSet";
 import {formatFloat} from "./utils";
 import {subtractPolygonSet} from "./polygonSet";
-import { GerberParser } from "./grbparser";
+import {GerberParser} from "./grbparser";
 
 abstract class ConverterBase<T> {
     convert(primitives:Array<GraphicsPrimitive>):Array<T> {
@@ -103,19 +103,16 @@ export class SVGConverter extends ConverterBase<string> {
     private objects_:GraphicsObjects = [];
 
     convertLine(l:Line):string {
-        let polygon = l.aperture.generateLineDraw(l.from, l.to, l.state);
         this.objects_ = this.objects_.concat(l.objects);
         return "";
     }
 
     convertArc(a:Arc):string {
-        let polygon = a.aperture.generateArcDraw(a.start, a.end, a.center, a.state);
         this.objects_ = this.objects_.concat(a.objects);
         return "";
     }
 
     convertCircle(c:Circle):string {
-        let polySet = c.aperture.generateCircleDraw(c.center, c.radius, c.state);
         this.objects_ = this.objects_.concat(c.objects);
         return "";
     }
@@ -155,7 +152,7 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     footer():Array<string> {
-        let svg = this.polySetToPath(composeImage(this.objects_));
+        let svg = this.polySetToPath(composeSolidImage(this.objects_));
         return [svg, "</g>", "</svg>"];
     }
 
@@ -208,5 +205,9 @@ export class SVGConverter extends ConverterBase<string> {
         let result = "";
         svg.forEach(l => result = result.concat(l));
         return result;
+    }
+
+    public static WaitInit(callback:() => void) {
+        Promise.resolve(waitClipperLoad()).then(() => callback());
     }
 }

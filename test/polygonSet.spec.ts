@@ -17,6 +17,7 @@ function arrayToPath(array:Array<Array<number>>):Array<Point> {
 }
 
 describe("PolygonSet tests", () => {
+    it('Wait for Clipper', () => ps.waitClipperLoad());
     it('Union Tests', () => {
         let poly1 = arrayToPath([[0, 0], [10, 0], [10, 20], [0, 20], [0, 0]]);
         let poly2 = arrayToPath([[0, 0], [20, 0], [20, 10], [0, 10], [0, 0]]);

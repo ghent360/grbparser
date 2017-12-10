@@ -67,7 +67,8 @@ export enum QuadrantMode {
 
 export enum ObjectPolarity {
     DARK,
-    LIGHT
+    LIGHT,
+    THIN
 }
 
 export enum ObjectMirroring {
@@ -83,14 +84,20 @@ export enum AttributeType {
     OBJECT
 }
 
+export type PolyongWithThinkness = {polygon:Polygon, is_solid:boolean};
+export type PolyongSetWithThinkness = {polygonSet:PolygonSet, is_solid:boolean};
 export type PolySetWithPolarity = {polySet:PolygonSet, polarity:ObjectPolarity};
 export type GraphicsObjects = Array<PolySetWithPolarity>;
 
 function reversePolarity(polarity:ObjectPolarity):ObjectPolarity {
-    if (polarity === ObjectPolarity.DARK) {
-        return ObjectPolarity.LIGHT;
+    switch (polarity) {
+        case ObjectPolarity.DARK:
+            return ObjectPolarity.LIGHT;
+        case ObjectPolarity.LIGHT:
+            return ObjectPolarity.DARK;
+        case ObjectPolarity.THIN:
+            return ObjectPolarity.THIN;
     }
-    return ObjectPolarity.DARK;
 }
 
 function reverseObjectsPolarity(objects:GraphicsObjects):GraphicsObjects {
@@ -130,9 +137,9 @@ export interface ApertureBase {
     
     isDrawable():boolean;
     objects(polarity:ObjectPolarity):GraphicsObjects;
-    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):Polygon;
-    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSet;
-    generateLineDraw(start:Point, end:Point, state:ObjectState):Polygon;
+    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolyongWithThinkness;
+    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolyongSetWithThinkness;
+    generateLineDraw(start:Point, end:Point, state:ObjectState):PolyongWithThinkness;
 }
 
 export class BlockAperture implements ApertureBase {
@@ -155,15 +162,15 @@ export class BlockAperture implements ApertureBase {
         return this.objects_;
     }
 
-    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):Polygon {
+    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolyongWithThinkness {
         throw new GerberParseException("Draw with block aperture is not supported.");
     }
 
-    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSet {
+    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolyongSetWithThinkness {
         throw new GerberParseException("Draw with block aperture is not supported.");
     }
 
-    generateLineDraw(start:Point, end:Point, state:ObjectState):Polygon {
+    generateLineDraw(start:Point, end:Point, state:ObjectState):PolyongWithThinkness {
         throw new GerberParseException("Draw with block aperture is not supported.");
     }
 }
@@ -198,23 +205,25 @@ export class ApertureDefinition implements ApertureBase {
         }
     }
 
-    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):Polygon {
+    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolyongWithThinkness {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {
             if (this.templateName == "C" || this.templateName == "O") {
                 let radius = state.scale * this.modifiers[0] / 2;
                 if (radius < Epsilon) {
-                    return [];
+                    return {polygon:[], is_solid:false};
                 }
-                return translatePolygon(
-                    circleToPolygon(radius),
-                    start.midPoint(end));
+                return {
+                    polygon:translatePolygon(circleToPolygon(radius), start.midPoint(end)),
+                    is_solid:true};
             } else if (this.templateName == "R") {
-                return translatePolygon(
-                    rectangleToPolygon(
-                        state.scale * this.modifiers[0],
-                        state.scale * this.modifiers[1]),
-                    start.midPoint(end));
+                return {
+                    polygon:translatePolygon(
+                        rectangleToPolygon(
+                            state.scale * this.modifiers[0],
+                            state.scale * this.modifiers[1]),
+                        start.midPoint(end)),
+                    is_solid:true};
             }
             throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
         }
@@ -234,13 +243,13 @@ export class ApertureDefinition implements ApertureBase {
         let outerEnd = new Point(outerEndVector.x + center.x, outerEndVector.y + center.y);
         if (this.templateName == "C" || this.templateName == "O") {
             if (apertureRadius < Epsilon) {
-                return arcToPolygon(start, end, center);
+                return {polygon:arcToPolygon(start, end, center), is_solid:false};
             }
             result = arcToPolygon(innerStart, outerStart, innerStart.midPoint(outerStart), false);
             result = result.concat(arcToPolygon(outerStart, outerEnd, center, false));
             result = result.concat(arcToPolygon(outerEnd, innerEnd, outerEnd.midPoint(innerEnd), false));
             result = result.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
-            return result;
+            return {polygon:result, is_solid:true};
         } else if (this.templateName == "R") {
             if (Math.abs(state.rotation) > Epsilon
                 || state.mirroring != ObjectMirroring.NONE) {
@@ -262,46 +271,48 @@ export class ApertureDefinition implements ApertureBase {
                 new Point(innerEnd.x + pEncLineCW.x, innerEnd.y + pEncLineCW.y)
             ]);
             result = result.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
-            return result;
+            return {polygon:result, is_solid:true};
         }
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
 
-    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSet {
+    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolyongSetWithThinkness {
         if (this.templateName == "C" || this.templateName == "O" || this.templateName == "R") {
             let result:PolygonSet = [];
             let apertureRadius = state.scale * this.modifiers[0] / 2;
             if (apertureRadius < Epsilon) {
-                return [translatePolygon(circleToPolygon(radius), center)];
+                return {polygonSet:[translatePolygon(circleToPolygon(radius), center)], is_solid:false};
             }
             result.push(translatePolygon(circleToPolygon(radius + apertureRadius), center));
             result.push(translatePolygon(circleToPolygon(radius - apertureRadius), center).reverse());
-            return result;
+            return {polygonSet:result, is_solid:true};
         }
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
 
-    generateLineDraw(start:Point, end:Point, state:ObjectState):Polygon {
+    generateLineDraw(start:Point, end:Point, state:ObjectState):PolyongWithThinkness {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {
             if (this.templateName == "C" || this.templateName == "O") {
                 let radius = state.scale * this.modifiers[0] / 2;
                 if (radius < Epsilon) {
-                    return [];
+                    return {polygon:[], is_solid:false};
                 }
-                return translatePolygon(
-                    circleToPolygon(radius),
-                    start.midPoint(end));
+                return {
+                    polygon: translatePolygon(circleToPolygon(radius), start.midPoint(end)),
+                    is_solid:true};
             } else if (this.templateName == "R") {
-                return translatePolygon(
-                    rotatePolygon(
-                        mirrorPolygon(
-                            rectangleToPolygon(
-                                state.scale * this.modifiers[0],
-                                state.scale * this.modifiers[1]),
-                            state.mirroring),
-                        state.rotation),
-                    start.midPoint(end));
+                return {
+                    polygon:translatePolygon(
+                        rotatePolygon(
+                            mirrorPolygon(
+                                rectangleToPolygon(
+                                    state.scale * this.modifiers[0],
+                                    state.scale * this.modifiers[1]),
+                                state.mirroring),
+                            state.rotation),
+                        start.midPoint(end)),
+                    is_solid:true};
             }
             throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
         }
@@ -310,7 +321,7 @@ export class ApertureDefinition implements ApertureBase {
         if (this.templateName == "C" || this.templateName == "O") {
             let radius = state.scale * this.modifiers[0] / 2;
             if (radius < Epsilon) {
-                return [start.clone(), end.clone()];
+                return {polygon:[start.clone(), end.clone()], is_solid:false};
             }
             let vector = {x:end.x - start.x, y:end.y - start.y};
             let uVector = unitVector(vector);
@@ -331,7 +342,7 @@ export class ApertureDefinition implements ApertureBase {
                 new Point(endLeft.x, endLeft.y),
                 end));
             result.push(new Point(startLeft.x, startLeft.y));
-            return result;
+            return {polygon:result, is_solid:true};
         } else if (this.templateName == "R") {
             if (Math.abs(state.rotation) > Epsilon
                 || state.mirroring != ObjectMirroring.NONE) {
@@ -340,13 +351,17 @@ export class ApertureDefinition implements ApertureBase {
             let width2 = state.scale * this.modifiers[0] / 2;
             let height2 = state.scale * this.modifiers[1] / 2;
             if (Math.abs(start.x - end.x) < Epsilon) { // Vertical Line
-                return translatePolygon(
-                    rectangleToPolygon(this.modifiers[0], Math.abs(end.y - start.y) + this.modifiers[1]),
-                    start.midPoint(end));
+                return {
+                    polygon:translatePolygon(
+                        rectangleToPolygon(this.modifiers[0], Math.abs(end.y - start.y) + this.modifiers[1]),
+                        start.midPoint(end)),
+                    is_solid:true};
             } else if (Math.abs(start.y - end.y) < Epsilon) { // Horizontal Line
-                return translatePolygon(
-                    rectangleToPolygon(Math.abs(end.x - start.x) + this.modifiers[0], this.modifiers[1]),
-                    start.midPoint(end));
+                return {
+                    polygon:translatePolygon(
+                        rectangleToPolygon(Math.abs(end.x - start.x) + this.modifiers[0], this.modifiers[1]),
+                        start.midPoint(end)),
+                    is_solid:true};
             } else {
                 let vector = {x:end.x - start.x, y:end.y - start.y};
                 result = new Array<Point>(7);
@@ -383,7 +398,7 @@ export class ApertureDefinition implements ApertureBase {
                     result[5] = new Point(start.x - width2, start.y - height2);
                     result[6] = new Point(start.x - width2, start.y - height2);
                 }
-                return result;
+                return {polygon:result, is_solid:true};
             }
         }
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
@@ -1247,8 +1262,9 @@ export class Line {
         readonly to:Point,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
-        let polygon = aperture.generateLineDraw(from, to, state);
-        this.objects_ = [{polySet:[polygon], polarity:state.polarity}];
+        let draw = aperture.generateLineDraw(from, to, state);
+        let polarity = (draw.is_solid) ? state.polarity : ObjectPolarity.THIN;
+        this.objects_ = [{polySet:[draw.polygon], polarity:polarity}];
     }
 
     toString():string {
@@ -1272,8 +1288,9 @@ export class Circle {
         readonly radius:number,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
-        let polygonSet = aperture.generateCircleDraw(center, radius, state);
-        this.objects_ = [{polySet:polygonSet, polarity:state.polarity}];
+        let draw = aperture.generateCircleDraw(center, radius, state);
+        let polarity = (draw.is_solid) ? state.polarity : ObjectPolarity.THIN;
+        this.objects_ = [{polySet:draw.polygonSet, polarity:polarity}];
     }
 
     toString():string {
@@ -1299,8 +1316,9 @@ export class Arc {
         readonly end:Point,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
-        let polygon = aperture.generateArcDraw(start, end, center, state);
-        this.objects_ = [{polySet:[polygon], polarity:state.polarity}];
+        let draw = aperture.generateArcDraw(start, end, center, state);
+        let polarity = (draw.is_solid) ? state.polarity : ObjectPolarity.THIN;
+        this.objects_ = [{polySet:[draw.polygon], polarity:polarity}];
     }
 
     toString():string {
@@ -1553,13 +1571,15 @@ export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
     }
 }
 
-export function composeImage(objects:GraphicsObjects, union:boolean = false):PolygonSet {
+export function composeSolidImage(objects:GraphicsObjects, union:boolean = false):PolygonSet {
     if (objects.length == 0) {
         return [];
     }
     let image:PolygonSet = [];
     let clear:PolygonSet = [];
-    objects.forEach(o => {
+    objects
+        .filter(o => o.polarity != ObjectPolarity.THIN)
+        .forEach(o => {
         if (o.polarity === ObjectPolarity.DARK) {
             if (clear.length > 0) {
                 if (image.length > 0) {

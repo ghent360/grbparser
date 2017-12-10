@@ -8,7 +8,14 @@
  */
 import {Point} from "./point";
 import {ObjectMirroring, Bounds, EmptyBounds, Epsilon, GraphicsObjects} from "./primitives";
-import * as cl from "clipperjs";
+import {ClipperSubModule} from "clipperjs/clipper";
+
+const clipperModule = import("clipperjs/clipper_js");
+let cl:ClipperSubModule;
+
+export async function waitClipperLoad() {
+    cl = await clipperModule;
+}
 
 export type Polygon = Array<Point>;
 export type PolygonSet = Array<Polygon>;
