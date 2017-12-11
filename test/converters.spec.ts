@@ -35,10 +35,10 @@ describe("Conveter tests", () => {
                 //console.log(`Conversion result for ${fileName}`);
             });
     });
-    it('parse and convert eagle files', () => {
+    it('eagle files to SVG', () => {
         let folder = "test/Gerber_File_Format_Examples/eagle";
         fs.readdirSync(folder)
-            .filter(fileName => fileName.match(/\.GT[LOPS]$/))
+            .filter(fileName => fileName.match(/\.G[TB]L$/))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
@@ -48,6 +48,17 @@ describe("Conveter tests", () => {
                 let stream = fs.createWriteStream(outputFileName);
                 stream.write(result);
                 stream.end();
+            });
+    });
+    it('eagle files to objects', () => {
+        let folder = "test/Gerber_File_Format_Examples/eagle";
+        fs.readdirSync(folder)
+            .filter(fileName => fileName.match(/\.G[TB][LOPS]$/))
+            .forEach(fileName => {
+                let fullFileName = folder + "/" + fileName;
+                let content = fs.readFileSync(fullFileName).toString();
+                //console.log(`Convert ${fileName}`);
+                let result = cv.ObjectConverter.GerberToObjects(content);
             });
     });
 });

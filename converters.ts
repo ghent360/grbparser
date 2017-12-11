@@ -215,3 +215,28 @@ export class SVGConverter extends ConverterBase<string> {
         return result;
     }
 }
+
+export class ObjectConverter {
+    constructor(readonly solids:PolygonSet, readonly thins:PolygonSet, readonly bounds:Bounds) {
+    }
+
+    public static GerberToObjects(content:string):ObjectConverter {
+        let parser = new GerberParser();
+        parser.parseBlock(content);
+        let ctx = new GerberState();
+        parser.execute(ctx);
+        let primitives = ctx.primitives;
+        let objects:GraphicsObjects = [];
+        let bounds = primitives[0].bounds;
+        primitives.forEach(p => {
+            objects = objects.concat(p.objects);
+            bounds.merge(p.bounds);
+        });
+        let solids = composeSolidImage(objects);
+        let thins:PolygonSet = [];
+        objects
+            .filter(o => o.polarity == ObjectPolarity.THIN)
+            .forEach(o => thins = thins.concat(o.polySet));
+        return new ObjectConverter(solids, thins, bounds);
+    }
+}
