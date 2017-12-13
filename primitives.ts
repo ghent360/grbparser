@@ -1262,9 +1262,6 @@ export class Line {
         readonly to:Point,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
-        let draw = aperture.generateLineDraw(from, to, state);
-        let polarity = (draw.is_solid) ? state.polarity : ObjectPolarity.THIN;
-        this.objects_ = [{polySet:[draw.polygon], polarity:polarity}];
     }
 
     toString():string {
@@ -1272,11 +1269,28 @@ export class Line {
     }
 
     get objects():GraphicsObjects {
+        if (!this.objects_) {
+            let draw = this.aperture.generateLineDraw(
+                this.from,
+                this.to,
+                this.state);
+            let polarity = (draw.is_solid) ? this.state.polarity : ObjectPolarity.THIN;
+            this.objects_ = [
+                {
+                    polySet:[draw.polygon],
+                    polarity:polarity
+                }
+            ];
+        }
         return this.objects_;
     }
 
     get bounds():Bounds {
-        return objectsBounds(this.objects_);
+        return objectsBounds(this.objects);
+    }
+
+    get primitives() {
+        return this;
     }
 }
 
@@ -1288,9 +1302,6 @@ export class Circle {
         readonly radius:number,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
-        let draw = aperture.generateCircleDraw(center, radius, state);
-        let polarity = (draw.is_solid) ? state.polarity : ObjectPolarity.THIN;
-        this.objects_ = [{polySet:draw.polygonSet, polarity:polarity}];
     }
 
     toString():string {
@@ -1298,11 +1309,28 @@ export class Circle {
     }
 
     get objects():GraphicsObjects {
+        if (!this.objects_) {
+            let draw = this.aperture.generateCircleDraw(
+                this.center,
+                this.radius,
+                this.state);
+            let polarity = (draw.is_solid) ? this.state.polarity : ObjectPolarity.THIN;
+            this.objects_ = [
+                {
+                    polySet:draw.polygonSet,
+                    polarity:polarity
+                }
+            ];
+        }
         return this.objects_;
     }
 
     get bounds():Bounds {
-        return objectsBounds(this.objects_);
+        return objectsBounds(this.objects);
+    }
+
+    get primitives() {
+        return this;
     }
 }
 
@@ -1316,9 +1344,6 @@ export class Arc {
         readonly end:Point,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
-        let draw = aperture.generateArcDraw(start, end, center, state);
-        let polarity = (draw.is_solid) ? state.polarity : ObjectPolarity.THIN;
-        this.objects_ = [{polySet:[draw.polygon], polarity:polarity}];
     }
 
     toString():string {
@@ -1326,11 +1351,29 @@ export class Arc {
     }
 
     get objects():GraphicsObjects {
+        if (!this.objects_) {
+            let draw = this.aperture.generateArcDraw(
+                this.start,
+                this.end,
+                this.center,
+                this.state);
+            let polarity = (draw.is_solid) ? this.state.polarity : ObjectPolarity.THIN;
+            this.objects_ = [
+                {
+                    polySet:[draw.polygon],
+                    polarity:polarity
+                }
+            ];
+        }
         return this.objects_;
     }
 
     get bounds():Bounds {
-        return objectsBounds(this.objects_);
+        return objectsBounds(this.objects);
+    }
+
+    get primitives() {
+        return this;
     }
 }
 
@@ -1341,17 +1384,6 @@ export class Flash {
         readonly center:Point,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
-        this.objects_ = aperture.objects(state.polarity).map(o => {
-            return {
-                polySet:translatePolySet(
-                    scalePolySet(
-                        rotatePolySet(
-                            mirrorPolySet(o.polySet, state.mirroring),
-                            state.rotation),
-                        state.scale),
-                    center),
-                polarity: (state.polarity === ObjectPolarity.DARK) ? o.polarity : reversePolarity(o.polarity)};
-        });
     }
 
     toString():string {
@@ -1359,11 +1391,30 @@ export class Flash {
     }
 
     get objects():GraphicsObjects {
+        if (!this.objects_) {
+            this.objects_ = this.aperture.objects(this.state.polarity).map(o => {
+                return {
+                    polySet:translatePolySet(
+                        scalePolySet(
+                            rotatePolySet(
+                                mirrorPolySet(o.polySet, this.state.mirroring),
+                                this.state.rotation),
+                                this.state.scale),
+                        this.center),
+                    polarity: (this.state.polarity === ObjectPolarity.DARK)
+                        ? o.polarity 
+                        : reversePolarity(o.polarity)};
+            });
+        }
         return this.objects_;
     }
 
     get bounds():Bounds {
-        return objectsBounds(this.objects_);
+        return objectsBounds(this.objects);
+    }
+
+    get primitives() {
+        return this;
     }
 }
 
@@ -1373,7 +1424,6 @@ export class Region {
     constructor(
         readonly contours:Array<RegionContour>,
         readonly state:ObjectState) {
-        this.objects_ = [{polySet:Region.buildPolygonSet(contours), polarity:state.polarity}];
     }
 
     toString():string {
@@ -1430,32 +1480,31 @@ export class Region {
     }
 
     get objects():GraphicsObjects {
+        if (!this.objects_) {
+            this.objects_ = [
+                {
+                    polySet:Region.buildPolygonSet(this.contours),
+                    polarity:this.state.polarity
+                }
+            ];
+        }
         return this.objects_;
     }
 
     get bounds():Bounds {
-        return objectsBounds(this.objects_);
+        return objectsBounds(this.objects);
+    }
+
+    get primitives() {
+        return this;
     }
 }
 
 export class Repeat {
-    private objects_:GraphicsObjects = [];
-    private primitives_:Array<GraphicsPrimitive> = [];
+    private objects_:GraphicsObjects;
+    private primitives_:Array<GraphicsPrimitive>;
 
     constructor(readonly block:Block) {
-        let xOffset = 0;
-        for (let xCnt = 0; xCnt < block.xRepeat; xCnt++) {
-            let yOffset = 0;
-            for (let yCnt = 0; yCnt < block.yRepeat; yCnt++) {
-                let translateVector = new Point(xOffset, yOffset);
-                this.objects_ = this.objects_.concat(
-                    translateObjects(block.objects, translateVector));
-                this.primitives_ = this.primitives_.concat(
-                    translatePrimitives(block.primitives, translateVector));
-                yOffset += block.yDelta;
-            }
-            xOffset += block.xDelta;
-        }
     }
 
     toString():string {
@@ -1463,11 +1512,39 @@ export class Repeat {
     }
 
     get objects():GraphicsObjects {
+        if (!this.objects_) {
+            this.buildObjects();
+        }
         return this.objects_;
     }
 
     get bounds():Bounds {
-        return objectsBounds(this.objects_);
+        return objectsBounds(this.objects);
+    }
+
+    private buildObjects() {
+        let xOffset = 0;
+        this.objects_ = [];
+        this.primitives_ = [];
+        for (let xCnt = 0; xCnt < this.block.xRepeat; xCnt++) {
+            let yOffset = 0;
+            for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
+                let translateVector = new Point(xOffset, yOffset);
+                this.objects_ = this.objects_.concat(
+                    translateObjects(this.block.objects, translateVector));
+                this.primitives_ = this.primitives_.concat(
+                    translatePrimitives(this.block.primitives, translateVector));
+                yOffset += this.block.yDelta;
+            }
+            xOffset += this.block.xDelta;
+        }
+    }
+
+    get primitives() {
+        if (!this.primitives_) {
+            this.buildObjects();
+        }
+        return this.primitives_;
     }
 }
 

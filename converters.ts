@@ -228,7 +228,7 @@ export class ObjectConverter {
         let primitives = ctx.primitives;
         let objects:GraphicsObjects = [];
         let bounds = primitives[0].bounds;
-        primitives.forEach(p => {
+        primitives.slice(1).forEach(p => {
             objects = objects.concat(p.objects);
             bounds.merge(p.bounds);
         });
