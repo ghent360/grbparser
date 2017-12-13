@@ -53,12 +53,23 @@ describe("Conveter tests", () => {
     it('eagle files to objects', () => {
         let folder = "test/Gerber_File_Format_Examples/eagle";
         fs.readdirSync(folder)
+            .filter(fileName => fileName.match(/\.G[TB]L$/))
+            .forEach(fileName => {
+                let fullFileName = folder + "/" + fileName;
+                let content = fs.readFileSync(fullFileName).toString();
+                //console.log(`Convert ${fileName}`);
+                let result = cv.PolygonConverter.GerberToPolygons(content);
+            });
+    });
+    it('eagle files to orimitives', () => {
+        let folder = "test/Gerber_File_Format_Examples/eagle";
+        fs.readdirSync(folder)
             .filter(fileName => fileName.match(/\.G[TB][LOPS]$/))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 //console.log(`Convert ${fileName}`);
-                let result = cv.ObjectConverter.GerberToObjects(content);
+                let result = cv.PrimitiveConverter.GerberToPrimitives(content);
             });
     });
 });

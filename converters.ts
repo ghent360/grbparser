@@ -216,11 +216,11 @@ export class SVGConverter extends ConverterBase<string> {
     }
 }
 
-export class ObjectConverter {
+export class PolygonConverter {
     constructor(readonly solids:PolygonSet, readonly thins:PolygonSet, readonly bounds:Bounds) {
     }
 
-    public static GerberToObjects(content:string):ObjectConverter {
+    public static GerberToPolygons(content:string):PolygonConverter {
         let parser = new GerberParser();
         parser.parseBlock(content);
         let ctx = new GerberState();
@@ -228,7 +228,7 @@ export class ObjectConverter {
         let primitives = ctx.primitives;
         let objects:GraphicsObjects = [];
         let bounds = primitives[0].bounds;
-        primitives.slice(1).forEach(p => {
+        primitives.forEach(p => {
             objects = objects.concat(p.objects);
             bounds.merge(p.bounds);
         });
@@ -237,6 +237,16 @@ export class ObjectConverter {
         objects
             .filter(o => o.polarity == ObjectPolarity.THIN)
             .forEach(o => thins = thins.concat(o.polySet));
-        return new ObjectConverter(solids, thins, bounds);
+        return new PolygonConverter(solids, thins, bounds);
+    }
+}
+
+export class PrimitiveConverter {
+    public static GerberToPrimitives(content:string):Array<GraphicsPrimitive> {
+        let parser = new GerberParser();
+        parser.parseBlock(content);
+        let ctx = new GerberState();
+        parser.execute(ctx);
+        return ctx.primitives;
     }
 }
