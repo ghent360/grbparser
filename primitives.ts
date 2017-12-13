@@ -1164,6 +1164,12 @@ export class LineSegment {
             new Point(Math.min(this.from.x, this.to.x), Math.min(this.from.y, this.to.y)),
             new Point(Math.max(this.from.x, this.to.x), Math.max(this.from.y, this.to.y)));
     }
+
+    public translate(vector:Point):LineSegment {
+        return new LineSegment(
+            this.from.add(vector),
+            this.to.add(vector));
+    }
 }
 
 export class CircleSegment {
@@ -1180,6 +1186,12 @@ export class CircleSegment {
         return new Bounds(
             new Point(this.center.x - this.radius, this.center.x - this.radius),
             new Point(this.center.x + this.radius, this.center.x + this.radius));
+    }
+
+    public translate(vector:Point):CircleSegment {
+        return new CircleSegment(
+            this.center.add(vector),
+            this.radius);
     }
 }
 
@@ -1200,10 +1212,22 @@ export class ArcSegment {
             new Point(Math.min(this.start.x, this.end.x), Math.min(this.start.y, this.end.y)),
             new Point(Math.max(this.start.x, this.end.x), Math.max(this.start.y, this.end.y)));
     }
+
+    public translate(vector:Point):ArcSegment {
+        return new ArcSegment(
+            this.center.add(vector),
+            this.radius,
+            this.start.add(vector),
+            this.end.add(vector));
+    }
 }
 
 export type RegionSegment = LineSegment | CircleSegment | ArcSegment;
 export type RegionContour = Array<RegionSegment>;
+
+function translateRegionContour(contour:RegionContour, vector:Point):RegionContour {
+    return contour.map(segment => segment.translate(vector));
+}
 
 class RegionGraphicsOperationsConsumer implements GraphicsOperations {
     private contour_:RegionContour = [];
@@ -1292,6 +1316,14 @@ export class Line {
     get primitives() {
         return this;
     }
+
+    public translate(vector:Point):Line {
+        return new Line(
+            this.from.add(vector),
+            this.to.add(vector),
+            this.aperture,
+            this.state);
+    }
 }
 
 export class Circle {
@@ -1331,6 +1363,14 @@ export class Circle {
 
     get primitives() {
         return this;
+    }
+
+    public translate(vector:Point):Circle {
+        return new Circle(
+            this.center.add(vector),
+            this.radius,
+            this.aperture,
+            this.state);
     }
 }
 
@@ -1375,6 +1415,16 @@ export class Arc {
     get primitives() {
         return this;
     }
+
+    public translate(vector:Point):Arc {
+        return new Arc(
+            this.center.add(vector),
+            this.radius,
+            this.start.add(vector),
+            this.end.add(vector),
+            this.aperture,
+            this.state);
+    }
 }
 
 export class Flash {
@@ -1415,6 +1465,13 @@ export class Flash {
 
     get primitives() {
         return this;
+    }
+
+    public translate(vector:Point):Flash {
+        return new Flash(
+            this.center.add(vector),
+            this.aperture,
+            this.state);
     }
 }
 
@@ -1498,13 +1555,19 @@ export class Region {
     get primitives() {
         return this;
     }
+
+    public translate(vector:Point):Region {
+        return new Region(
+            this.contours.map(contour => translateRegionContour(contour, vector)),
+            this.state);
+    }
 }
 
 export class Repeat {
     private objects_:GraphicsObjects;
     private primitives_:Array<GraphicsPrimitive>;
 
-    constructor(readonly block:Block) {
+    constructor(readonly block:Block, readonly xOffset:number = 0, readonly yOffset = 0) {
     }
 
     toString():string {
@@ -1523,15 +1586,27 @@ export class Repeat {
     }
 
     private buildObjects() {
-        let xOffset = 0;
+        let xOffset = this.xOffset;
         this.objects_ = [];
-        this.primitives_ = [];
         for (let xCnt = 0; xCnt < this.block.xRepeat; xCnt++) {
-            let yOffset = 0;
+            let yOffset = this.yOffset;
             for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
                 let translateVector = new Point(xOffset, yOffset);
                 this.objects_ = this.objects_.concat(
                     translateObjects(this.block.objects, translateVector));
+                yOffset += this.block.yDelta;
+            }
+            xOffset += this.block.xDelta;
+        }
+    }
+
+    private buildPrimitives() {
+        let xOffset = this.xOffset;
+        this.primitives_ = [];
+        for (let xCnt = 0; xCnt < this.block.xRepeat; xCnt++) {
+            let yOffset = this.yOffset;
+            for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
+                let translateVector = new Point(xOffset, yOffset);
                 this.primitives_ = this.primitives_.concat(
                     translatePrimitives(this.block.primitives, translateVector));
                 yOffset += this.block.yDelta;
@@ -1542,14 +1617,23 @@ export class Repeat {
 
     get primitives() {
         if (!this.primitives_) {
-            this.buildObjects();
+            this.buildPrimitives();
         }
         return this.primitives_;
     }
+
+    public translate(vector:Point):Repeat {
+        return new Repeat(
+            this.block,
+            this.xOffset + vector.x,
+            this.yOffset + vector.y);
+    }
 }
 
-function translatePrimitives(primitives:Array<GraphicsPrimitive>, vector:Point):Array<GraphicsPrimitive> {
-    return [];
+function translatePrimitives(
+    primitives:Array<GraphicsPrimitive>,
+    vector:Point):Array<GraphicsPrimitive> {
+    return primitives.map(primitive => primitive.translate(vector));
 }
 
 export type GraphicsPrimitive = Line | Circle | Arc | Flash | Region | Repeat;
