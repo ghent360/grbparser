@@ -158,14 +158,16 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     footer():Array<string> {
-        let solids = this.objects_.filter(o => o.polarity != ObjectPolarity.THIN);
         let wires:PolygonSet = []
         this.objects_
             .filter(o => o.polarity == ObjectPolarity.THIN)
             .forEach(p => wires = wires.concat(p.polySet));
-        let svgSolids = this.polySetToSolidPath(composeSolidImage(solids, true));
-        let svgWires = this.polySetToWirePath(connectWires(wires));
-        return [svgSolids, "</g>", "</svg>"];
+        let solids = composeSolidImage(this.objects_, true);
+        wires = connectWires(wires);
+        //console.log(`Solids ${solids.length} wires ${wires.length}`);
+        let svgSolids = this.polySetToSolidPath(solids);
+        let svgWires = this.polySetToWirePath(wires);
+        return [svgSolids, svgWires, "</g>", "</svg>"];
     }
 
     private polySetToSolidPath(polySet:PolygonSet):string {
@@ -184,7 +186,7 @@ export class SVGConverter extends ConverterBase<string> {
             });
         result += ' z" ';
         result += `style="fill:${SVGConverter.colorToHtml(this.layerColor)}; fill-opacity:1; fill-rule:nonzero; ` +
-            'stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
+            'stroke:#000000; stroke-opacity:1; stroke-width:0;"/>\n';
         return result;
     }
 
@@ -203,7 +205,7 @@ export class SVGConverter extends ConverterBase<string> {
                 }
             });
         result += `style="stroke:${SVGConverter.colorToHtml(this.layerColor)}; fill-opacity:0; fill-rule:nonzero; ` +
-            'stroke-opacity:1; stroke-width:1;"/>'
+            'stroke-opacity:1; stroke-width:1;"/>\n';
         return result;
     }
 

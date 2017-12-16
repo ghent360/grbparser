@@ -199,7 +199,11 @@ function removeMidPoints(polygon:Polygon):Polygon {
 }
 
 export function simplifyPolygon(polygon:Polygon):Polygon {
-    return removeMidPoints(removeDuplicatePoints(polygon));
+    let result = removeMidPoints(removeDuplicatePoints(polygon));
+    //if (result.length < polygon.length) {
+    //    console.log(`Simplified from ${polygon.length} to ${result.length}`);
+    //}
+    return result;
 }
 
 export function simplifyPolygonSet(polygonSet:PolygonSet):PolygonSet {
@@ -229,5 +233,8 @@ export function connectWires(polygonSet:PolygonSet):PolygonSet {
             }
         }
     }
+    //if (result.length < polygonSet.length) {
+    //    console.log(`Simplified wires from ${polygonSet.length} to ${result.length}`);
+    //}
     return result;
 }
