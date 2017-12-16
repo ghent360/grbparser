@@ -49,18 +49,18 @@ describe("Conveter tests", () => {
                 stream.write(result);
                 stream.end();
             });
-    });
+    }).timeout(10000);
     it('eagle files to objects', () => {
         let folder = "test/Gerber_File_Format_Examples/eagle";
         fs.readdirSync(folder)
-            .filter(fileName => fileName.match(/\.G[TB]L$/))
+            .filter(fileName => fileName.match(/\.GTL$/))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 //console.log(`Convert ${fileName}`);
                 let result = cv.PolygonConverter.GerberToPolygons(content);
             });
-    });
+    }).timeout(5000);
     it('eagle files to orimitives', () => {
         let folder = "test/Gerber_File_Format_Examples/eagle";
         fs.readdirSync(folder)

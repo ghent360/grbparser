@@ -15,7 +15,7 @@ import * as ps from '../polygonSet';
 import * as exp from '../expressions';
 import {Point} from "../point";
 import {NUMSTEPS} from "../polygonTools";
-import { ObjectPolarity } from '../primitives';
+import {ObjectPolarity} from '../primitives';
 
 function saveSVGPolygons(polygons:ps.PolygonSet, fileName:string) {
     let svgbldr = new SVGBuilder();

@@ -133,9 +133,10 @@ export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
     clipper.addPaths(one, cl.PathType.Subject, false);
     clipper.addPaths(other, cl.PathType.Clip, false);
     let result = clipper.execute(cl.ClipType.Union, cl.FillRule.NonZero, Point);
+    clipper.clear();
     clipper.delete();
     if (result.success) {
-        return result.solution_closed;
+        return simplifyPolygonSet(result.solution_closed);
     }
     return [];
 }
@@ -145,9 +146,88 @@ export function subtractPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet 
     clipper.addPaths(one, cl.PathType.Subject, false);
     clipper.addPaths(other, cl.PathType.Clip, false);
     let result = clipper.execute(cl.ClipType.Difference, cl.FillRule.NonZero, Point);
+    clipper.clear();
     clipper.delete();
     if (result.success) {
-        return result.solution_closed;
+        return simplifyPolygonSet(result.solution_closed);
     }
     return [];
+}
+
+function slopesAreEqual(pt1:Point, pt2:Point, pt3:Point):boolean {
+    let dx12 = pt1.x - pt2.x;
+    let dy12 = pt1.y - pt2.y;
+    let dx23 = pt2.x - pt3.x;
+    let dy23 = pt2.y - pt3.y;
+    return Math.abs(dy12 * dx23 - dx12 * dy23) < Epsilon;
+}
+
+function removeDuplicatePoints(polygon:Polygon):Polygon {
+    if (polygon.length < 2) {
+        return polygon;
+    }
+    let last = polygon[0];
+    let result = [last];
+    let Epsilon2 = Epsilon * Epsilon;
+    for (let idx = 1; idx < polygon.length; idx++) {
+        if (polygon[idx].distance2(last) < Epsilon2) {
+            continue;
+        }
+        last = polygon[idx];
+        result.push(last);
+    }
+    return result;
+}
+
+function removeMidPoints(polygon:Polygon):Polygon {
+    if (polygon.length < 3) {
+        return polygon;
+    }
+    let result:Polygon = [];
+    if (!slopesAreEqual(polygon[polygon.length - 1], polygon[0], polygon[1])) {
+        result.push(polygon[0]);
+    }
+    for (let idx = 1; idx < polygon.length - 1; idx++) {
+        if (!slopesAreEqual(polygon[idx - 1], polygon[idx], polygon[idx+1])) {
+            result.push(polygon[idx]);
+        }
+    }
+    if (!slopesAreEqual(polygon[polygon.length - 2], polygon[polygon.length - 1], polygon[0])) {
+        result.push(polygon[polygon.length - 1]);
+    }
+    return result;
+}
+
+export function simplifyPolygon(polygon:Polygon):Polygon {
+    return removeMidPoints(removeDuplicatePoints(polygon));
+}
+
+export function simplifyPolygonSet(polygonSet:PolygonSet):PolygonSet {
+    return polygonSet.map(p => simplifyPolygon(p));
+}
+
+export function connectWires(polygonSet:PolygonSet):PolygonSet {
+    if (polygonSet.length < 1) {
+        return polygonSet;
+    }
+    let last = polygonSet[0];
+    let lastPt = last[last.length - 1];
+    let result:PolygonSet = [last];
+    let Epsilon2 = Epsilon * Epsilon;
+    for (let idx = 1; idx < polygonSet.length; idx++) {
+        if (polygonSet[idx].length > 0) {
+            let polygon = polygonSet[idx];
+            if (lastPt.distance2(polygon[0]) < Epsilon2) {
+                result.pop();
+                last = last.concat(polygon.slice(1));
+                result.push(last);
+                lastPt = last[last.length - 1];
+            } else {
+                last = polygon;
+                result.push(last);
+                lastPt = last[last.length - 1];
+            }
+        }
+    }
+    return result;
 }

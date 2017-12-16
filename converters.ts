@@ -32,7 +32,7 @@ import {
     GerberState,
 } from "./primitives";
 import {Point} from "./point";
-import {PolygonSet, waitClipperLoad} from "./polygonSet";
+import {PolygonSet, waitClipperLoad, connectWires} from "./polygonSet";
 import {formatFloat} from "./utils";
 import {subtractPolygonSet} from "./polygonSet";
 import {GerberParser} from "./grbparser";
@@ -158,14 +158,20 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     footer():Array<string> {
-        let svg = this.polySetToPath(composeSolidImage(this.objects_));
-        return [svg, "</g>", "</svg>"];
+        let solids = this.objects_.filter(o => o.polarity != ObjectPolarity.THIN);
+        let wires:PolygonSet = []
+        this.objects_
+            .filter(o => o.polarity == ObjectPolarity.THIN)
+            .forEach(p => wires = wires.concat(p.polySet));
+        let svgSolids = this.polySetToSolidPath(composeSolidImage(solids, true));
+        let svgWires = this.polySetToWirePath(connectWires(wires));
+        return [svgSolids, "</g>", "</svg>"];
     }
 
-    private polySetToPath(polySet:PolygonSet):string {
+    private polySetToSolidPath(polySet:PolygonSet):string {
         let result = '<path d="';
         polySet
-            .filter(polygon => polygon.length > 2)
+            .filter(polygon => polygon.length > 1)
             .forEach(polygon => {
                 let start = polygon[0].scale(this.scale).add(this.offset_);
                 result += ` M ${start.x.toFixed(this.precision)} `
@@ -179,6 +185,25 @@ export class SVGConverter extends ConverterBase<string> {
         result += ' z" ';
         result += `style="fill:${SVGConverter.colorToHtml(this.layerColor)}; fill-opacity:1; fill-rule:nonzero; ` +
             'stroke:#000000; stroke-opacity:1; stroke-width:0;"/>'
+        return result;
+    }
+
+    private polySetToWirePath(polySet:PolygonSet):string {
+        let result = '<path d="';
+        polySet
+            .filter(polygon => polygon.length > 1)
+            .forEach(polygon => {
+                let start = polygon[0].scale(this.scale).add(this.offset_);
+                result += ` M ${start.x.toFixed(this.precision)} `
+                    + `${(this.height_ - start.y).toFixed(this.precision)}`;
+                for (let idx = 1; idx < polygon.length; idx++) {
+                    let point = polygon[idx].scale(this.scale).add(this.offset_);
+                    result += ` L ${point.x.toFixed(this.precision)} `
+                        + `${(this.height_ - point.y).toFixed(this.precision)}`;
+                }
+            });
+        result += `style="stroke:${SVGConverter.colorToHtml(this.layerColor)}; fill-opacity:0; fill-rule:nonzero; ` +
+            'stroke-opacity:1; stroke-width:1;"/>'
         return result;
     }
 
@@ -220,7 +245,7 @@ export class PolygonConverter {
     constructor(readonly solids:PolygonSet, readonly thins:PolygonSet, readonly bounds:Bounds) {
     }
 
-    public static GerberToPolygons(content:string):PolygonConverter {
+    public static GerberToPolygons(content:string, union:boolean = true):PolygonConverter {
         let parser = new GerberParser();
         parser.parseBlock(content);
         let ctx = new GerberState();
@@ -232,12 +257,12 @@ export class PolygonConverter {
             objects = objects.concat(p.objects);
             bounds.merge(p.bounds);
         });
-        let solids = composeSolidImage(objects);
+        let solids = composeSolidImage(objects, union);
         let thins:PolygonSet = [];
         objects
             .filter(o => o.polarity == ObjectPolarity.THIN)
             .forEach(o => thins = thins.concat(o.polySet));
-        return new PolygonConverter(solids, thins, bounds);
+        return new PolygonConverter(solids, connectWires(thins), bounds);
     }
 }
 
