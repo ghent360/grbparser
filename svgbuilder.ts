@@ -32,7 +32,7 @@ function GetAlphaAsFrac(clr:number):number {
 
 //a very simple class that builds an SVG file with any number of 
 //polygons of the specified formats ...
-class StyleInfo {
+export class StyleInfo {
     public brushClr:number;
     public penClr:number;
     public penWidth:number;

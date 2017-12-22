@@ -37,7 +37,7 @@ import {formatFloat} from "./utils";
 import {subtractPolygonSet} from "./polygonSet";
 import {GerberParser} from "./grbparser";
 
-abstract class ConverterBase<T> {
+export abstract class ConverterBase<T> {
     convert(primitives:Array<GraphicsPrimitive>):Array<T> {
         let result:Array<T> = this.header(primitives);
         primitives.forEach(p => {

@@ -719,7 +719,7 @@ export class D03Command implements GerberCommand {
     }
 }
 
-class BaseGCodeCommand {
+export class BaseGCodeCommand {
     readonly codeId:number;
     readonly isAdvanced = false;
     private static matchExp = /^G(\d+)$/;

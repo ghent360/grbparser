@@ -4,7 +4,8 @@
   "description": "A package to parse Gerber files.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --opts mocha.opts"
+    "test": "mocha --require ts-node/register 'test/**/*.spec.ts'",
+    "prepublish": "tsc -p ./ --outDir dist/"
   },
   "repository": {
     "type": "git",
@@ -20,7 +21,7 @@
   },
   "homepage": "https://github.com/ghent360/grbparser#readme",
   "dependencies": {
-    "@types/node": "^8.5.1",
+    "@types/node": "^8.5.2",
     "node": "^9.3.0",
     "ts-node": "^4.0.2",
     "typescript": "^2.6.2"
