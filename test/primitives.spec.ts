@@ -38,6 +38,12 @@ function perseExpressions(expressions:Array<string>):Array<exp.AritmeticOperatio
     return expressions.map(e => new exp.ExpressionParser(e).parse());
 }
 
+function distance(x1:number, y1:number, x2:number, y2:number):number {
+    let dx = x1 - x2;
+    let dy = y1 - y2;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
 const defaultState = new pr.ObjectState();
 
 describe("Primitives tests", () => {
@@ -48,26 +54,42 @@ describe("Primitives tests", () => {
         let objects = aperture.objects(ObjectPolarity.DARK);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 1);
-        assert.equal(objects[0].polySet[0].length, NUMSTEPS + 1);
-        assert.ok(objects[0].polySet[0][0].distance(objects[0].polySet[0][NUMSTEPS]) < pr.Epsilon);
+        assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 2);
+        let distanceFirstToLast = distance(
+            objects[0].polySet[0][0], objects[0].polySet[0][1],
+            objects[0].polySet[0][NUMSTEPS*2], objects[0].polySet[0][NUMSTEPS*2 + 1]);
+
+        assert.ok(distanceFirstToLast < pr.Epsilon);
 
         aperture = new pr.ApertureDefinition(10, "C", [10, 5]);
         objects = aperture.objects(ObjectPolarity.DARK);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
-        assert.equal(objects[0].polySet[0].length, NUMSTEPS + 1);
-        assert.equal(objects[0].polySet[1].length, NUMSTEPS + 1);
-        assert.ok(objects[0].polySet[0][0].distance(objects[0].polySet[0][NUMSTEPS]) < pr.Epsilon);
-        assert.ok(objects[0].polySet[1][0].distance(objects[0].polySet[1][NUMSTEPS]) < pr.Epsilon);
+        assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 2);
+        assert.equal(objects[0].polySet[1].length, NUMSTEPS*2 + 2);
+        distanceFirstToLast = distance(
+            objects[0].polySet[0][0], objects[0].polySet[0][1],
+            objects[0].polySet[0][NUMSTEPS*2], objects[0].polySet[0][NUMSTEPS*2 + 1]);
+        assert.ok(distanceFirstToLast < pr.Epsilon);
+        distanceFirstToLast = distance(
+            objects[0].polySet[1][0], objects[0].polySet[1][1],
+            objects[0].polySet[1][NUMSTEPS*2], objects[0].polySet[1][NUMSTEPS*2 + 1]);
+        assert.ok(distanceFirstToLast < pr.Epsilon);
 
         aperture = new pr.ApertureDefinition(10, "C", [10, 3, 5]);
         objects = aperture.objects(ObjectPolarity.DARK);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
-        assert.equal(objects[0].polySet[0].length, NUMSTEPS + 1);
-        assert.equal(objects[0].polySet[1].length, 5);
-        assert.ok(objects[0].polySet[0][0].distance(objects[0].polySet[0][NUMSTEPS]) < pr.Epsilon);
-        assert.ok(objects[0].polySet[1][0].distance(objects[0].polySet[1][4]) < pr.Epsilon);
+        assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 2);
+        assert.equal(objects[0].polySet[1].length, 10);
+        distanceFirstToLast = distance(
+            objects[0].polySet[0][0], objects[0].polySet[0][1],
+            objects[0].polySet[0][NUMSTEPS*2], objects[0].polySet[0][NUMSTEPS*2 + 1]);
+        assert.ok(distanceFirstToLast < pr.Epsilon);
+        distanceFirstToLast = distance(
+            objects[0].polySet[1][0], objects[0].polySet[1][1],
+            objects[0].polySet[1][8], objects[0].polySet[1][9]);
+        assert.ok(distanceFirstToLast < pr.Epsilon);
     });
     it('Standard Rectangle Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "R", [10, 5]);
@@ -75,26 +97,41 @@ describe("Primitives tests", () => {
         let objects = aperture.objects(ObjectPolarity.DARK);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 1);
-        assert.equal(objects[0].polySet[0].length, 5);
-        assert.ok(objects[0].polySet[0][0].distance(objects[0].polySet[0][4]) < pr.Epsilon);
+        assert.equal(objects[0].polySet[0].length, 10);
+        let distanceFirstToLast = distance(
+            objects[0].polySet[0][0], objects[0].polySet[0][1],
+            objects[0].polySet[0][8], objects[0].polySet[0][9]);
+        assert.ok(distanceFirstToLast < pr.Epsilon);
 
         aperture = new pr.ApertureDefinition(10, "R", [10, 5, 3]);
         objects = aperture.objects(ObjectPolarity.DARK);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
-        assert.equal(objects[0].polySet[0].length, 5);
-        assert.equal(objects[0].polySet[1].length, NUMSTEPS + 1);
-        assert.ok(objects[0].polySet[0][0].distance(objects[0].polySet[0][4]) < pr.Epsilon);
-        assert.ok(objects[0].polySet[1][0].distance(objects[0].polySet[1][NUMSTEPS]) < pr.Epsilon);
+        assert.equal(objects[0].polySet[0].length, 10);
+        assert.equal(objects[0].polySet[1].length, NUMSTEPS*2 + 2);
+        distanceFirstToLast = distance(
+            objects[0].polySet[0][0], objects[0].polySet[0][1],
+            objects[0].polySet[0][8], objects[0].polySet[0][9]);
+        assert.ok(distanceFirstToLast < pr.Epsilon);
+        distanceFirstToLast = distance(
+            objects[0].polySet[1][0], objects[0].polySet[1][1],
+            objects[0].polySet[1][NUMSTEPS*2], objects[0].polySet[1][NUMSTEPS*2 + 1]);
+        assert.ok(distanceFirstToLast < pr.Epsilon);
         
         aperture = new pr.ApertureDefinition(10, "R", [10, 5, 3, 2]);
         objects = aperture.objects(ObjectPolarity.DARK);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
-        assert.equal(objects[0].polySet[0].length, 5);
-        assert.equal(objects[0].polySet[1].length, 5);
-        assert.ok(objects[0].polySet[0][0].distance(objects[0].polySet[0][4]) < pr.Epsilon);
-        assert.ok(objects[0].polySet[1][0].distance(objects[0].polySet[1][4]) < pr.Epsilon);
+        assert.equal(objects[0].polySet[0].length, 10);
+        assert.equal(objects[0].polySet[1].length, 10);
+        distanceFirstToLast = distance(
+            objects[0].polySet[0][0], objects[0].polySet[0][1],
+            objects[0].polySet[0][8], objects[0].polySet[0][9]);
+        assert.ok(distanceFirstToLast < pr.Epsilon);
+        distanceFirstToLast = distance(
+            objects[0].polySet[1][0], objects[0].polySet[1][1],
+            objects[0].polySet[1][8], objects[0].polySet[1][9]);
+        assert.ok(distanceFirstToLast < pr.Epsilon);
     });
     it('Standard Obround Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "O", [5, 10]);
@@ -102,7 +139,7 @@ describe("Primitives tests", () => {
         let objects = aperture.objects(ObjectPolarity.DARK);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 1);
-        assert.equal(objects[0].polySet[0].length, NUMSTEPS + 3);
+        assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 6);
         //console.log(`O poly set ${polySet}`);
         saveSVGObjects(objects, "oblong.svg");
     });
@@ -112,7 +149,7 @@ describe("Primitives tests", () => {
         let objects = aperture.objects(ObjectPolarity.DARK);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
-        assert.equal(objects[0].polySet[0].length, 4);
+        assert.equal(objects[0].polySet[0].length, 8);
         saveSVGObjects(objects, "polygon3.svg");
         //console.log(`P poly set ${polySet}`);
     });

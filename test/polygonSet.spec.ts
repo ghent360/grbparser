@@ -13,6 +13,7 @@ import * as pr from '../primitives';
 import * as ps from '../polygonSet';
 import {SVGBuilder} from "../svgbuilder";
 import * as fs from 'fs';
+import { reversePolygon } from '../polygonTools';
 
 function saveSVGPolygons(polygons:ps.PolygonSet, fileName:string) {
     let svgbldr = new SVGBuilder();
@@ -27,27 +28,24 @@ function arrayToPath(array:Array<Array<number>>):Array<Point> {
 }
 
 function circleToPolygon(
-    center:Point, radius:number, numSegments:number = 40):Array<Point> {
-    let result = new Array<Point>(numSegments);
+    center:Point, radius:number, numSegments:number = 40):Float64Array {
+    let result = new Float64Array(numSegments * 2);
     let angleStep = (2 * Math.PI) / numSegments;
     for (let idx = 0; idx <= numSegments; idx++) {
         let angle = idx * angleStep;
-        result[idx] = new Point(
-            center.x + radius * Math.cos(angle),
-            center.y + radius * Math.sin(angle)
-        );
+        result[idx * 2] = center.x + radius * Math.cos(angle);
+        result[idx * 2 + 1] = center.y + radius * Math.sin(angle);
     }
     return result;
 }
 
-function rectPolygon(x:number, y:number, w:number, h:number):Array<Point> {
-    let result = new Array<Point>(5);
-    result[0] = new Point(x, y);
-    result[1] = new Point(x + w, y);
-    result[2] = new Point(x + w, y + h);
-    result[3] = new Point(x, y + h);
-    result[4] = new Point(x, y);
-    return result;
+function rectPolygon(x:number, y:number, w:number, h:number):Float64Array {
+    return Float64Array.of(
+        x, y,
+        x + w, y,
+        x + w, y + h,
+        x, y + h,
+        x, y);
 }
 
 describe("PolygonSet tests", () => {
@@ -56,7 +54,8 @@ describe("PolygonSet tests", () => {
         let poly1 = rectPolygon(0, 0, 10, 20);
         let poly2 = rectPolygon(0, 0, 20, 10);
         let poly3 = circleToPolygon(new Point(0, 0), 50);
-        let poly4 = circleToPolygon(new Point(0, 0), 48).reverse();
+        let poly4 = circleToPolygon(new Point(0, 0), 48);
+        reversePolygon(poly4);
         let result = ps.unionPolygonSet([poly1, poly2, poly3, poly4], []);
         saveSVGPolygons(result, 'union_test1.svg');
         //console.log(result);

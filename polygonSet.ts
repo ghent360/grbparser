@@ -139,7 +139,7 @@ export function polygonBounds(poly:Polygon):Bounds {
     let start = new Point(poly[0], poly[1]);
     let bounds = new Bounds(start, start.clone());
     let len = poly.length;
-    for (let idx = len - 2; idx >= 0; idx -= 2) {
+    for (let idx = len - 2; idx >= 2; idx -= 2) {
         bounds.mergexy(poly[idx], poly[idx + 1]);
     }
     return bounds;

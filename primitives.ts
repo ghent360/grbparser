@@ -49,6 +49,7 @@ import {
     rectangleToPolygon,
     obroundToPolygon,
     NUMSTEPS,
+    reversePolygon,
 } from "./polygonTools";
 
 export enum FileUnits {
@@ -251,7 +252,9 @@ export class ApertureDefinition implements ApertureBase {
             result.set(arcToPolygon(innerStart, outerStart, innerStart.midPoint(outerStart), false));
             result.set(arcToPolygon(outerStart, outerEnd, center, false), NUMSTEPS * 2 - 2);
             result.set(arcToPolygon(outerEnd, innerEnd, outerEnd.midPoint(innerEnd), false), NUMSTEPS * 4 - 4);
-            result.set(arcToPolygon(innerStart, innerEnd, center).reverse(), NUMSTEPS * 6 - 6);
+            let closingArc = arcToPolygon(innerStart, innerEnd, center);
+            reversePolygon(closingArc);
+            result.set(closingArc, NUMSTEPS * 6 - 6);
             return {polygon:result, is_solid:true};
         } else if (this.templateName == "R") {
             if (Math.abs(state.rotation) > Epsilon
@@ -276,7 +279,9 @@ export class ApertureDefinition implements ApertureBase {
             result[7 + NUMSTEPS * 2] = outerEnd.y + pEncLineCW.y;
             result[8 + NUMSTEPS * 2] = innerEnd.x + pEncLineCW.x;
             result[9 + NUMSTEPS * 2] = innerEnd.y + pEncLineCW.y;
-            result.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 10 + NUMSTEPS * 2);
+            let closingArc = arcToPolygon(innerStart, innerEnd, center);
+            reversePolygon(closingArc);
+            result.set(closingArc, 10 + NUMSTEPS * 2);
             return {polygon:result, is_solid:true};
         }
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
@@ -290,7 +295,9 @@ export class ApertureDefinition implements ApertureBase {
                 return {polygonSet:[translatePolygon(circleToPolygon(radius), center)], is_solid:false};
             }
             result.push(translatePolygon(circleToPolygon(radius + apertureRadius), center));
-            result.push(translatePolygon(circleToPolygon(radius - apertureRadius), center).reverse());
+            let innerCircle = translatePolygon(circleToPolygon(radius - apertureRadius), center);
+            reversePolygon(innerCircle);
+            result.push(innerCircle);
             return {polygonSet:result, is_solid:true};
         }
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
@@ -349,8 +356,8 @@ export class ApertureDefinition implements ApertureBase {
                 new Point(endLeft.x, endLeft.y),
                 end),
                 NUMSTEPS * 2);
-            result[NUMSTEPS * 2] = startLeft.x;
-            result[NUMSTEPS * 2 + 1] = startLeft.y;
+            result[NUMSTEPS * 4] = startLeft.x;
+            result[NUMSTEPS * 4 + 1] = startLeft.y;
             return {polygon:result, is_solid:true};
         } else if (this.templateName == "R") {
             if (Math.abs(state.rotation) > Epsilon
@@ -434,23 +441,35 @@ export class ApertureDefinition implements ApertureBase {
             }
             result.push(circleToPolygon(radius));
             if (this.modifiers.length == 2) {
-                result.push(circleToPolygon(this.modifiers[1] / 2).reverse());
+                let hole = circleToPolygon(this.modifiers[1] / 2);
+                reversePolygon(hole);
+                result.push(hole);
             } else if (this.modifiers.length == 3) {
-                result.push(rectangleToPolygon(this.modifiers[1], this.modifiers[2]).reverse());
+                let hole = rectangleToPolygon(this.modifiers[1], this.modifiers[2]);
+                reversePolygon(hole);
+                result.push(hole);
             }
         } else if (this.templateName === "R") {
             result.push(rectangleToPolygon(this.modifiers[0], this.modifiers[1]));
             if (this.modifiers.length == 3) {
-                result.push(circleToPolygon(this.modifiers[2] / 2).reverse());
+                let hole = circleToPolygon(this.modifiers[2] / 2);
+                reversePolygon(hole);
+                result.push(hole);
             } else if (this.modifiers.length == 4) {
-                result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]).reverse());
+                let hole = rectangleToPolygon(this.modifiers[2], this.modifiers[3]);
+                reversePolygon(hole);
+                result.push(hole);
             }
         } else if (this.templateName === "O") {
             result.push(obroundToPolygon(this.modifiers[0], this.modifiers[1]));
             if (this.modifiers.length == 3) {
-                result.push(circleToPolygon(this.modifiers[2] / 2).reverse());
+                let hole = circleToPolygon(this.modifiers[2] / 2);
+                reversePolygon(hole);
+                result.push(hole);
             } else if (this.modifiers.length == 4) {
-                result.push(rectangleToPolygon(this.modifiers[2], this.modifiers[3]).reverse());
+                let hole = rectangleToPolygon(this.modifiers[2], this.modifiers[3]);
+                reversePolygon(hole);
+                result.push(hole);
             }
         } else if (this.templateName === "P") {
             if (this.modifiers.length == 2) {
@@ -459,9 +478,13 @@ export class ApertureDefinition implements ApertureBase {
                 result.push(circleToPolygon(this.modifiers[0] / 2, this.modifiers[1], this.modifiers[2]));
             }
             if (this.modifiers.length == 4) {
-                result.push(circleToPolygon(this.modifiers[3] / 2).reverse());
+                let hole = circleToPolygon(this.modifiers[3] / 2);
+                reversePolygon(hole);
+                result.push(hole);
             } else if (this.modifiers.length == 5) {
-                result.push(rectangleToPolygon(this.modifiers[3], this.modifiers[4]).reverse());
+                let hole = rectangleToPolygon(this.modifiers[3], this.modifiers[4]);
+                reversePolygon(hole);
+                result.push(hole);
             }
         } else {
             return this.macro.toPolygonSet(this.modifiers);
@@ -586,12 +609,10 @@ export class ApertureMacro {
                                 let innerDiameter = outerDiameter - ringThickness * 2;
                                 shape.push(rotatePolygon(translatePolygon(circleToPolygon(outerDiameter / 2), center), rotation));
                                 if (innerDiameter > Epsilon) {
+                                    let closingCircle = circleToPolygon(innerDiameter / 2);
+                                    reversePolygon(closingCircle);
                                     shape.push(
-                                        rotatePolygon(
-                                            translatePolygon(
-                                                circleToPolygon(innerDiameter / 2).reverse(),
-                                                center),
-                                            rotation));
+                                        rotatePolygon(translatePolygon(closingCircle,center), rotation));
                                 }
                                 outerDiameter = innerDiameter - gap * 2;
                             }
@@ -636,7 +657,9 @@ export class ApertureMacro {
                                     polygon[0] = innerStart.x;
                                     polygon[1] = innerStart.y;
                                     polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
-                                    polygon.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 2 + NUMSTEPS * 2);
+                                    let closingArc = arcToPolygon(innerStart, innerEnd, center);
+                                    reversePolygon(closingArc);
+                                    polygon.set(closingArc, 2 + NUMSTEPS * 2);
                                     shape.push(rotatePolygon(polygon, rotation));
 
                                     // Quadrant 2 shape
@@ -648,7 +671,9 @@ export class ApertureMacro {
                                     polygon[0] = innerStart.x;
                                     polygon[1] = innerStart.y;
                                     polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
-                                    polygon.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 2 + NUMSTEPS * 2);
+                                    closingArc = arcToPolygon(innerStart, innerEnd, center);
+                                    reversePolygon(closingArc);
+                                    polygon.set(closingArc, 2 + NUMSTEPS * 2);
                                     shape.push(rotatePolygon(polygon, rotation));
 
                                     // Quadrant 3 shape
@@ -660,7 +685,9 @@ export class ApertureMacro {
                                     polygon[0] = innerStart.x;
                                     polygon[1] = innerStart.y;
                                     polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
-                                    polygon.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 2 + NUMSTEPS * 2);
+                                    closingArc = arcToPolygon(innerStart, innerEnd, center);
+                                    reversePolygon(closingArc);
+                                    polygon.set(closingArc, 2 + NUMSTEPS * 2);
                                     shape.push(rotatePolygon(polygon, rotation));
 
                                     // Quadrant 4 shape
@@ -672,7 +699,9 @@ export class ApertureMacro {
                                     polygon[0] = innerStart.x;
                                     polygon[1] = innerStart.y;
                                     polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
-                                    polygon.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 2 + NUMSTEPS * 2);
+                                    closingArc = arcToPolygon(innerStart, innerEnd, center);
+                                    reversePolygon(closingArc);
+                                    polygon.set(closingArc, 2 + NUMSTEPS * 2);
                                     shape.push(rotatePolygon(polygon, rotation));
                                 } else {
                                     // Quadrant 1 shape

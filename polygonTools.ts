@@ -127,3 +127,19 @@ export function arcToPolygon(
     }
     return result;
 }
+
+export function reversePolygon(poly:Polygon) {
+    let len = poly.length;
+    if (len < 2) {
+        return;
+    }
+    let lenMinus2 = len - 2;
+    for (let idx = lenMinus2; idx >= len / 2; idx -= 2) {
+        let tmpx = poly[idx];
+        let tmpy = poly[idx + 1];
+        poly[idx] = poly[lenMinus2 - idx];
+        poly[idx + 1] = poly[lenMinus2 - idx + 1];
+        poly[lenMinus2 - idx] = tmpx;
+        poly[lenMinus2 - idx + 1] = tmpy;
+    }
+}

@@ -3,12 +3,12 @@
         "target": "es6",
         "module": "commonjs",
         "sourceMap": true,
-	"noImplicitAny": false,
-	"declaration": true
+	    "noImplicitAny": false
+    	//"declaration": true
     },
     "exclude": [
-	"node_modules",
-	"dist/",
-	"test/"
+        "node_modules",
+        "dist/"
+        //"test/"
     ]
 }
