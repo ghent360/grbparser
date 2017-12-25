@@ -47,6 +47,7 @@ import {
     circleToPolygon,
     rectangleToPolygon,
     obroundToPolygon,
+    NUMSTEPS,
 } from "./polygonTools";
 
 export enum FileUnits {
@@ -211,7 +212,7 @@ export class ApertureDefinition implements ApertureBase {
             if (this.templateName == "C" || this.templateName == "O") {
                 let radius = state.scale * this.modifiers[0] / 2;
                 if (radius < Epsilon) {
-                    return {polygon:[], is_solid:false};
+                    return {polygon:Float64Array.of(), is_solid:false};
                 }
                 return {
                     polygon:translatePolygon(circleToPolygon(radius), start.midPoint(end)),
@@ -245,10 +246,11 @@ export class ApertureDefinition implements ApertureBase {
             if (apertureRadius < Epsilon) {
                 return {polygon:arcToPolygon(start, end, center), is_solid:false};
             }
-            result = arcToPolygon(innerStart, outerStart, innerStart.midPoint(outerStart), false);
-            result = result.concat(arcToPolygon(outerStart, outerEnd, center, false));
-            result = result.concat(arcToPolygon(outerEnd, innerEnd, outerEnd.midPoint(innerEnd), false));
-            result = result.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+            result = new Float64Array(NUMSTEPS * 8 - 6);
+            result.set(arcToPolygon(innerStart, outerStart, innerStart.midPoint(outerStart), false));
+            result.set(arcToPolygon(outerStart, outerEnd, center, false), NUMSTEPS * 2 - 2);
+            result.set(arcToPolygon(outerEnd, innerEnd, outerEnd.midPoint(innerEnd), false), NUMSTEPS * 4 - 4);
+            result.set(arcToPolygon(innerStart, innerEnd, center).reverse(), NUMSTEPS * 6 - 6);
             return {polygon:result, is_solid:true};
         } else if (this.templateName == "R") {
             if (Math.abs(state.rotation) > Epsilon
@@ -259,18 +261,21 @@ export class ApertureDefinition implements ApertureBase {
             let endLine = {x:outerEnd.x - innerEnd.x, y:outerEnd.y - innerEnd.y};
             let pStartLineCCW = scaleVector(unitVector({x:startLine.y, y:-startLine.x}), this.modifiers[1]);
             let pEncLineCW = scaleVector(unitVector({x:-endLine.y, y:endLine.x}), this.modifiers[1]);
-            result = [
-                innerStart.clone(),
-                new Point(innerStart.x + pStartLineCCW.x, innerStart.y + pStartLineCCW.y),
-                new Point(outerStart.x + pStartLineCCW.x, outerStart.y + pStartLineCCW.y)
-            ];
-            result = result.concat(arcToPolygon(outerStart, outerEnd, center, false));
-            result = result.concat([
-                outerEnd.clone(),
-                new Point(outerEnd.x + pEncLineCW.x, outerEnd.y + pEncLineCW.y),
-                new Point(innerEnd.x + pEncLineCW.x, innerEnd.y + pEncLineCW.y)
-            ]);
-            result = result.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+            result = new Float64Array(10 + NUMSTEPS * 4);
+            result[0] = innerStart.x;
+            result[1] = innerStart.y;
+            result[2] = innerStart.x + pStartLineCCW.x;
+            result[3] = innerStart.y + pStartLineCCW.y;
+            result[4] = outerStart.x + pStartLineCCW.x;
+            result[5] = outerStart.y + pStartLineCCW.y;
+            result.set(arcToPolygon(outerStart, outerEnd, center, false), 6);
+            result[4 + NUMSTEPS * 2] = outerEnd.x;
+            result[5 + NUMSTEPS * 2] = outerEnd.y;
+            result[6 + NUMSTEPS * 2] = outerEnd.x + pEncLineCW.x;
+            result[7 + NUMSTEPS * 2] = outerEnd.y + pEncLineCW.y;
+            result[8 + NUMSTEPS * 2] = innerEnd.x + pEncLineCW.x;
+            result[9 + NUMSTEPS * 2] = innerEnd.y + pEncLineCW.y;
+            result.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 10 + NUMSTEPS * 2);
             return {polygon:result, is_solid:true};
         }
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
@@ -296,7 +301,7 @@ export class ApertureDefinition implements ApertureBase {
             if (this.templateName == "C" || this.templateName == "O") {
                 let radius = state.scale * this.modifiers[0] / 2;
                 if (radius < Epsilon) {
-                    return {polygon:[], is_solid:false};
+                    return {polygon:Float64Array.of(), is_solid:false};
                 }
                 return {
                     polygon: translatePolygon(circleToPolygon(radius), start.midPoint(end)),
@@ -321,7 +326,7 @@ export class ApertureDefinition implements ApertureBase {
         if (this.templateName == "C" || this.templateName == "O") {
             let radius = state.scale * this.modifiers[0] / 2;
             if (radius < Epsilon) {
-                return {polygon:[start.clone(), end.clone()], is_solid:false};
+                return {polygon: Float64Array.of(start.x, start.y, end.x, end.y), is_solid:false};
             }
             let vector = {x:end.x - start.x, y:end.y - start.y};
             let uVector = unitVector(vector);
@@ -333,15 +338,18 @@ export class ApertureDefinition implements ApertureBase {
             let endLeft = addVector(startLeft, vector);
             let startRight = addVector({x:start.x, y:start.y}, pCW);
             let endRight = addVector(startRight, vector);
-            result = arcToPolygon(
+            result = new Float64Array(NUMSTEPS * 4 + 2);
+            result.set(arcToPolygon(
                 new Point(startLeft.x, startLeft.y),
                 new Point(startRight.x, startRight.y),
-                start);
-            result = result.concat(arcToPolygon(
+                start));
+            result.set(arcToPolygon(
                 new Point(endRight.x, endRight.y),
                 new Point(endLeft.x, endLeft.y),
-                end));
-            result.push(new Point(startLeft.x, startLeft.y));
+                end),
+                NUMSTEPS * 2);
+            result[NUMSTEPS * 2] = startLeft.x;
+            result[NUMSTEPS * 2 + 1] = startLeft.y;
             return {polygon:result, is_solid:true};
         } else if (this.templateName == "R") {
             if (Math.abs(state.rotation) > Epsilon
@@ -364,39 +372,42 @@ export class ApertureDefinition implements ApertureBase {
                     is_solid:true};
             } else {
                 let vector = {x:end.x - start.x, y:end.y - start.y};
-                result = new Array<Point>(7);
                 if (angle < Math.PI / 2) {
-                    result[0] = new Point(start.x - width2, start.y - height2);
-                    result[1] = new Point(start.x + width2, start.y - height2);
-                    result[2] = new Point(end.x + width2, end.y - height2);
-                    result[3] = new Point(end.x + width2, end.y + height2);
-                    result[4] = new Point(end.x - width2, end.y + height2);
-                    result[5] = new Point(start.x - width2, start.y + height2);
-                    result[6] = new Point(start.x - width2, start.y - height2);
+                    result = Float64Array.of(
+                        start.x - width2, start.y - height2,
+                        start.x + width2, start.y - height2,
+                        end.x + width2, end.y - height2,
+                        end.x + width2, end.y + height2,
+                        end.x - width2, end.y + height2,
+                        start.x - width2, start.y + height2,
+                        start.x - width2, start.y - height2);
                 } else if (angle < Math.PI) {
-                    result[0] = new Point(start.x - width2, start.y - height2);
-                    result[1] = new Point(start.x + width2, start.y - height2);
-                    result[2] = new Point(start.x + width2, start.y + height2);
-                    result[3] = new Point(end.x + width2, end.y + height2);
-                    result[4] = new Point(end.x - width2, end.y + height2);
-                    result[5] = new Point(end.x - width2, end.y - height2);
-                    result[6] = new Point(start.x - width2, start.y - height2);
-                } else if (angle < Math.PI) {
-                    result[0] = new Point(end.x - width2, end.y - height2);
-                    result[1] = new Point(end.x + width2, end.y - height2);
-                    result[2] = new Point(start.x + width2, start.y - height2);
-                    result[3] = new Point(start.x + width2, start.y + height2);
-                    result[4] = new Point(start.x - width2, start.y + height2);
-                    result[5] = new Point(end.x - width2, end.y + height2);
-                    result[6] = new Point(end.x - width2, end.y - height2);
+                    result = Float64Array.of(
+                        start.x - width2, start.y - height2,
+                        start.x + width2, start.y - height2,
+                        start.x + width2, start.y + height2,
+                        end.x + width2, end.y + height2,
+                        end.x - width2, end.y + height2,
+                        end.x - width2, end.y - height2,
+                        start.x - width2, start.y - height2);
+                } else if (angle < 3 * Math.PI / 2) {
+                    result = Float64Array.of(
+                        end.x - width2, end.y - height2,
+                        end.x + width2, end.y - height2,
+                        start.x + width2, start.y - height2,
+                        start.x + width2, start.y + height2,
+                        start.x - width2, start.y + height2,
+                        end.x - width2, end.y + height2,
+                        end.x - width2, end.y - height2);
                 } else {
-                    result[0] = new Point(end.x - width2, end.y - height2);
-                    result[1] = new Point(end.x + width2, end.y - height2);
-                    result[2] = new Point(end.x + width2, end.y + height2);
-                    result[3] = new Point(start.x + width2, start.y + height2);
-                    result[4] = new Point(start.x - width2, start.y + height2);
-                    result[5] = new Point(start.x - width2, start.y - height2);
-                    result[6] = new Point(start.x - width2, start.y - height2);
+                    result = Float64Array.of(
+                        end.x - width2, end.y - height2,
+                        end.x + width2, end.y - height2,
+                        end.x + width2, end.y + height2,
+                        start.x + width2, start.y + height2,
+                        start.x - width2, start.y + height2,
+                        start.x - width2, start.y - height2,
+                        start.x - width2, start.y - height2);
                 }
                 return {polygon:result, is_solid:true};
             }
@@ -530,11 +541,10 @@ export class ApertureMacro {
                         if (numPoints < 1) {
                             throw new GerberParseException(`Invalid number of points in a macro outline ${numPoints}`);
                         }
-                        let outline = new Array<Point>(numPoints + 1);
+                        let outline = new Float64Array(numPoints * 2 + 2);
                         for (let idx = 0; idx <= numPoints; idx++) {
-                            outline[idx] = new Point(
-                                ApertureMacro.getValue(modifiers, 2 * idx + 2),
-                                ApertureMacro.getValue(modifiers, 2 * idx + 3));
+                            outline[idx * 2] = ApertureMacro.getValue(modifiers, 2 * idx + 2);
+                            outline[idx * 2 + 1] = ApertureMacro.getValue(modifiers, 2 * idx + 3);
                         }
                         shape = [rotatePolygon(outline, ApertureMacro.getValue(modifiers, 2 * numPoints + 4))];
                         break;
@@ -612,91 +622,104 @@ export class ApertureMacro {
                             throw new GerberParseException(`Invalid thermal shape outer=${outerDiameter}, gap=${gap}`);
                         }
                         shape = [];
+                        let polygon:Polygon;
                         if (outerDiameter > Epsilon) {
                             if (gap > Epsilon) {
                                 if (innerDiameter > Epsilon) {
                                     // Quadrant 1 shape
-                                    let polygon:Polygon = [];
+                                    polygon = new Float64Array(2 + NUMSTEPS * 4);
                                     let innerStart = new Point(innerRadius + center.x, gap2 + center.y);
                                     let outerStart = new Point(outerRadius + center.x, gap2 + center.y);
                                     let innerEnd = new Point(gap2 + center.x, innerRadius + center.y);
                                     let outerEnd = new Point(gap2 + center.x, outerRadius + center.y);
-                                    polygon.push(innerStart);
-                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
-                                    polygon = polygon.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+                                    polygon[0] = innerStart.x;
+                                    polygon[1] = innerStart.y;
+                                    polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
+                                    polygon.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 2 + NUMSTEPS * 2);
                                     shape.push(rotatePolygon(polygon, rotation));
 
                                     // Quadrant 2 shape
-                                    polygon = [];
+                                    polygon = new Float64Array(2 + NUMSTEPS * 4);
                                     innerStart = new Point(-gap2 + center.x, innerRadius + center.y);
                                     outerStart = new Point(-gap2 + center.x, outerRadius + center.y);
                                     innerEnd = new Point(-innerRadius + center.x, gap2 + center.y);
                                     outerEnd = new Point(-outerRadius + center.x, gap2 + center.y);
-                                    polygon.push(innerStart);
-                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
-                                    polygon = polygon.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+                                    polygon[0] = innerStart.x;
+                                    polygon[1] = innerStart.y;
+                                    polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
+                                    polygon.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 2 + NUMSTEPS * 2);
                                     shape.push(rotatePolygon(polygon, rotation));
 
                                     // Quadrant 3 shape
-                                    polygon = [];
+                                    polygon = new Float64Array(2 + NUMSTEPS * 4);
                                     innerStart = new Point(-innerRadius + center.x, -gap2 + center.y);
                                     outerStart = new Point(-outerRadius + center.x, -gap2 + center.y);
                                     innerEnd = new Point(-gap2 + center.x, -innerRadius + center.y);
                                     outerEnd = new Point(-gap2 + center.x, -outerRadius + center.y);
-                                    polygon.push(innerStart);
-                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
-                                    polygon = polygon.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+                                    polygon[0] = innerStart.x;
+                                    polygon[1] = innerStart.y;
+                                    polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
+                                    polygon.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 2 + NUMSTEPS * 2);
                                     shape.push(rotatePolygon(polygon, rotation));
 
                                     // Quadrant 4 shape
-                                    polygon = [];
+                                    polygon = new Float64Array(2 + NUMSTEPS * 4);
                                     innerStart = new Point(gap2 + center.x, -innerRadius + center.y);
                                     outerStart = new Point(gap2 + center.x, -outerRadius + center.y);
                                     innerEnd = new Point(innerRadius + center.x, -gap2 + center.y);
                                     outerEnd = new Point(outerRadius + center.x, -gap2 + center.y);
-                                    polygon.push(innerStart);
-                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
-                                    polygon = polygon.concat(arcToPolygon(innerStart, innerEnd, center).reverse());
+                                    polygon[0] = innerStart.x;
+                                    polygon[1] = innerStart.y;
+                                    polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
+                                    polygon.set(arcToPolygon(innerStart, innerEnd, center).reverse(), 2 + NUMSTEPS * 2);
                                     shape.push(rotatePolygon(polygon, rotation));
                                 } else {
                                     // Quadrant 1 shape
-                                    let polygon:Polygon = [];
+                                    polygon = new Float64Array(4 + NUMSTEPS * 2);
                                     let innerPoint = new Point(gap2 + center.x, gap2 + center.y);
                                     let outerStart = new Point(outerRadius + center.x, gap2 + center.y);
                                     let outerEnd = new Point(gap2 + center.x, outerRadius + center.y);
-                                    polygon.push(innerPoint);
-                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
-                                    polygon.push(innerPoint);
+                                    polygon[0] = innerPoint.x;
+                                    polygon[1] = innerPoint.y;
+                                    polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
+                                    polygon[2 + NUMSTEPS * 2] = innerPoint.x;
+                                    polygon[3 + NUMSTEPS * 2] = innerPoint.y;
                                     shape.push(rotatePolygon(polygon, rotation));
 
                                     // Quadrant 2 shape
-                                    polygon = [];
+                                    polygon = new Float64Array(4 + NUMSTEPS * 2);
                                     innerPoint = new Point(-gap2 + center.x, gap2 + center.y);
                                     outerStart = new Point(-gap2 + center.x, outerRadius + center.y);
                                     outerEnd = new Point(-outerRadius + center.x, gap2 + center.y);
-                                    polygon.push(innerPoint);
-                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
-                                    polygon.push(innerPoint);
+                                    polygon[0] = innerPoint.x;
+                                    polygon[1] = innerPoint.y;
+                                    polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
+                                    polygon[2 + NUMSTEPS * 2] = innerPoint.x;
+                                    polygon[3 + NUMSTEPS * 2] = innerPoint.y;
                                     shape.push(rotatePolygon(polygon, rotation));
 
                                     // Quadrant 3 shape
-                                    polygon = [];
+                                    polygon = new Float64Array(4 + NUMSTEPS * 2);
                                     innerPoint = new Point(-gap2 + center.x, -gap2 + center.y);
                                     outerStart = new Point(-outerRadius + center.x, -gap2 + center.y);
                                     outerEnd = new Point(-gap2 + center.x, -outerRadius + center.y);
-                                    polygon.push(innerPoint);
-                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
-                                    polygon.push(innerPoint);
+                                    polygon[0] = innerPoint.x;
+                                    polygon[1] = innerPoint.y;
+                                    polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
+                                    polygon[2 + NUMSTEPS * 2] = innerPoint.x;
+                                    polygon[3 + NUMSTEPS * 2] = innerPoint.y;
                                     shape.push(rotatePolygon(polygon, rotation));
 
                                     // Quadrant 4 shape
-                                    polygon = [];
+                                    polygon = new Float64Array(4 + NUMSTEPS * 2);
                                     innerPoint = new Point(gap2 + center.x, -gap2 + center.y);
                                     outerStart = new Point(gap2 + center.x, -outerRadius + center.y);
                                     outerEnd = new Point(outerRadius + center.x, -gap2 + center.y);
-                                    polygon.push(innerPoint);
-                                    polygon = polygon.concat(arcToPolygon(outerStart, outerEnd, center));
-                                    polygon.push(innerPoint);
+                                    polygon[0] = innerPoint.x;
+                                    polygon[1] = innerPoint.y;
+                                    polygon.set(arcToPolygon(outerStart, outerEnd, center), 2);
+                                    polygon[2 + NUMSTEPS * 2] = innerPoint.x;
+                                    polygon[3 + NUMSTEPS * 2] = innerPoint.y;
                                     shape.push(rotatePolygon(polygon, rotation));
                                 }
                             } else {
@@ -733,7 +756,12 @@ export class ApertureMacro {
                             centerEnd.x - dirNormalCCW.x,
                             centerEnd.y - dirNormalCCW.y);
                         shape = [rotatePolygon(
-                            [startLeft, startRight, endRight, endLeft, startLeft.clone()],
+                            Float64Array.of(
+                                startLeft.x, startLeft.y,
+                                startRight.x, startRight.y,
+                                endRight.x, endRight.y,
+                                endLeft.x, endLeft.y, 
+                                startLeft.x, startLeft.y),
                             rotation)];
                         break;
     
@@ -1140,6 +1168,21 @@ export class Bounds {
         }
     }
 
+    mergexy(x:number, y:number) {
+        if (x < this.min.x) {
+            this.min.x = x;
+        }
+        if (y < this.min.y) {
+            this.min.y = y;
+        }
+        if (x > this.max.x) {
+            this.max.x = x;
+        }
+        if (y > this.max.y) {
+            this.max.y = y;
+        }
+    }
+
     get width():number {
         return this.max.x - this.min.x;
     }
@@ -1511,28 +1554,46 @@ export class Region {
     }
 
     private static buildPolygon(contour:RegionContour):Polygon {
-        let result:Polygon = [];
+        let numPoints = 0;
+        contour.forEach(
+            segment => {
+                if (segment instanceof LineSegment) {
+                    numPoints += 2;
+                } else if (segment instanceof ArcSegment) {
+                    numPoints += NUMSTEPS;
+                } else if (segment instanceof CircleSegment) {
+                    numPoints += NUMSTEPS;
+                }
+            }
+        );
+        let result:Polygon = new Float64Array(numPoints * 2);
+        let arrayOffset = 0;
         contour.forEach(
             segment => {
                 if (segment instanceof LineSegment) {
                     let line = segment as LineSegment;
-                    result.push(line.from);
-                    result.push(line.to);
+                    result[arrayOffset++] = line.from.x;
+                    result[arrayOffset++] = line.from.y;
+                    result[arrayOffset++] = line.to.x;
+                    result[arrayOffset++] = line.to.y;
                 } else if (segment instanceof ArcSegment) {
                     let arc = segment as ArcSegment;
-                    result = result.concat(arcToPolygon(arc.start, arc.end, arc.center));
+                    result.set(arcToPolygon(arc.start, arc.end, arc.center), arrayOffset);
+                    arrayOffset += NUMSTEPS * 2;
                 } else if (segment instanceof CircleSegment) {
                     let circle = segment as CircleSegment;
-                    result = result.concat(translatePolygon(circleToPolygon(circle.radius), circle.center));
+                    result.set(translatePolygon(circleToPolygon(circle.radius), circle.center), arrayOffset);
+                    arrayOffset += NUMSTEPS * 2;
                 } else {
                     throw new GerberParseException(`Unsupported segment type ${segment}`);
                 }
             }
         );
         // Close the polygon if we have to
-        if (result[0].distance(result[result.length - 1]) > Epsilon) {
-            result.push(result[0].clone());
-        }
+        // TODO: fixme!!!
+        //if (result[0].distance(result[result.length - 1]) > Epsilon) {
+        //    result.push(result[0].clone());
+        //}
         return result;
     }
 

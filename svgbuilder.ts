@@ -122,23 +122,24 @@ export class SVGBuilder {
             return false;
         }
 
-        let left = this.PolyInfoList[i].polygons[j][0].x;
+        let left = this.PolyInfoList[i].polygons[j][0];
         let right = left;
-        let top = this.PolyInfoList[i].polygons[j][0].y;
+        let top = this.PolyInfoList[i].polygons[j][1];
         let bottom = top;
         for ( ; i < this.PolyInfoList.length; ++i) {
             for (let j = 0; j < this.PolyInfoList[i].polygons.length; ++j) {
-                for (let k = 0; k < this.PolyInfoList[i].polygons[j].length; ++k) {
-                    let ip = this.PolyInfoList[i].polygons[j][k];
-                    if (ip.x < left) {
-                        left = ip.x;
-                    } else if (ip.x > right) {
-                        right = ip.x;
+                for (let k = 0; k < this.PolyInfoList[i].polygons[j].length; k += 2) {
+                    let ipx = this.PolyInfoList[i].polygons[j][k];
+                    let ipy = this.PolyInfoList[i].polygons[j][k + 1];
+                    if (ipx < left) {
+                        left = ipx;
+                    } else if (ipx > right) {
+                        right = ipx;
                     }
-                    if (ip.y < top) {
-                        top = ip.y;
-                    } else if (ip.y > bottom) {
-                        bottom = ip.y;
+                    if (ipy < top) {
+                        top = ipy;
+                    } else if (ipy > bottom) {
+                        bottom = ipy;
                     }
                 }
             }
@@ -175,14 +176,15 @@ export class SVGBuilder {
                 }
                 file.write(" M ");
                 file.write( 
-                    (this.PolyInfoList[i].polygons[j][0].x * scale + offsetX).toFixed(3));
+                    (this.PolyInfoList[i].polygons[j][0] * scale + offsetX).toFixed(3));
                 file.write(" ");
                 file.write(
-                    (this.PolyInfoList[i].polygons[j][0].y * scale + offsetY).toFixed(3));
-                for (let k = 1; k < this.PolyInfoList[i].polygons[j].length; ++k) {
-                    let ip = this.PolyInfoList[i].polygons[j][k];
-                    let x = ip.x * scale;
-                    let y = ip.y * scale;
+                    (this.PolyInfoList[i].polygons[j][1] * scale + offsetY).toFixed(3));
+                for (let k = 2; k < this.PolyInfoList[i].polygons[j].length; k += 2) {
+                    let ipx = this.PolyInfoList[i].polygons[j][k];
+                    let ipy = this.PolyInfoList[i].polygons[j][k + 1];
+                    let x = ipx * scale;
+                    let y = ipy * scale;
                     file.write(" L ");
                     file.write((x + offsetX).toFixed(3));
                     file.write(" ");
@@ -210,16 +212,17 @@ export class SVGBuilder {
                     if (this.PolyInfoList[i].polygons[j].length < 3) {
                         continue;
                     }
-                    for (let k = 0; k < this.PolyInfoList[i].polygons[j].length; ++k) {
-                        let ip = this.PolyInfoList[i].polygons[j][k];
+                    for (let k = 0; k < this.PolyInfoList[i].polygons[j].length; k += 2) {
+                        let ipx = this.PolyInfoList[i].polygons[j][k];
+                        let ipy = this.PolyInfoList[i].polygons[j][k + 1];
                         file.write("<text x=\"");
-                        file.write(Math.trunc(ip.x * scale + offsetX).toString());
+                        file.write(Math.trunc(ipx * scale + offsetX).toString());
                         file.write("\" y=\"");
-                        file.write(Math.trunc(ip.y * scale + offsetY).toString());
+                        file.write(Math.trunc(ipy * scale + offsetY).toString());
                         file.write("\">");
-                        file.write(ip.x.toFixed(3));
+                        file.write(ipx.toFixed(3));
                         file.write(",");
-                        file.write(ip.y.toFixed(3));
+                        file.write(ipy.toFixed(3));
                         file.write("</text>\n\n");
                     }
                 }

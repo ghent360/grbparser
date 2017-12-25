@@ -175,13 +175,15 @@ export class SVGConverter extends ConverterBase<string> {
         polySet
             .filter(polygon => polygon.length > 1)
             .forEach(polygon => {
-                let start = polygon[0].scale(this.scale).add(this.offset_);
-                result += ` M ${start.x.toFixed(this.precision)} `
-                    + `${(this.height_ - start.y).toFixed(this.precision)}`;
-                for (let idx = 1; idx < polygon.length; idx++) {
-                    let point = polygon[idx].scale(this.scale).add(this.offset_);
-                    result += ` L ${point.x.toFixed(this.precision)} `
-                        + `${(this.height_ - point.y).toFixed(this.precision)}`;
+                let startx = polygon[0] * this.scale + this.offset_.x;
+                let starty = polygon[1] * this.scale + this.offset_.y;
+                result += ` M ${startx.toFixed(this.precision)} `
+                    + `${(this.height_ - starty).toFixed(this.precision)}`;
+                for (let idx = 2; idx < polygon.length; idx += 2) {
+                    let pointx = polygon[2 * idx] * this.scale + this.offset_.x;
+                    let pointy = polygon[2 * idx + 1] * this.scale + this.offset_.y;
+                    result += ` L ${pointx.toFixed(this.precision)} `
+                        + `${(this.height_ - pointy).toFixed(this.precision)}`;
                 }
             });
         result += ' z" ';
@@ -195,13 +197,15 @@ export class SVGConverter extends ConverterBase<string> {
         polySet
             .filter(polygon => polygon.length > 1)
             .forEach(polygon => {
-                let start = polygon[0].scale(this.scale).add(this.offset_);
-                result += ` M ${start.x.toFixed(this.precision)} `
-                    + `${(this.height_ - start.y).toFixed(this.precision)}`;
-                for (let idx = 1; idx < polygon.length; idx++) {
-                    let point = polygon[idx].scale(this.scale).add(this.offset_);
-                    result += ` L ${point.x.toFixed(this.precision)} `
-                        + `${(this.height_ - point.y).toFixed(this.precision)}`;
+                let startx = polygon[0] * this.scale + this.offset_.x;
+                let starty = polygon[1] * this.scale + this.offset_.y;
+                result += ` M ${startx.toFixed(this.precision)} `
+                    + `${(this.height_ - starty).toFixed(this.precision)}`;
+                for (let idx = 2; idx < polygon.length; idx += 2) {
+                    let pointx = polygon[2 * idx] * this.scale + this.offset_.x;
+                    let pointy = polygon[2 * idx + 1] * this.scale + this.offset_.y;
+                    result += ` L ${pointx.toFixed(this.precision)} `
+                        + `${(this.height_ - pointy).toFixed(this.precision)}`;
                 }
             });
         result += `style="stroke:${SVGConverter.colorToHtml(this.layerColor)}; fill-opacity:0; fill-rule:nonzero; ` +

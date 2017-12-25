@@ -17,7 +17,7 @@ export async function waitClipperLoad() {
     cl = await clipperModule;
 }
 
-export type Polygon = Array<Point>;
+export type Polygon = Float64Array;
 export type PolygonSet = Array<Polygon>;
 
 export function rotatePolygon(poly:Polygon, angle:number):Polygon {
@@ -27,10 +27,15 @@ export function rotatePolygon(poly:Polygon, angle:number):Polygon {
     let angleRadians = angle * (Math.PI * 2.0) / 360;
     let cosA = Math.cos(angleRadians);
     let sinA = Math.sin(angleRadians);
-
-    return poly.map(point => new Point(
-        point.x * cosA - point.y * sinA,
-        point.x * sinA + point.y * cosA));
+    let len = poly.length;
+    let result = new Float64Array(len);
+    for (let idx = len - 2; idx >= 0; idx -= 2) {
+        let x = poly[idx];
+        let y = poly[idx + 1];
+        result[idx] = x * cosA - y * sinA;
+        result[idx + 1] = x * sinA + y * cosA;
+    }
+    return result;
 }
 
 export function rotatePolySet(polySet:PolygonSet, angle:number):PolygonSet {
@@ -45,7 +50,13 @@ export function translatePolygon(poly:Polygon, offset:Point):Polygon {
         && Math.abs(offset.y) < Epsilon) {
         return poly;
     }
-    return poly.map(point => point.add(offset));
+    let len = poly.length;
+    let result = new Float64Array(len);
+    for (let idx = len - 2; idx >= 0; idx -= 2) {
+        result[idx] = poly[idx] + offset.x;
+        result[idx + 1] = poly[idx + 1] + offset.y;
+    }
+    return result;
 }
 
 export function translatePolySet(polySet:PolygonSet, offset:Point):PolygonSet {
@@ -70,7 +81,12 @@ export function scalePolygon(poly:Polygon, scale:number):Polygon {
     if (Math.abs(scale - 1) < Epsilon) {
         return poly;
     }
-    return poly.map(point => point.scale(scale));
+    let len = poly.length;
+    let result = new Float64Array(len);
+    for (let idx = len - 1; idx >= 0; idx--) {
+        result[idx] = poly[idx] * scale;
+    }
+    return result;
 }
 
 export function scalePolySet(polySet:PolygonSet, scale:number):PolygonSet {
@@ -80,12 +96,33 @@ export function scalePolySet(polySet:PolygonSet, scale:number):PolygonSet {
     return polySet.map(polygon => scalePolygon(polygon, scale));
 }
 
-
 export function mirrorPolygon(poly:Polygon, mirror:ObjectMirroring):Polygon {
-    if (mirror == ObjectMirroring.NONE) {
+    if (mirror === ObjectMirroring.NONE) {
         return poly;
     }
-    return poly.map(point => point.mirror(mirror));
+    let len = poly.length;
+    let result = new Float64Array(len);
+    switch (mirror) {
+        case ObjectMirroring.X_AXIS:
+            for (let idx = len - 2; idx >= 0; idx -= 2) {
+                result[idx] = -poly[idx];
+                result[idx + 1] = poly[idx + 1];
+            }
+            break;
+        case ObjectMirroring.Y_AXIS:
+            for (let idx = len - 2; idx >= 0; idx -= 2) {
+                result[idx] = poly[idx];
+                result[idx + 1] = -poly[idx + 1];
+            }
+            break;
+        case ObjectMirroring.XY_AXIS:
+            for (let idx = len - 2; idx >= 0; idx -= 2) {
+                result[idx] = -poly[idx];
+                result[idx + 1] = -poly[idx + 1];
+            }
+            break;
+    }
+    return result;
 }
 
 export function mirrorPolySet(polySet:PolygonSet, mirror:ObjectMirroring):PolygonSet {
@@ -99,9 +136,11 @@ export function polygonBounds(poly:Polygon):Bounds {
     if (poly.length == 0) {
         return EmptyBounds();
     }
-    let bounds = new Bounds(poly[0].clone(), poly[0].clone());
-    for (let idx = 1; idx < poly.length; idx++) {
-        bounds.merge(poly[idx]);
+    let start = new Point(poly[0], poly[1]);
+    let bounds = new Bounds(start, start.clone());
+    let len = poly.length;
+    for (let idx = len - 2; idx >= 0; idx -= 2) {
+        bounds.mergexy(poly[idx], poly[idx + 1]);
     }
     return bounds;
 }
@@ -130,84 +169,32 @@ export function objectsBounds(objects:GraphicsObjects):Bounds {
 
 export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
     let clipper = new cl.Clipper<Point>(100000000);
-    clipper.addPaths(one, cl.PathType.Subject, false);
-    clipper.addPaths(other, cl.PathType.Clip, false);
-    let result = clipper.executeClosedToPoints(cl.ClipType.Union, cl.FillRule.NonZero, Point);
-    clipper.clear();
+    clipper.addPathArrays(one, cl.PathType.Subject, false);
+    clipper.addPathArrays(other, cl.PathType.Clip, false);
+    let result = clipper.executeClosedToArrays(cl.ClipType.Union, cl.FillRule.NonZero);
     clipper.delete();
     if (result.success) {
-        return simplifyPolygonSet(result.solution_closed);
+        return result.solution_closed;
     }
     return [];
 }
 
 export function subtractPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
     let clipper = new cl.Clipper<Point>(100000000);
-    clipper.addPaths(one, cl.PathType.Subject, false);
-    clipper.addPaths(other, cl.PathType.Clip, false);
-    let result = clipper.executeClosedToPoints(cl.ClipType.Difference, cl.FillRule.NonZero, Point);
-    clipper.clear();
+    clipper.addPathArrays(one, cl.PathType.Subject, false);
+    clipper.addPathArrays(other, cl.PathType.Clip, false);
+    let result = clipper.executeClosedToArrays(cl.ClipType.Difference, cl.FillRule.NonZero);
     clipper.delete();
     if (result.success) {
-        return simplifyPolygonSet(result.solution_closed);
+        return result.solution_closed;
     }
     return [];
 }
 
-function slopesAreEqual(pt1:Point, pt2:Point, pt3:Point):boolean {
-    let dx12 = pt1.x - pt2.x;
-    let dy12 = pt1.y - pt2.y;
-    let dx23 = pt2.x - pt3.x;
-    let dy23 = pt2.y - pt3.y;
-    return Math.abs(dy12 * dx23 - dx12 * dy23) < Epsilon;
-}
-
-function removeDuplicatePoints(polygon:Polygon):Polygon {
-    if (polygon.length < 2) {
-        return polygon;
-    }
-    let last = polygon[0];
-    let result = [last];
-    let Epsilon2 = Epsilon * Epsilon;
-    for (let idx = 1; idx < polygon.length; idx++) {
-        if (polygon[idx].distance2(last) < Epsilon2) {
-            continue;
-        }
-        last = polygon[idx];
-        result.push(last);
-    }
-    return result;
-}
-
-function removeMidPoints(polygon:Polygon):Polygon {
-    if (polygon.length < 3) {
-        return polygon;
-    }
-    let result:Polygon = [];
-    if (!slopesAreEqual(polygon[polygon.length - 1], polygon[0], polygon[1])) {
-        result.push(polygon[0]);
-    }
-    for (let idx = 1; idx < polygon.length - 1; idx++) {
-        if (!slopesAreEqual(polygon[idx - 1], polygon[idx], polygon[idx+1])) {
-            result.push(polygon[idx]);
-        }
-    }
-    if (!slopesAreEqual(polygon[polygon.length - 2], polygon[polygon.length - 1], polygon[0])) {
-        result.push(polygon[polygon.length - 1]);
-    }
-    return result;
-}
-
-export function simplifyPolygon(polygon:Polygon):Polygon {
-    let result = removeMidPoints(removeDuplicatePoints(polygon));
-    //if (result.length < polygon.length) {
-    //    console.log(`Simplified from ${polygon.length} to ${result.length}`);
-    //}
-    return result;
-}
-
-export function simplifyPolygonSet(polygonSet:PolygonSet):PolygonSet {
-    return polygonSet.map(p => simplifyPolygon(p));
+function distance2(x1:number, y1:number, x2:number, y2:number):number {
+    let dx = x1 - x2;
+    let dy = y1 - y2;
+    return dx * dx + dy * dy;
 }
 
 export function connectWires(polygonSet:PolygonSet):PolygonSet {
@@ -215,21 +202,27 @@ export function connectWires(polygonSet:PolygonSet):PolygonSet {
         return polygonSet;
     }
     let last = polygonSet[0];
-    let lastPt = last[last.length - 1];
+    let lastPtx = last[last.length - 2];
+    let lastPty = last[last.length - 1];
     let result:PolygonSet = [last];
     let Epsilon2 = Epsilon * Epsilon;
     for (let idx = 1; idx < polygonSet.length; idx++) {
         if (polygonSet[idx].length > 0) {
             let polygon = polygonSet[idx];
-            if (lastPt.distance2(polygon[0]) < Epsilon2) {
+            if (distance2(lastPtx, lastPty, polygon[0], polygon[1]) < Epsilon2) {
                 result.pop();
-                last = last.concat(polygon.slice(1));
-                result.push(last);
-                lastPt = last[last.length - 1];
+                let concat = new Float64Array(last.length + polygon.length - 2);
+                concat.set(last);
+                concat.set(polygon.subarray(2), last.length);
+                result.push(concat);
+                last = concat;
+                lastPtx = last[last.length - 2];
+                lastPty = last[last.length - 1];
             } else {
                 last = polygon;
                 result.push(last);
-                lastPt = last[last.length - 1];
+                lastPtx = last[last.length - 2];
+                lastPty = last[last.length - 1];
             }
         }
     }
