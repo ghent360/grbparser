@@ -40,6 +40,7 @@ import {
     mirrorPolygon,
     objectsBounds,
     translateObjects,
+    distance2,
 } from "./polygonSet";
 import {Point} from "./point";
 import {
@@ -1555,18 +1556,32 @@ export class Region {
 
     private static buildPolygon(contour:RegionContour):Polygon {
         let numPoints = 0;
+        let lastPt:Point = undefined;
+        let firstPt:Point = undefined;
         contour.forEach(
             segment => {
                 if (segment instanceof LineSegment) {
+                    let line = segment as LineSegment;
                     numPoints += 2;
+                    lastPt = line.to;
+                    if (!firstPt) {
+                        firstPt = line.from;
+                    }
                 } else if (segment instanceof ArcSegment) {
+                    let arc = segment as ArcSegment;
                     numPoints += NUMSTEPS;
+                    lastPt = arc.end;
+                    if (!firstPt) {
+                        firstPt = arc.start;
+                    }
                 } else if (segment instanceof CircleSegment) {
                     numPoints += NUMSTEPS;
                 }
             }
         );
-        let result:Polygon = new Float64Array(numPoints * 2);
+        let needsClose = firstPt && lastPt
+            && distance2(firstPt.x, firstPt.y, lastPt.x, lastPt.y) > Epsilon;
+        let result:Polygon = new Float64Array(numPoints * 2 + ((needsClose) ? 2 : 0));
         let arrayOffset = 0;
         contour.forEach(
             segment => {
@@ -1590,10 +1605,10 @@ export class Region {
             }
         );
         // Close the polygon if we have to
-        // TODO: fixme!!!
-        //if (result[0].distance(result[result.length - 1]) > Epsilon) {
-        //    result.push(result[0].clone());
-        //}
+        if (needsClose) {
+            result[arrayOffset++] = result[0];
+            result[arrayOffset++] = result[1];
+        }
         return result;
     }
 
