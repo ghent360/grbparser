@@ -180,8 +180,8 @@ export class SVGConverter extends ConverterBase<string> {
                 result += ` M ${startx.toFixed(this.precision)} `
                     + `${(this.height_ - starty).toFixed(this.precision)}`;
                 for (let idx = 2; idx < polygon.length; idx += 2) {
-                    let pointx = polygon[2 * idx] * this.scale + this.offset_.x;
-                    let pointy = polygon[2 * idx + 1] * this.scale + this.offset_.y;
+                    let pointx = polygon[idx] * this.scale + this.offset_.x;
+                    let pointy = polygon[idx + 1] * this.scale + this.offset_.y;
                     result += ` L ${pointx.toFixed(this.precision)} `
                         + `${(this.height_ - pointy).toFixed(this.precision)}`;
                 }
@@ -202,13 +202,13 @@ export class SVGConverter extends ConverterBase<string> {
                 result += ` M ${startx.toFixed(this.precision)} `
                     + `${(this.height_ - starty).toFixed(this.precision)}`;
                 for (let idx = 2; idx < polygon.length; idx += 2) {
-                    let pointx = polygon[2 * idx] * this.scale + this.offset_.x;
-                    let pointy = polygon[2 * idx + 1] * this.scale + this.offset_.y;
+                    let pointx = polygon[idx] * this.scale + this.offset_.x;
+                    let pointy = polygon[idx + 1] * this.scale + this.offset_.y;
                     result += ` L ${pointx.toFixed(this.precision)} `
                         + `${(this.height_ - pointy).toFixed(this.precision)}`;
                 }
             });
-        result += `style="stroke:${SVGConverter.colorToHtml(this.layerColor)}; fill-opacity:0; fill-rule:nonzero; ` +
+        result += `style="stroke:${SVGConverter.colorToHtml(this.layerColor)}; ` +
             'stroke-opacity:1; stroke-width:1;"/>\n';
         return result;
     }

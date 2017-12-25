@@ -1846,18 +1846,18 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
     objects
         .filter(o => o.polarity != ObjectPolarity.THIN)
         .forEach(o => {
-        if (o.polarity === ObjectPolarity.DARK) {
-            if (clear.length > 0) {
-                if (image.length > 0) {
-                    image = subtractPolygonSet(image, clear);
+            if (o.polarity === ObjectPolarity.DARK) {
+                if (clear.length > 0) {
+                    if (image.length > 0) {
+                        image = subtractPolygonSet(image, clear);
+                    }
+                    clear = [];
                 }
-                clear = [];
+                image = image.concat(o.polySet);
+            } else {
+                clear = clear.concat(o.polySet);
             }
-            image = image.concat(o.polySet);
-        } else {
-            clear = clear.concat(o.polySet);
-        }
-    });
+        });
     if (clear.length > 0) {
         if (image.length > 0) {
             image = subtractPolygonSet(image, clear);
