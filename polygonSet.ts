@@ -132,7 +132,7 @@ export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
     let clipper = new cl.Clipper<Point>(100000000);
     clipper.addPaths(one, cl.PathType.Subject, false);
     clipper.addPaths(other, cl.PathType.Clip, false);
-    let result = clipper.execute(cl.ClipType.Union, cl.FillRule.NonZero, Point);
+    let result = clipper.executeClosedToPoints(cl.ClipType.Union, cl.FillRule.NonZero, Point);
     clipper.clear();
     clipper.delete();
     if (result.success) {
@@ -145,7 +145,7 @@ export function subtractPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet 
     let clipper = new cl.Clipper<Point>(100000000);
     clipper.addPaths(one, cl.PathType.Subject, false);
     clipper.addPaths(other, cl.PathType.Clip, false);
-    let result = clipper.execute(cl.ClipType.Difference, cl.FillRule.NonZero, Point);
+    let result = clipper.executeClosedToPoints(cl.ClipType.Difference, cl.FillRule.NonZero, Point);
     clipper.clear();
     clipper.delete();
     if (result.success) {

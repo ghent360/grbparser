@@ -23,11 +23,11 @@
   "dependencies": {
     "@types/node": "^8.5.2",
     "node": "^9.3.0",
-    "ts-node": "^4.0.2",
+    "ts-node": "^4.1.0",
     "typescript": "^2.6.2"
   },
   "devDependencies": {
-    "@types/mocha": "^2.2.44",
+    "@types/mocha": "^2.2.45",
     "assert": "^1.4.1",
     "babel-core": "^6.26.0",
     "babel-preset-env": "^1.6.1",
