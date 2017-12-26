@@ -258,11 +258,14 @@ export class PolygonConverter {
         parser.execute(ctx);
         let primitives = ctx.primitives;
         let objects:GraphicsObjects = [];
-        let bounds = primitives[0].bounds;
-        primitives.forEach(p => {
-            objects = objects.concat(p.objects);
-            bounds.merge(p.bounds);
-        });
+        let bounds:Bounds;
+        if (primitives.length > 0) {
+            bounds = primitives[0].bounds;
+            primitives.forEach(p => {
+                objects = objects.concat(p.objects);
+                bounds.merge(p.bounds);
+            });
+        }
         let solids = composeSolidImage(objects, union);
         let thins:PolygonSet = [];
         objects

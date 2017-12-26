@@ -53,7 +53,7 @@ describe("Conveter tests", () => {
     it('eagle files to objects', () => {
         let folder = "test/Gerber_File_Format_Examples/eagle";
         fs.readdirSync(folder)
-            .filter(fileName => fileName.match(/\.G[TB]L$/))
+            .filter(fileName => fileName.match(/\.G[TBM]L$/))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
@@ -62,10 +62,10 @@ describe("Conveter tests", () => {
                 //console.log(`Solids ${result.solids.length} wires ${result.thins.length}`);
             });
     }).timeout(10000);
-    it('eagle files to orimitives', () => {
+    it('eagle files to primitives', () => {
         let folder = "test/Gerber_File_Format_Examples/eagle";
         fs.readdirSync(folder)
-            .filter(fileName => fileName.match(/\.G[TB][LOPS]$/))
+            .filter(fileName => fileName.match(/\.G[TBM][LOPS]$/))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();

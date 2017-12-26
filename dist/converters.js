@@ -215,11 +215,14 @@ class PolygonConverter {
         parser.execute(ctx);
         let primitives = ctx.primitives;
         let objects = [];
-        let bounds = primitives[0].bounds;
-        primitives.forEach(p => {
-            objects = objects.concat(p.objects);
-            bounds.merge(p.bounds);
-        });
+        let bounds;
+        if (primitives.length > 0) {
+            bounds = primitives[0].bounds;
+            primitives.forEach(p => {
+                objects = objects.concat(p.objects);
+                bounds.merge(p.bounds);
+            });
+        }
         let solids = primitives_1.composeSolidImage(objects, union);
         let thins = [];
         objects

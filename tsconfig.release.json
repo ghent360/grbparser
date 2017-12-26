@@ -4,10 +4,11 @@
         "module": "commonjs",
         "sourceMap": true,
         "noImplicitAny": false,
-    	"declaration": false
+    	"declaration": true
     },
     "exclude": [
         "node_modules",
-        "dist/"
+        "dist/",
+        "test/"
     ]
 }
