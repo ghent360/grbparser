@@ -257,13 +257,13 @@ export class PolygonConverter {
         let primitives = ctx.primitives;
         let objects:GraphicsObjects = [];
         let bounds:Bounds;
-        let vertices = 0;
+        //let vertices = 0;
         if (primitives.length > 0) {
             bounds = primitives[0].bounds;
             primitives.forEach(p => {
-                p.objects.forEach(object => {
-                    object.polySet.forEach(poly => vertices += poly.length)
-                });
+                //p.objects.forEach(object => {
+                //    object.polySet.forEach(poly => vertices += poly.length)
+                //});
                 objects.push(...p.objects);
                 bounds.merge(p.bounds);
             });
