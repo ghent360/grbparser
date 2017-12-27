@@ -238,8 +238,7 @@ export class SVGConverter extends ConverterBase<string> {
         cvt.scale = scale;
         cvt.margin = margin;
         let svg = cvt.convert(primitives);
-        let result = svg.join();
-        return result;
+        return svg.join('\n');
     }
 }
 
@@ -276,6 +275,7 @@ export class PolygonConverter {
         objects
             .filter(o => o.polarity == ObjectPolarity.THIN)
             .forEach(o => thins.push(...o.polySet));
+        /*
         console.log('---');
         console.log(`Primitives   ${primitives.length}`);
         console.log(`Vertices     ${vertices}`);
@@ -287,6 +287,7 @@ export class PolygonConverter {
         console.log(`Bounds  Time ${boundsEnd - executeEnd}ms`);
         console.log(`Compose Time ${composeEnd - boundsEnd}ms`);
         console.log(`Total   Time ${performance.now() - start}ms`);
+        */
         return new PolygonConverter(solids, connectWires(thins), bounds);
     }
 }
