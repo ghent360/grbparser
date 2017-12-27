@@ -819,7 +819,10 @@ export class ApertureMacro {
                 }
             }
         }
-        return subtractPolygonSet(positives, negatives);
+        if (negatives.length > 0) {
+            return subtractPolygonSet(positives, negatives);
+        }
+        return positives;
     }
 
     private static getValue(modifiers:Array<number>, idx:number):number {
@@ -1837,7 +1840,7 @@ export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
     }
 }
 
-export function composeSolidImage(objects:GraphicsObjects, union:boolean = false):PolygonSet {
+export function composeSolidImage(objects:GraphicsObjects, union:boolean = true):PolygonSet {
     if (objects.length == 0) {
         return [];
     }

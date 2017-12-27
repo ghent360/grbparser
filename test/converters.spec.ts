@@ -12,10 +12,9 @@ import * as fs from 'fs';
 import * as gp from '../grbparser';
 import * as pr from '../primitives';
 import * as cv from '../converters';
-import { SVGConverter, Init } from '../converters';
+import { SVGConverter } from '../converters';
 
 describe("Conveter tests", () => {
-    it('Wait to init', () => Init);
     it('parse and convert gerber file', () => {
         let folder = "test/Gerber_File_Format_Examples";
         fs.readdirSync(folder)

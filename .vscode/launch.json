@@ -11,6 +11,8 @@
                 "tdd",
                 "--timeout",
                 "999999",
+                "--require",
+                "ts-node/register",
                 "--colors",
                 "${workspaceRoot}/test"
             ],

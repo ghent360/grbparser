@@ -49,7 +49,6 @@ function rectPolygon(x:number, y:number, w:number, h:number):Float64Array {
 }
 
 describe("PolygonSet tests", () => {
-    it('Wait for Clipper', () => ps.waitClipperLoad());
     it('Union Test 1', () => {
         let poly1 = rectPolygon(0, 0, 10, 20);
         let poly2 = rectPolygon(0, 0, 20, 10);

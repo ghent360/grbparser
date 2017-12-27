@@ -47,7 +47,6 @@ function distance(x1:number, y1:number, x2:number, y2:number):number {
 const defaultState = new pr.ObjectState();
 
 describe("Primitives tests", () => {
-    it('Wait for Clipper', () => ps.waitClipperLoad());
     it('Standard Circle Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "C", [10]);
         assert.equal(aperture.isMacro(), false);

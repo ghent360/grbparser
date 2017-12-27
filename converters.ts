@@ -32,7 +32,7 @@ import {
     GerberState,
 } from "./primitives";
 import {Point} from "./point";
-import {PolygonSet, waitClipperLoad, connectWires} from "./polygonSet";
+import {PolygonSet, connectWires} from "./polygonSet";
 import {formatFloat} from "./utils";
 import {subtractPolygonSet} from "./polygonSet";
 import {GerberParser} from "./grbparser";
@@ -91,11 +91,6 @@ export class DebugConverter {
         });
         return result;
     }
-}
-
-export const Init = waitClipperLoad();
-export function WaitInit(callback:() => void) {
-    Promise.resolve(waitClipperLoad()).then(() => callback());
 }
 
 export class SVGConverter extends ConverterBase<string> {

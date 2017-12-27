@@ -8,14 +8,7 @@
  */
 import {Point} from "./point";
 import {ObjectMirroring, Bounds, EmptyBounds, Epsilon, GraphicsObjects} from "./primitives";
-import {ClipperSubModule} from "clipperjs/clipper";
-
-const clipperModule = import("clipperjs/clipper_js");
-let cl:ClipperSubModule;
-
-export async function waitClipperLoad() {
-    cl = await clipperModule;
-}
+import {Clipper} from 'nativeclipper';
 
 export type Polygon = Float64Array;
 export type PolygonSet = Array<Polygon>;
@@ -168,25 +161,25 @@ export function objectsBounds(objects:GraphicsObjects):Bounds {
 }
 
 export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
-    let clipper = new cl.Clipper<Point>(100000000);
-    clipper.addPathArrays(one, cl.PathType.Subject, false);
-    clipper.addPathArrays(other, cl.PathType.Clip, false);
-    let result = clipper.executeClosedToArrays(cl.ClipType.Union, cl.FillRule.NonZero);
-    clipper.delete();
+    let clipper = new Clipper(100000000);
+    clipper.addPaths(one, 'subject');
+    if (other.length > 0) {
+        clipper.addPaths(other, 'clip');
+    }
+    let result = clipper.execute('union', 'nonzero');
     if (result.success) {
-        return result.solution_closed;
+        return result.solution;
     }
     return [];
 }
 
 export function subtractPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
-    let clipper = new cl.Clipper<Point>(100000000);
-    clipper.addPathArrays(one, cl.PathType.Subject, false);
-    clipper.addPathArrays(other, cl.PathType.Clip, false);
-    let result = clipper.executeClosedToArrays(cl.ClipType.Difference, cl.FillRule.NonZero);
-    clipper.delete();
+    let clipper = new Clipper(100000000);
+    clipper.addPaths(one, 'subject');
+    clipper.addPaths(other, 'clip');
+    let result = clipper.execute('difference', 'nonzero');
     if (result.success) {
-        return result.solution_closed;
+        return result.solution;
     }
     return [];
 }
