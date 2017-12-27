@@ -170,7 +170,9 @@ export function objectsBounds(objects:GraphicsObjects):Bounds {
 export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
     let clipper = new cl.Clipper<Point>(100000000);
     clipper.addPathArrays(one, cl.PathType.Subject, false);
-    clipper.addPathArrays(other, cl.PathType.Clip, false);
+    if (other.length > 0) {
+        clipper.addPathArrays(other, cl.PathType.Clip, false);
+    }
     let result = clipper.executeClosedToArrays(cl.ClipType.Union, cl.FillRule.NonZero);
     clipper.delete();
     if (result.success) {
@@ -180,6 +182,9 @@ export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
 }
 
 export function subtractPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
+    if (other.length == 0) {
+        return one;
+    }
     let clipper = new cl.Clipper<Point>(100000000);
     clipper.addPathArrays(one, cl.PathType.Subject, false);
     clipper.addPathArrays(other, cl.PathType.Clip, false);

@@ -34,9 +34,8 @@ import {
 import {Point} from "./point";
 import {PolygonSet, waitClipperLoad, connectWires} from "./polygonSet";
 import {formatFloat} from "./utils";
-import {subtractPolygonSet} from "./polygonSet";
 import {GerberParser} from "./grbparser";
-import { performance } from "perf_hooks";
+import {performance} from "perf_hooks";
 
 export abstract class ConverterBase<T> {
     convert(primitives:Array<GraphicsPrimitive>):Array<T> {
@@ -64,7 +63,8 @@ export abstract class ConverterBase<T> {
                 throw new Error("Unknown primitive " + p);
             }
         });
-        return result.concat(this.footer(primitives));
+        result.push(...this.footer(primitives));
+        return result;
     }
 
     header(primitives:Array<GraphicsPrimitive>):Array<T> {
@@ -110,32 +110,32 @@ export class SVGConverter extends ConverterBase<string> {
     private objects_:GraphicsObjects = [];
 
     convertLine(l:Line):string {
-        this.objects_ = this.objects_.concat(l.objects);
+        this.objects_.push(...l.objects);
         return "";
     }
 
     convertArc(a:Arc):string {
-        this.objects_ = this.objects_.concat(a.objects);
+        this.objects_.push(...a.objects);
         return "";
     }
 
     convertCircle(c:Circle):string {
-        this.objects_ = this.objects_.concat(c.objects);
+        this.objects_.push(...c.objects);
         return "";
     }
 
     convertFlash(f:Flash):string {
-        this.objects_ = this.objects_.concat(f.objects);
+        this.objects_.push(...f.objects);
         return "";
     }
 
     convertRegion(r:Region):string {
-        this.objects_ = this.objects_.concat(r.objects);
+        this.objects_.push(...r.objects);
         return "";
     }
 
     convertRepeat(r:Repeat):string {
-        this.objects_ = this.objects_.concat(r.objects);
+        this.objects_.push(...r.objects);
         return "";
     }
 
@@ -162,8 +162,8 @@ export class SVGConverter extends ConverterBase<string> {
         let wires:PolygonSet = []
         this.objects_
             .filter(o => o.polarity == ObjectPolarity.THIN)
-            .forEach(p => wires = wires.concat(p.polySet));
-        let solids = composeSolidImage(this.objects_, true);
+            .forEach(p => wires.push(...p.polySet));
+        let solids = composeSolidImage(this.objects_);
         wires = connectWires(wires);
         //console.log(`Solids ${solids.length} wires ${wires.length}`);
         let svgSolids = this.polySetToSolidPath(solids);
@@ -242,9 +242,7 @@ export class SVGConverter extends ConverterBase<string> {
         cvt.scale = scale;
         cvt.margin = margin;
         let svg = cvt.convert(primitives);
-        let result = "";
-        svg.forEach(l => result = result.concat(l));
-        return result;
+        return svg.join('\n');
     }
 }
 
@@ -270,7 +268,7 @@ export class PolygonConverter {
                 p.objects.forEach(object => {
                     object.polySet.forEach(poly => vertices += poly.length)
                 });
-                objects = objects.concat(p.objects);
+                objects.push(...p.objects);
                 bounds.merge(p.bounds);
             });
         }
@@ -279,7 +277,7 @@ export class PolygonConverter {
         let thins:PolygonSet = [];
         objects
             .filter(o => o.polarity == ObjectPolarity.THIN)
-            .forEach(o => thins = thins.concat(o.polySet));
+            .forEach(o => thins.push(...o.polySet));
         console.log('---');
         console.log(`Primitives   ${primitives.length}`);
         console.log(`Vertices     ${vertices}`);
