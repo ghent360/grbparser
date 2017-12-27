@@ -813,10 +813,8 @@ export class ApertureMacro {
                         throw new GerberParseException(`Unsupported macro primitive ${primitive.code}`);
                 }
                 if (isPositive) {
-                    //positives = positives.concat(shape);
                     positives.push(...shape);
                 } else {
-                    //negatives = negatives.concat(shape);
                     negatives.push(...shape);
                 }
             }
@@ -1702,8 +1700,6 @@ export class Repeat {
             let yOffset = this.yOffset;
             for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
                 let translateVector = new Point(xOffset, yOffset);
-                //this.objects_ = this.objects_.concat(
-                //    translateObjects(this.block.objects, translateVector));
                 this.objects_.push(
                     ...translateObjects(this.block.objects, translateVector));
                 yOffset += this.block.yDelta;
@@ -1719,8 +1715,6 @@ export class Repeat {
             let yOffset = this.yOffset;
             for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
                 let translateVector = new Point(xOffset, yOffset);
-                //this.primitives_ = this.primitives_.concat(
-                //    translatePrimitives(this.block.primitives, translateVector));
                 this.primitives_.push(
                     ...translatePrimitives(this.block.primitives, translateVector));
                 yOffset += this.block.yDelta;
@@ -1812,42 +1806,36 @@ export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
             ctx.getCurrentAperture(),
             ctx.getObjectState());
         this.primitives_.push(l);
-        //this.objects_ = this.objects_.concat(l.objects);
         this.objects_.push(...l.objects);
     }
 
     circle(center:Point, radius:number, ctx:GerberState) {
         let c = new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState());
         this.primitives_.push(c);
-        //this.objects_ = this.objects_.concat(c.objects);
         this.objects_.push(...c.objects);
     }
 
     arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState) {
         let a = new Arc(center, radius, start, end, ctx.getCurrentAperture(), ctx.getObjectState());
         this.primitives_.push(a);
-        //this.objects_ = this.objects_.concat(a.objects);
         this.objects_.push(...a.objects);
     }
 
     flash(center:Point, ctx:GerberState) {
         let f = new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState());
         this.primitives_.push(f);
-        //this.objects_ = this.objects_.concat(f.objects);
         this.objects_.push(...f.objects);
     }
 
     region(contours:Array<RegionContour>, ctx:GerberState) {
         let r = new Region(contours, ctx.getObjectState());
         this.primitives_.push(r);
-        //this.objects_ = this.objects_.concat(r.objects);
         this.objects_.push(...r.objects);
     }
 
     block(block:Block, ctx:GerberState) {
         let r = new Repeat(block);
         this.primitives_.push(r);
-        //this.objects_ = this.objects_.concat(r.objects);
         this.objects_.push(...r.objects);
     }
 }
@@ -1864,26 +1852,21 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
             if (o.polarity === ObjectPolarity.DARK) {
                 if (clear.length > 0) {
                     if (image.length > 0) {
-                        console.log('subtract');
                         image = subtractPolygonSet(image, clear);
                     }
                     clear = [];
                 }
-                //image = image.concat(o.polySet);
                 image.push(...o.polySet);
             } else {
-                //clear = clear.concat(o.polySet);
                 clear.push(...o.polySet);
             }
         });
     if (clear.length > 0) {
         if (image.length > 0) {
-            console.log('subtract');
             image = subtractPolygonSet(image, clear);
         }
     }
     if (union) {
-        console.log('union');
         image = unionPolygonSet(image, []);
     }
     return image;
