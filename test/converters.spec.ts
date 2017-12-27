@@ -73,4 +73,16 @@ describe("Conveter tests", () => {
                 let result = cv.PrimitiveConverter.GerberToPrimitives(content);
             });
     });
+    it('rambo files to objects', () => {
+        let folder = "test/Gerber_File_Format_Examples/rambo";
+        fs.readdirSync(folder)
+            .filter(fileName => fileName.match(/\.GTL$/))
+            .forEach(fileName => {
+                let fullFileName = folder + "/" + fileName;
+                let content = fs.readFileSync(fullFileName).toString();
+                //console.log(`Convert ${fileName}`);
+                let result = cv.PolygonConverter.GerberToPolygons(content, true);
+                //console.log(`Solids ${result.solids.length} wires ${result.thins.length}`);
+            });
+    }).timeout(60000);
 });
