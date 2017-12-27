@@ -105,32 +105,38 @@ export class SVGConverter extends ConverterBase<string> {
     private objects_:GraphicsObjects = [];
 
     convertLine(l:Line):string {
-        this.objects_ = this.objects_.concat(l.objects);
+        //this.objects_ = this.objects_.concat(l.objects);
+        this.objects_.push(...l.objects);
         return "";
     }
 
     convertArc(a:Arc):string {
-        this.objects_ = this.objects_.concat(a.objects);
+        //this.objects_ = this.objects_.concat(a.objects);
+        this.objects_.push(...a.objects);
         return "";
     }
 
     convertCircle(c:Circle):string {
-        this.objects_ = this.objects_.concat(c.objects);
+        //this.objects_ = this.objects_.concat(c.objects);
+        this.objects_.push(...c.objects);
         return "";
     }
 
     convertFlash(f:Flash):string {
-        this.objects_ = this.objects_.concat(f.objects);
+        //this.objects_ = this.objects_.concat(f.objects);
+        this.objects_.push(...f.objects);
         return "";
     }
 
     convertRegion(r:Region):string {
-        this.objects_ = this.objects_.concat(r.objects);
+        //this.objects_ = this.objects_.concat(r.objects);
+        this.objects_.push(...r.objects);
         return "";
     }
 
     convertRepeat(r:Repeat):string {
-        this.objects_ = this.objects_.concat(r.objects);
+        //this.objects_ = this.objects_.concat(r.objects);
+        this.objects_.push(...r.objects);
         return "";
     }
 
@@ -157,8 +163,8 @@ export class SVGConverter extends ConverterBase<string> {
         let wires:PolygonSet = []
         this.objects_
             .filter(o => o.polarity == ObjectPolarity.THIN)
-            .forEach(p => wires = wires.concat(p.polySet));
-        let solids = composeSolidImage(this.objects_, true);
+            .forEach(p => wires.push(...p.polySet));
+        let solids = composeSolidImage(this.objects_);
         wires = connectWires(wires);
         //console.log(`Solids ${solids.length} wires ${wires.length}`);
         let svgSolids = this.polySetToSolidPath(solids);
@@ -258,32 +264,35 @@ export class PolygonConverter {
         let primitives = ctx.primitives;
         let objects:GraphicsObjects = [];
         let bounds:Bounds;
-        let vertices = 0;
+        //let vertices = 0;
         if (primitives.length > 0) {
             bounds = primitives[0].bounds;
             primitives.forEach(p => {
-                p.objects.forEach(object => {
+                /*p.objects.forEach(object => {
                     object.polySet.forEach(poly => vertices += poly.length)
-                });
-                objects = objects.concat(p.objects);
+                });*/
+                //objects = objects.concat(p.objects);
+                objects.push(...p.objects);
                 bounds.merge(p.bounds);
             });
         }
+        let boundsEnd = performance.now();
         let solids = composeSolidImage(objects, union);
         let composeEnd = performance.now();
         let thins:PolygonSet = [];
         objects
             .filter(o => o.polarity == ObjectPolarity.THIN)
-            .forEach(o => thins = thins.concat(o.polySet));
+            .forEach(o => thins.push(...o.polySet));
         console.log('---');
         console.log(`Primitives   ${primitives.length}`);
-        console.log(`Vertices     ${vertices}`);
+        //console.log(`Vertices     ${vertices}`);
         console.log(`Objects      ${objects.length}`);
         console.log(`Solid polys  ${solids.length}`);
         console.log(`Union        ${union}`);
         console.log(`Parse   Time ${parseEnd - start}ms`);
         console.log(`Execute Time ${executeEnd - parseEnd}ms`);
-        console.log(`Compose Time ${composeEnd - executeEnd}ms`);
+        console.log(`Bounds  Time ${boundsEnd - executeEnd}ms`);
+        console.log(`Compose Time ${composeEnd - boundsEnd}ms`);
         console.log(`Total   Time ${performance.now() - start}ms`);
         return new PolygonConverter(solids, connectWires(thins), bounds);
     }

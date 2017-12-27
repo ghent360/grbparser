@@ -80,7 +80,7 @@ describe("Conveter tests", () => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 //console.log(`Convert ${fileName}`);
-                let result = cv.PolygonConverter.GerberToPolygons(content, true);
+                let result = cv.PolygonConverter.GerberToPolygons(content);
                 //console.log(`Solids ${result.solids.length} wires ${result.thins.length}`);
             });
     }).timeout(60000);
