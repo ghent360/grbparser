@@ -176,7 +176,9 @@ exports.objectsBounds = objectsBounds;
 function unionPolygonSet(one, other) {
     let clipper = new cl.Clipper(100000000);
     clipper.addPathArrays(one, cl.PathType.Subject, false);
-    clipper.addPathArrays(other, cl.PathType.Clip, false);
+    if (other.length > 0) {
+        clipper.addPathArrays(other, cl.PathType.Clip, false);
+    }
     let result = clipper.executeClosedToArrays(cl.ClipType.Union, cl.FillRule.NonZero);
     clipper.delete();
     if (result.success) {
@@ -186,6 +188,9 @@ function unionPolygonSet(one, other) {
 }
 exports.unionPolygonSet = unionPolygonSet;
 function subtractPolygonSet(one, other) {
+    if (other.length == 0) {
+        return one;
+    }
     let clipper = new cl.Clipper(100000000);
     clipper.addPathArrays(one, cl.PathType.Subject, false);
     clipper.addPathArrays(other, cl.PathType.Clip, false);

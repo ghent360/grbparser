@@ -48,7 +48,8 @@ class ConverterBase {
                 throw new Error("Unknown primitive " + p);
             }
         });
-        return result.concat(this.footer(primitives));
+        result.push(...this.footer(primitives));
+        return result;
     }
     header(primitives) {
         return [];
@@ -83,27 +84,27 @@ class SVGConverter extends ConverterBase {
         this.objects_ = [];
     }
     convertLine(l) {
-        this.objects_ = this.objects_.concat(l.objects);
+        this.objects_.push(...l.objects);
         return "";
     }
     convertArc(a) {
-        this.objects_ = this.objects_.concat(a.objects);
+        this.objects_.push(...a.objects);
         return "";
     }
     convertCircle(c) {
-        this.objects_ = this.objects_.concat(c.objects);
+        this.objects_.push(...c.objects);
         return "";
     }
     convertFlash(f) {
-        this.objects_ = this.objects_.concat(f.objects);
+        this.objects_.push(...f.objects);
         return "";
     }
     convertRegion(r) {
-        this.objects_ = this.objects_.concat(r.objects);
+        this.objects_.push(...r.objects);
         return "";
     }
     convertRepeat(r) {
-        this.objects_ = this.objects_.concat(r.objects);
+        this.objects_.push(...r.objects);
         return "";
     }
     header(primitives) {
@@ -125,8 +126,8 @@ class SVGConverter extends ConverterBase {
         let wires = [];
         this.objects_
             .filter(o => o.polarity == primitives_1.ObjectPolarity.THIN)
-            .forEach(p => wires = wires.concat(p.polySet));
-        let solids = primitives_1.composeSolidImage(this.objects_, true);
+            .forEach(p => wires.push(...p.polySet));
+        let solids = primitives_1.composeSolidImage(this.objects_);
         wires = polygonSet_1.connectWires(wires);
         //console.log(`Solids ${solids.length} wires ${wires.length}`);
         let svgSolids = this.polySetToSolidPath(solids);
@@ -196,9 +197,7 @@ class SVGConverter extends ConverterBase {
         cvt.scale = scale;
         cvt.margin = margin;
         let svg = cvt.convert(primitives);
-        let result = "";
-        svg.forEach(l => result = result.concat(l));
-        return result;
+        return svg.join('\n');
     }
 }
 exports.SVGConverter = SVGConverter;
@@ -208,26 +207,46 @@ class PolygonConverter {
         this.thins = thins;
         this.bounds = bounds;
     }
-    static GerberToPolygons(content, union = true) {
+    static GerberToPolygons(content, union = false) {
+        //let start = performance.now();
         let parser = new grbparser_1.GerberParser();
         parser.parseBlock(content);
+        //let parseEnd = performance.now();
         let ctx = new primitives_1.GerberState();
         parser.execute(ctx);
+        //let executeEnd = performance.now();
         let primitives = ctx.primitives;
         let objects = [];
         let bounds;
+        let vertices = 0;
         if (primitives.length > 0) {
             bounds = primitives[0].bounds;
             primitives.forEach(p => {
-                objects = objects.concat(p.objects);
+                p.objects.forEach(object => {
+                    object.polySet.forEach(poly => vertices += poly.length);
+                });
+                objects.push(...p.objects);
                 bounds.merge(p.bounds);
             });
         }
         let solids = primitives_1.composeSolidImage(objects, union);
+        //let composeEnd = performance.now();
         let thins = [];
         objects
             .filter(o => o.polarity == primitives_1.ObjectPolarity.THIN)
-            .forEach(o => thins = thins.concat(o.polySet));
+            .forEach(o => thins.push(...o.polySet));
+        /*
+            console.log('---');
+            console.log(`Primitives   ${primitives.length}`);
+            console.log(`Vertices     ${vertices}`);
+            console.log(`Objects      ${objects.length}`);
+            console.log(`Solid polys  ${solids.length}`);
+            console.log(`Union        ${union}`);
+            console.log(`Parse   Time ${parseEnd - start}ms`);
+            console.log(`Execute Time ${executeEnd - parseEnd}ms`);
+            console.log(`Compose Time ${composeEnd - executeEnd}ms`);
+        console.log(`Total   Time ${performance.now() - start}ms`);
+        */
         return new PolygonConverter(solids, polygonSet_1.connectWires(thins), bounds);
     }
 }

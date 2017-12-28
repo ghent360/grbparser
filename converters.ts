@@ -35,7 +35,6 @@ import {Point} from "./point";
 import {PolygonSet, waitClipperLoad, connectWires} from "./polygonSet";
 import {formatFloat} from "./utils";
 import {GerberParser} from "./grbparser";
-import {performance} from "perf_hooks";
 
 export abstract class ConverterBase<T> {
     convert(primitives:Array<GraphicsPrimitive>):Array<T> {
@@ -251,13 +250,13 @@ export class PolygonConverter {
     }
 
     public static GerberToPolygons(content:string, union:boolean = false):PolygonConverter {
-        let start = performance.now();
+        //let start = performance.now();
         let parser = new GerberParser();
         parser.parseBlock(content);
-        let parseEnd = performance.now();
+	//let parseEnd = performance.now();
         let ctx = new GerberState();
         parser.execute(ctx);
-        let executeEnd = performance.now();
+	//let executeEnd = performance.now();
         let primitives = ctx.primitives;
         let objects:GraphicsObjects = [];
         let bounds:Bounds;
@@ -273,11 +272,12 @@ export class PolygonConverter {
             });
         }
         let solids = composeSolidImage(objects, union);
-        let composeEnd = performance.now();
+	//let composeEnd = performance.now();
         let thins:PolygonSet = [];
         objects
             .filter(o => o.polarity == ObjectPolarity.THIN)
-            .forEach(o => thins.push(...o.polySet));
+	    .forEach(o => thins.push(...o.polySet));
+	/*
         console.log('---');
         console.log(`Primitives   ${primitives.length}`);
         console.log(`Vertices     ${vertices}`);
@@ -287,7 +287,8 @@ export class PolygonConverter {
         console.log(`Parse   Time ${parseEnd - start}ms`);
         console.log(`Execute Time ${executeEnd - parseEnd}ms`);
         console.log(`Compose Time ${composeEnd - executeEnd}ms`);
-        console.log(`Total   Time ${performance.now() - start}ms`);
+	console.log(`Total   Time ${performance.now() - start}ms`);
+	*/
         return new PolygonConverter(solids, connectWires(thins), bounds);
     }
 }

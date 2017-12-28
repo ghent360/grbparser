@@ -690,14 +690,17 @@ class ApertureMacro {
                         throw new GerberParseException(`Unsupported macro primitive ${primitive.code}`);
                 }
                 if (isPositive) {
-                    positives = positives.concat(shape);
+                    positives.push(...shape);
                 }
                 else {
-                    negatives = negatives.concat(shape);
+                    negatives.push(...shape);
                 }
             }
         }
-        return polygonSet_1.subtractPolygonSet(positives, negatives);
+        if (negatives.length > 0) {
+            return polygonSet_1.subtractPolygonSet(positives, negatives);
+        }
+        return positives;
     }
     static getValue(modifiers, idx) {
         let r = modifiers[idx];
@@ -1405,7 +1408,7 @@ class Repeat {
             let yOffset = this.yOffset;
             for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
                 let translateVector = new point_1.Point(xOffset, yOffset);
-                this.objects_ = this.objects_.concat(polygonSet_1.translateObjects(this.block.objects, translateVector));
+                this.objects_.push(...polygonSet_1.translateObjects(this.block.objects, translateVector));
                 yOffset += this.block.yDelta;
             }
             xOffset += this.block.xDelta;
@@ -1418,7 +1421,7 @@ class Repeat {
             let yOffset = this.yOffset;
             for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
                 let translateVector = new point_1.Point(xOffset, yOffset);
-                this.primitives_ = this.primitives_.concat(translatePrimitives(this.block.primitives, translateVector));
+                this.primitives_.push(...translatePrimitives(this.block.primitives, translateVector));
                 yOffset += this.block.yDelta;
             }
             xOffset += this.block.xDelta;
@@ -1483,32 +1486,32 @@ class BlockGraphicsOperationsConsumer {
     line(from, to, ctx) {
         let l = new Line(from, to, ctx.getCurrentAperture(), ctx.getObjectState());
         this.primitives_.push(l);
-        this.objects_ = this.objects_.concat(l.objects);
+        this.objects_.push(...l.objects);
     }
     circle(center, radius, ctx) {
         let c = new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState());
         this.primitives_.push(c);
-        this.objects_ = this.objects_.concat(c.objects);
+        this.objects_.push(...c.objects);
     }
     arc(center, radius, start, end, ctx) {
         let a = new Arc(center, radius, start, end, ctx.getCurrentAperture(), ctx.getObjectState());
         this.primitives_.push(a);
-        this.objects_ = this.objects_.concat(a.objects);
+        this.objects_.push(...a.objects);
     }
     flash(center, ctx) {
         let f = new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState());
         this.primitives_.push(f);
-        this.objects_ = this.objects_.concat(f.objects);
+        this.objects_.push(...f.objects);
     }
     region(contours, ctx) {
         let r = new Region(contours, ctx.getObjectState());
         this.primitives_.push(r);
-        this.objects_ = this.objects_.concat(r.objects);
+        this.objects_.push(...r.objects);
     }
     block(block, ctx) {
         let r = new Repeat(block);
         this.primitives_.push(r);
-        this.objects_ = this.objects_.concat(r.objects);
+        this.objects_.push(...r.objects);
     }
 }
 exports.BlockGraphicsOperationsConsumer = BlockGraphicsOperationsConsumer;
@@ -1528,10 +1531,10 @@ function composeSolidImage(objects, union = false) {
                 }
                 clear = [];
             }
-            image = image.concat(o.polySet);
+            image.push(...o.polySet);
         }
         else {
-            clear = clear.concat(o.polySet);
+            clear.push(...o.polySet);
         }
     });
     if (clear.length > 0) {
