@@ -35,6 +35,22 @@ describe("Conveter tests", () => {
                 //console.log(`Conversion result for ${fileName}`);
             });
     });
+    it('Bugs files to SVG', () => {
+        let folder = "test/Gerber_File_Format_Examples/bugs";
+        fs.readdirSync(folder)
+            .filter(fileName => !fileName.match(/\.svg$/))
+            .forEach(fileName => {
+                let fullFileName = folder + "/" + fileName;
+                let content = fs.readFileSync(fullFileName).toString();
+                //console.log(`Convert ${fileName}`);
+                let result = cv.SVGConverter.GerberToSvg(
+                    content, 0x101010, 1, 0);
+                let outputFileName = folder + "/" + fileName + ".svg";
+                let stream = fs.createWriteStream(outputFileName);
+                stream.write(result);
+                stream.end();
+            });
+    }).timeout(10000);
     it('eagle files to SVG', () => {
         let folder = "test/Gerber_File_Format_Examples/eagle";
         fs.readdirSync(folder)

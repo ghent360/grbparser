@@ -194,6 +194,9 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     private polySetToWirePath(polySet:PolygonSet):string {
+        if (polySet.length == 0) {
+            return "";
+        }
         let result = '<path d="';
         polySet
             .filter(polygon => polygon.length > 1)
@@ -242,7 +245,7 @@ export class SVGConverter extends ConverterBase<string> {
         cvt.scale = scale;
         cvt.margin = margin;
         let svg = cvt.convert(primitives);
-        return svg.join('\n');
+        return svg.filter(s => s.length > 0).join('\n');
     }
 }
 
