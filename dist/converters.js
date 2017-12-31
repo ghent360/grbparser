@@ -156,6 +156,9 @@ class SVGConverter extends ConverterBase {
         return result;
     }
     polySetToWirePath(polySet) {
+        if (polySet.length == 0) {
+            return "";
+        }
         let result = '<path d="';
         polySet
             .filter(polygon => polygon.length > 1)
@@ -197,7 +200,7 @@ class SVGConverter extends ConverterBase {
         cvt.scale = scale;
         cvt.margin = margin;
         let svg = cvt.convert(primitives);
-        return svg.join('\n');
+        return svg.filter(s => s.length > 0).join('\n');
     }
 }
 exports.SVGConverter = SVGConverter;

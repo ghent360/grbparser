@@ -1116,6 +1116,31 @@ exports.ArcSegment = ArcSegment;
 function translateRegionContour(contour, vector) {
     return contour.map(segment => segment.translate(vector));
 }
+function contourOrientation(countour) {
+    let sum = 0;
+    countour.forEach(s => {
+        let start;
+        let end;
+        if (s instanceof CircleSegment) {
+            // Not sure what to do with circle segments. Start and end point are the same,
+            // so it should compute as 0
+            return;
+        }
+        else if (s instanceof ArcSegment) {
+            // Threat arcs like line from start to end point.
+            let arc = s;
+            start = s.start;
+            end = s.end;
+        }
+        else {
+            let line = s;
+            start = s.from;
+            end = s.to;
+        }
+        sum += (end.x - start.x) * (end.y + start.y);
+    });
+    return sum;
+}
 class RegionGraphicsOperationsConsumer {
     constructor() {
         this.contour_ = [];
@@ -1380,6 +1405,10 @@ class Region {
         if (needsClose) {
             result[arrayOffset++] = result[0];
             result[arrayOffset++] = result[1];
+        }
+        // If the contour is clockwise, reverse the polygon.
+        if (contourOrientation(contour)) {
+            polygonTools_1.reversePolygon(result);
         }
         return result;
     }
