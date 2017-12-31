@@ -182,14 +182,23 @@ function unionPolygonSet(one, other) {
     let result = clipper.executeClosedToArrays(cl.ClipType.Union, cl.FillRule.NonZero);
     clipper.delete();
     if (result.success) {
-        return result.solution_closed;
+        return {
+            polygonSet: result.solution_closed,
+            bounds: result.bounds_closed
+        };
     }
-    return [];
+    return {
+        polygonSet: result.solution_closed,
+        bounds: undefined
+    };
 }
 exports.unionPolygonSet = unionPolygonSet;
 function subtractPolygonSet(one, other) {
     if (other.length == 0) {
-        return one;
+        return {
+            polygonSet: one,
+            bounds: polySetBounds(one).toSimpleBounds()
+        };
     }
     let clipper = new cl.Clipper(100000000);
     clipper.addPathArrays(one, cl.PathType.Subject, false);
@@ -197,9 +206,15 @@ function subtractPolygonSet(one, other) {
     let result = clipper.executeClosedToArrays(cl.ClipType.Difference, cl.FillRule.NonZero);
     clipper.delete();
     if (result.success) {
-        return result.solution_closed;
+        return {
+            polygonSet: result.solution_closed,
+            bounds: result.bounds_closed
+        };
     }
-    return [];
+    return {
+        polygonSet: result.solution_closed,
+        bounds: undefined
+    };
 }
 exports.subtractPolygonSet = subtractPolygonSet;
 function distance2(x1, y1, x2, y2) {

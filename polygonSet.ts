@@ -7,7 +7,13 @@
  * License: MIT License, see LICENSE.txt
  */
 import {Point} from "./point";
-import {ObjectMirroring, Bounds, EmptyBounds, Epsilon, GraphicsObjects} from "./primitives";
+import {
+    ObjectMirroring,
+    Bounds,
+    EmptyBounds,
+    Epsilon,
+    GraphicsObjects,
+    SimpleBounds} from "./primitives";
 import {ClipperSubModule} from "clipperjs/clipper";
 
 const clipperModule = import("clipperjs/clipper_js");
@@ -19,6 +25,10 @@ export async function waitClipperLoad() {
 
 export type Polygon = Float64Array;
 export type PolygonSet = Array<Polygon>;
+export interface PolygonSetWithBounds {
+    readonly polygonSet:PolygonSet;
+    readonly bounds:SimpleBounds;
+}
 
 export function rotatePolygon(poly:Polygon, angle:number):Polygon {
     if (Math.abs(angle) < Epsilon) {
@@ -167,7 +177,7 @@ export function objectsBounds(objects:GraphicsObjects):Bounds {
     return bounds;
 }
 
-export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
+export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSetWithBounds {
     let clipper = new cl.Clipper<Point>(100000000);
     clipper.addPathArrays(one, cl.PathType.Subject, false);
     if (other.length > 0) {
@@ -176,14 +186,23 @@ export function unionPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
     let result = clipper.executeClosedToArrays(cl.ClipType.Union, cl.FillRule.NonZero);
     clipper.delete();
     if (result.success) {
-        return result.solution_closed;
+        return {
+            polygonSet: result.solution_closed,
+            bounds: result.bounds_closed
+        };
     }
-    return [];
+    return {
+        polygonSet: result.solution_closed,
+        bounds: undefined
+    };
 }
 
-export function subtractPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet {
+export function subtractPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSetWithBounds {
     if (other.length == 0) {
-        return one;
+        return {
+            polygonSet: one,
+            bounds: polySetBounds(one).toSimpleBounds()
+        };
     }
     let clipper = new cl.Clipper<Point>(100000000);
     clipper.addPathArrays(one, cl.PathType.Subject, false);
@@ -191,9 +210,15 @@ export function subtractPolygonSet(one:PolygonSet, other:PolygonSet):PolygonSet 
     let result = clipper.executeClosedToArrays(cl.ClipType.Difference, cl.FillRule.NonZero);
     clipper.delete();
     if (result.success) {
-        return result.solution_closed;
+        return {
+            polygonSet: result.solution_closed,
+            bounds: result.bounds_closed
+        };
     }
-    return [];
+    return {
+        polygonSet: result.solution_closed,
+        bounds: undefined
+    };
 }
 
 export function distance2(x1:number, y1:number, x2:number, y2:number):number {

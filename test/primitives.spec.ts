@@ -28,7 +28,7 @@ function saveSVGPolygons(polygons:ps.PolygonSet, fileName:string) {
 function saveSVGObjects(objects:pr.GraphicsObjects, fileName:string) {
     let svgbldr = new SVGBuilder();
     let polygons = pr.composeSolidImage(objects);
-    svgbldr.Add(polygons);
+    svgbldr.Add(polygons.polygonSet);
     let stream = fs.createWriteStream(fileName);
     svgbldr.SaveToSVG(stream);
     stream.end();

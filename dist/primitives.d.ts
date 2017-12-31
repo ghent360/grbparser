@@ -1,5 +1,5 @@
 import { AritmeticOperation } from "./expressions";
-import { Polygon, PolygonSet } from "./polygonSet";
+import { Polygon, PolygonSet, PolygonSetWithBounds } from "./polygonSet";
 import { Point } from "./point";
 export declare enum FileUnits {
     INCHES = 0,
@@ -199,14 +199,21 @@ export declare class GerberState {
     endRepeat(): void;
     endFile(): void;
 }
+export interface SimpleBounds {
+    readonly minx: number;
+    readonly miny: number;
+    readonly maxx: number;
+    readonly maxy: number;
+}
 export declare class Bounds {
     min: Point;
     max: Point;
     constructor(min: Point, max: Point);
-    merge(other: Bounds | Point): void;
+    merge(other: Bounds | Point | SimpleBounds): void;
     mergexy(x: number, y: number): void;
     readonly width: number;
     readonly height: number;
+    toSimpleBounds(): SimpleBounds;
 }
 export declare class LineSegment {
     readonly from: Point;
@@ -348,7 +355,7 @@ export declare class BlockGraphicsOperationsConsumer implements GraphicsOperatio
     region(contours: Array<RegionContour>, ctx: GerberState): void;
     block(block: Block, ctx: GerberState): void;
 }
-export declare function composeSolidImage(objects: GraphicsObjects, union?: boolean): PolygonSet;
+export declare function composeSolidImage(objects: GraphicsObjects, union?: boolean): PolygonSetWithBounds;
 export interface GerberCommand {
     readonly name: string;
     readonly isAdvanced: boolean;

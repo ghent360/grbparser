@@ -30,9 +30,10 @@ import {
     composeSolidImage,
     Repeat,
     GerberState,
+    SimpleBounds,
 } from "./primitives";
 import {Point} from "./point";
-import {PolygonSet, waitClipperLoad, connectWires} from "./polygonSet";
+import {PolygonSet, waitClipperLoad, connectWires, polySetBounds} from "./polygonSet";
 import {formatFloat} from "./utils";
 import {GerberParser} from "./grbparser";
 
@@ -165,7 +166,7 @@ export class SVGConverter extends ConverterBase<string> {
         let solids = composeSolidImage(this.objects_);
         wires = connectWires(wires);
         //console.log(`Solids ${solids.length} wires ${wires.length}`);
-        let svgSolids = this.polySetToSolidPath(solids);
+        let svgSolids = this.polySetToSolidPath(solids.polygonSet);
         let svgWires = this.polySetToWirePath(wires);
         return [svgSolids, svgWires, "</g>", "</svg>"];
     }
@@ -245,52 +246,60 @@ export class SVGConverter extends ConverterBase<string> {
     }
 }
 
-export class PolygonConverter {
-    constructor(readonly solids:PolygonSet, readonly thins:PolygonSet, readonly bounds:Bounds) {
-    }
+export class PolygonConverterResult {
+    readonly solids:PolygonSet;
+    readonly thins:PolygonSet;
+    readonly bounds:SimpleBounds;
+}
 
-    public static GerberToPolygons(content:string, union:boolean = false):PolygonConverter {
-        //let start = performance.now();
-        let parser = new GerberParser();
-        parser.parseBlock(content);
-	//let parseEnd = performance.now();
-        let ctx = new GerberState();
-        parser.execute(ctx);
-	//let executeEnd = performance.now();
-        let primitives = ctx.primitives;
-        let objects:GraphicsObjects = [];
-        let bounds:Bounds;
-        let vertices = 0;
-        if (primitives.length > 0) {
-            bounds = primitives[0].bounds;
-            primitives.forEach(p => {
-                p.objects.forEach(object => {
-                    object.polySet.forEach(poly => vertices += poly.length)
-                });
-                objects.push(...p.objects);
-                bounds.merge(p.bounds);
+export function GerberToPolygons(content:string, union:boolean = false):PolygonConverterResult {
+    //let start = performance.now();
+    let parser = new GerberParser();
+    parser.parseBlock(content);
+    //let parseEnd = performance.now();
+    let ctx = new GerberState();
+    parser.execute(ctx);
+    //let executeEnd = performance.now();
+    let primitives = ctx.primitives;
+    let objects:GraphicsObjects = [];
+    let vertices = 0;
+    if (primitives.length > 0) {
+        primitives.forEach(p => {
+            p.objects.forEach(object => {
+                object.polySet.forEach(poly => vertices += poly.length)
             });
-        }
-        let solids = composeSolidImage(objects, union);
-	//let composeEnd = performance.now();
-        let thins:PolygonSet = [];
-        objects
-            .filter(o => o.polarity == ObjectPolarity.THIN)
-	    .forEach(o => thins.push(...o.polySet));
-	/*
-        console.log('---');
-        console.log(`Primitives   ${primitives.length}`);
-        console.log(`Vertices     ${vertices}`);
-        console.log(`Objects      ${objects.length}`);
-        console.log(`Solid polys  ${solids.length}`);
-        console.log(`Union        ${union}`);
-        console.log(`Parse   Time ${parseEnd - start}ms`);
-        console.log(`Execute Time ${executeEnd - parseEnd}ms`);
-        console.log(`Compose Time ${composeEnd - executeEnd}ms`);
-	console.log(`Total   Time ${performance.now() - start}ms`);
-	*/
-        return new PolygonConverter(solids, connectWires(thins), bounds);
+            objects.push(...p.objects);
+        });
     }
+    let image = composeSolidImage(objects, union);
+    //let composeEnd = performance.now();
+    let thins:PolygonSet = [];
+    objects
+        .filter(o => o.polarity == ObjectPolarity.THIN)
+        .forEach(o => thins.push(...o.polySet));
+    let bounds = image.bounds;
+    if (thins.length > 0) {
+        let thinBounds = polySetBounds(thins);
+        thinBounds.merge(image.bounds);
+        bounds = thinBounds.toSimpleBounds();
+    }
+/*
+    console.log('---');
+    console.log(`Primitives   ${primitives.length}`);
+    console.log(`Vertices     ${vertices}`);
+    console.log(`Objects      ${objects.length}`);
+    console.log(`Solid polys  ${solids.length}`);
+    console.log(`Union        ${union}`);
+    console.log(`Parse   Time ${parseEnd - start}ms`);
+    console.log(`Execute Time ${executeEnd - parseEnd}ms`);
+    console.log(`Compose Time ${composeEnd - executeEnd}ms`);
+    console.log(`Total   Time ${performance.now() - start}ms`);
+*/
+    return {
+        solids: image.polygonSet,
+        thins: connectWires(thins),
+        bounds: bounds
+    };
 }
 
 export class PrimitiveConverter {

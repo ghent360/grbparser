@@ -517,7 +517,7 @@ class ApertureMacro {
                         if (crossLen > exports.Epsilon && crossThickness > exports.Epsilon) {
                             shape.push(polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.rectangleToPolygon(crossLen, crossThickness), center), rotation));
                             shape.push(polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.rectangleToPolygon(crossThickness, crossLen), center), rotation));
-                            shape = polygonSet_1.unionPolygonSet(shape, []);
+                            shape = polygonSet_1.unionPolygonSet(shape, []).polygonSet;
                         }
                         if (shape.length < 1) {
                             console.log("Empty moire shape");
@@ -698,7 +698,7 @@ class ApertureMacro {
             }
         }
         if (negatives.length > 0) {
-            return polygonSet_1.subtractPolygonSet(positives, negatives);
+            return polygonSet_1.subtractPolygonSet(positives, negatives).polygonSet;
         }
         return positives;
     }
@@ -1004,7 +1004,7 @@ class Bounds {
                 this.max.y = other.max.y;
             }
         }
-        else {
+        else if (other instanceof point_1.Point) {
             if (other.x < this.min.x) {
                 this.min.x = other.x;
             }
@@ -1016,6 +1016,20 @@ class Bounds {
             }
             if (other.y > this.max.y) {
                 this.max.y = other.y;
+            }
+        }
+        else {
+            if (other.minx < this.min.x) {
+                this.min.x = other.minx;
+            }
+            if (other.miny < this.min.y) {
+                this.min.y = other.miny;
+            }
+            if (other.maxx > this.max.x) {
+                this.max.x = other.maxx;
+            }
+            if (other.maxy > this.max.y) {
+                this.max.y = other.maxy;
             }
         }
     }
@@ -1038,6 +1052,14 @@ class Bounds {
     }
     get height() {
         return this.max.y - this.min.y;
+    }
+    toSimpleBounds() {
+        return {
+            minx: this.min.x,
+            miny: this.min.y,
+            maxx: this.max.x,
+            maxy: this.max.y
+        };
     }
 }
 exports.Bounds = Bounds;
@@ -1517,7 +1539,10 @@ class BlockGraphicsOperationsConsumer {
 exports.BlockGraphicsOperationsConsumer = BlockGraphicsOperationsConsumer;
 function composeSolidImage(objects, union = false) {
     if (objects.length == 0) {
-        return [];
+        return {
+            polygonSet: [],
+            bounds: undefined
+        };
     }
     let image = [];
     let clear = [];
@@ -1527,7 +1552,7 @@ function composeSolidImage(objects, union = false) {
         if (o.polarity === ObjectPolarity.DARK) {
             if (clear.length > 0) {
                 if (image.length > 0) {
-                    image = polygonSet_1.subtractPolygonSet(image, clear);
+                    image = polygonSet_1.subtractPolygonSet(image, clear).polygonSet;
                 }
                 clear = [];
             }
@@ -1539,13 +1564,19 @@ function composeSolidImage(objects, union = false) {
     });
     if (clear.length > 0) {
         if (image.length > 0) {
-            image = polygonSet_1.subtractPolygonSet(image, clear);
+            if (!union) {
+                return polygonSet_1.subtractPolygonSet(image, clear);
+            }
+            image = polygonSet_1.subtractPolygonSet(image, clear).polygonSet;
         }
     }
     if (union) {
-        image = polygonSet_1.unionPolygonSet(image, []);
+        return polygonSet_1.unionPolygonSet(image, []);
     }
-    return image;
+    return {
+        polygonSet: image,
+        bounds: polygonSet_1.polySetBounds(image).toSimpleBounds()
+    };
 }
 exports.composeSolidImage = composeSolidImage;
 exports.Epsilon = 1E-12;

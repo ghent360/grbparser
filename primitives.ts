@@ -41,6 +41,7 @@ import {
     objectsBounds,
     translateObjects,
     distance2,
+    PolygonSetWithBounds,
 } from "./polygonSet";
 import {Point} from "./point";
 import {
@@ -620,7 +621,7 @@ export class ApertureMacro {
                         if (crossLen > Epsilon && crossThickness > Epsilon) {
                             shape.push(rotatePolygon(translatePolygon(rectangleToPolygon(crossLen, crossThickness), center), rotation));
                             shape.push(rotatePolygon(translatePolygon(rectangleToPolygon(crossThickness, crossLen), center), rotation));
-                            shape = unionPolygonSet(shape, []);
+                            shape = unionPolygonSet(shape, []).polygonSet;
                         }
                         if (shape.length < 1) {
                             console.log("Empty moire shape");
@@ -820,7 +821,7 @@ export class ApertureMacro {
             }
         }
         if (negatives.length > 0) {
-            return subtractPolygonSet(positives, negatives);
+            return subtractPolygonSet(positives, negatives).polygonSet;
         }
         return positives;
     }
@@ -1167,11 +1168,18 @@ export class GerberState {
     }
 }
 
+export interface SimpleBounds {
+    readonly minx:number;
+    readonly miny:number;
+    readonly maxx:number;
+    readonly maxy:number;
+}
+
 export class Bounds {
     constructor(public min:Point, public max:Point) {
     }
 
-    merge(other:Bounds|Point) {
+    merge(other:Bounds|Point|SimpleBounds) {
         if (other instanceof Bounds) {
             if (other.min.x < this.min.x) {
                 this.min.x = other.min.x;
@@ -1185,7 +1193,7 @@ export class Bounds {
             if (other.max.y > this.max.y) {
                 this.max.y = other.max.y;
             }
-        } else {
+        } else if (other instanceof Point) {
             if (other.x < this.min.x) {
                 this.min.x = other.x;
             }
@@ -1197,6 +1205,19 @@ export class Bounds {
             }
             if (other.y > this.max.y) {
                 this.max.y = other.y;
+            }
+        } else {
+            if (other.minx < this.min.x) {
+                this.min.x = other.minx;
+            }
+            if (other.miny < this.min.y) {
+                this.min.y = other.miny;
+            }
+            if (other.maxx > this.max.x) {
+                this.max.x = other.maxx;
+            }
+            if (other.maxy > this.max.y) {
+                this.max.y = other.maxy;
             }
         }
     }
@@ -1222,6 +1243,15 @@ export class Bounds {
 
     get height():number {
         return this.max.y - this.min.y;
+    }
+
+    toSimpleBounds():SimpleBounds {
+        return {
+            minx:this.min.x,
+            miny:this.min.y,
+            maxx:this.max.x,
+            maxy:this.max.y
+        };
     }
 }
 
@@ -1840,9 +1870,12 @@ export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
     }
 }
 
-export function composeSolidImage(objects:GraphicsObjects, union:boolean = false):PolygonSet {
+export function composeSolidImage(objects:GraphicsObjects, union:boolean = false):PolygonSetWithBounds {
     if (objects.length == 0) {
-        return [];
+        return {
+            polygonSet:[],
+            bounds: undefined
+        };
     }
     let image:PolygonSet = [];
     let clear:PolygonSet = [];
@@ -1852,7 +1885,7 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
             if (o.polarity === ObjectPolarity.DARK) {
                 if (clear.length > 0) {
                     if (image.length > 0) {
-                        image = subtractPolygonSet(image, clear);
+                        image = subtractPolygonSet(image, clear).polygonSet;
                     }
                     clear = [];
                 }
@@ -1863,13 +1896,19 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
         });
     if (clear.length > 0) {
         if (image.length > 0) {
-            image = subtractPolygonSet(image, clear);
+            if (!union) {
+                return subtractPolygonSet(image, clear);
+            }
+            image = subtractPolygonSet(image, clear).polygonSet;
         }
     }
     if (union) {
-        image = unionPolygonSet(image, []);
+        return unionPolygonSet(image, []);
     }
-    return image;
+    return {
+        polygonSet: image,
+        bounds: polySetBounds(image).toSimpleBounds()
+    }
 }
 
 export interface GerberCommand {
