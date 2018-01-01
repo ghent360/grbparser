@@ -63,10 +63,13 @@ async function processZipFile(zipFileName:string) {
 
 const start = async (inputFiles:Array<string>) => {
     console.log(`${inputFiles.length} input files`);
-    for (let idx = 0; idx < inputFiles.length; idx += 2) {
+    for (let idx = 0; idx < inputFiles.length - 1; idx += 2) {
         let w1 = inputFiles[idx];
         let w2 = inputFiles[idx + 1];
         await Promise.all([processZipFile(w1), processZipFile(w2)]);
+    }
+    if (inputFiles.length % 2 != 0) {
+        await processZipFile(inputFiles[inputFiles.length - 1]);
     }
     let stream = fs.createWriteStream('test-results.json');
     stream.write(JSON.stringify(results, null, 2));
