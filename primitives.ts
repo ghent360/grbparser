@@ -113,7 +113,8 @@ function reverseObjectsPolarity(objects:GraphicsObjects):GraphicsObjects {
 export enum CoordinateSkipZeros {
     NONE = 0,
     LEADING = 1,
-    TRAILING = 2
+    TRAILING = 2,
+    DIRECT = 3
 }
 
 export enum CoordinateType {

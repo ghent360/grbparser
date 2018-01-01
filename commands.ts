@@ -59,7 +59,7 @@ export class FSCommand implements GerberCommand {
     readonly name:string = "FS";
     readonly isAdvanced = true;
     readonly coordinateFormat:CoordinateFormatSpec;
-    private static matchExp = /^FS([LT]?)([IA])X(\d)(\d)Y(\d)(\d)\*$/;
+    private static matchExp = /^FS([LTD]?)([IA])(N\d)?(G\d)?X(\d)(\d)Y(\d)(\d)(Z\d+)?(D\d)?(M\d)?\*$/;
 
     constructor(cmd:string) {
         let match = FSCommand.matchExp.exec(cmd);
@@ -68,13 +68,23 @@ export class FSCommand implements GerberCommand {
         }
         let coordZeros = CoordinateSkipZeros.NONE;
         if (match[1]) {
-            coordZeros = (match[1] == 'T') ? CoordinateSkipZeros.TRAILING : CoordinateSkipZeros.LEADING;
+            switch (match[1]) {
+                case 'L':
+                    coordZeros = CoordinateSkipZeros.LEADING;
+                    break;
+                case 'T':
+                    coordZeros = CoordinateSkipZeros.TRAILING;
+                    break;
+                case 'D':
+                    coordZeros = CoordinateSkipZeros.DIRECT;
+                    break;
+            }
         }
         let coordType = (match[2] == 'A') ? CoordinateType.ABSOLUTE : CoordinateType.INCREMENTAL;
-        let xNumIntPos = Number.parseInt(match[3]);
-        let xNumDecPos = Number.parseInt(match[4]);
-        let yNumIntPos = Number.parseInt(match[5]);
-        let yNumDecPos = Number.parseInt(match[6]);
+        let xNumIntPos = Number.parseInt(match[5]);
+        let xNumDecPos = Number.parseInt(match[6]);
+        let yNumIntPos = Number.parseInt(match[7]);
+        let yNumDecPos = Number.parseInt(match[8]);
         this.coordinateFormat =
             new CoordinateFormatSpec(coordZeros, coordType, xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
     }
@@ -82,7 +92,17 @@ export class FSCommand implements GerberCommand {
     formatOutput():string {
         let result = "FS";
         if (this.coordinateFormat.coordFormat != CoordinateSkipZeros.NONE) {
-            result += (this.coordinateFormat.coordFormat == CoordinateSkipZeros.LEADING) ? "L" : "T";
+            switch (this.coordinateFormat.coordFormat) {
+                case CoordinateSkipZeros.LEADING:
+                    result += "L";
+                    break;
+                case CoordinateSkipZeros.TRAILING:
+                    result += "T";
+                    break;
+                case CoordinateSkipZeros.DIRECT:
+                    result += "D";
+                    break;
+            }
         }
         result += (this.coordinateFormat.coordType == CoordinateType.ABSOLUTE) ? "A" : "I";
         result += "X";
@@ -550,7 +570,7 @@ export class D01Command implements GerberCommand {
     readonly y?:number;
     readonly i?:number;
     readonly j?:number;
-    private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(I([\+\-]?\d+))?(J([\+\-]?\d+))?D[0]*1$/;
+    private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(I([\+\-]?\d+))?(J([\+\-]?\d+))?(?:D[0]*1)?$/;
 
     constructor(cmd:string, fmt:CoordinateFormatSpec) {
         let match = D01Command.matchExp.exec(cmd);

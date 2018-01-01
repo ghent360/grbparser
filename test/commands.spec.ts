@@ -156,13 +156,17 @@ describe("Commands tests", () => {
 
         let fmt = new pr.CoordinateFormatSpec(CoordinateSkipZeros.LEADING, CoordinateType.ABSOLUTE, 1, 3, 1, 3);
 
+        cmd = new cm.D01Command("X2222", fmt);
+        assert.equal(cmd.x, 2.222);
+        let out = cmd.formatOutput(fmt);
+        assert.equal(out, "X2222D01");
         cmd = new cm.D01Command("X0005Y1111D1", fmt);
         assert.equal(cmd.x, 0.005);
         assert.equal(cmd.y, 1.111);
         assert.equal(cmd.i, undefined);
         assert.equal(cmd.j, undefined);
 
-        let out = cmd.formatOutput(fmt);
+        out = cmd.formatOutput(fmt);
         assert.equal(out, "X5Y1111D01");
         
         cmd = new cm.D02Command("X0Y0D2", fmt);
