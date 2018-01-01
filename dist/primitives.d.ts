@@ -43,14 +43,25 @@ export declare type PolySetWithPolarity = {
     polarity: ObjectPolarity;
 };
 export declare type GraphicsObjects = Array<PolySetWithPolarity>;
+export declare enum CoordinateSkipZeros {
+    NONE = 0,
+    LEADING = 1,
+    TRAILING = 2,
+}
+export declare enum CoordinateType {
+    ABSOLUTE = 1,
+    INCREMENTAL = 2,
+}
 export declare class CoordinateFormatSpec {
+    readonly coordFormat: CoordinateSkipZeros;
+    readonly coordType: CoordinateType;
     readonly xNumIntPos: number;
     readonly xNumDecPos: number;
     readonly yNumIntPos: number;
     readonly yNumDecPos: number;
     readonly xPow: number;
     readonly yPow: number;
-    constructor(xNumIntPos: number, xNumDecPos: number, yNumIntPos: number, yNumDecPos: number);
+    constructor(coordFormat: CoordinateSkipZeros, coordType: CoordinateType, xNumIntPos: number, xNumDecPos: number, yNumIntPos: number, yNumDecPos: number);
 }
 export declare class GerberParseException {
     readonly message: string;

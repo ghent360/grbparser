@@ -18,11 +18,12 @@
 *
 * Note that in the input text the command separators are stipped by the command tokenizer.
 */
-import { ApertureDefinition, ApertureMacro, CoordinateFormatSpec, FileUnits, ObjectPolarity, ObjectMirroring, Attribute, GerberCommand, GerberState } from './primitives';
+import { ApertureDefinition, ApertureMacro, CoordinateFormatSpec, FileUnits, ObjectPolarity, ObjectMirroring, Attribute, GerberCommand, GerberState, CoordinateSkipZeros } from './primitives';
 export declare class FSCommand implements GerberCommand {
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly coordinateFormat: CoordinateFormatSpec;
+    private static matchExp;
     constructor(cmd: string);
     formatOutput(): string;
     execute(ctx: GerberState): void;
@@ -87,6 +88,9 @@ export declare class DCommand implements GerberCommand {
     formatOutput(): string;
     execute(ctx: GerberState): void;
 }
+export declare function parseCoordinateX(coordinate: string, fmt: CoordinateFormatSpec): number;
+export declare function parseCoordinateY(coordinate: string, fmt: CoordinateFormatSpec): number;
+export declare function formatFixedNumber(value: number, precision: number, intPos: number, skip: CoordinateSkipZeros): string;
 export declare class D01Command implements GerberCommand {
     readonly name: string;
     readonly isAdvanced: boolean;

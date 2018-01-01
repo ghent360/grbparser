@@ -28,27 +28,42 @@ class FSCommand {
     constructor(cmd) {
         this.name = "FS";
         this.isAdvanced = true;
-        if (cmd.length < 10 || !cmd.startsWith("FSLAX") || cmd[7] != "Y") {
+        let match = FSCommand.matchExp.exec(cmd);
+        if (!match) {
             throw new primitives_1.GerberParseException(`Unsuported FS command ${cmd}`);
         }
-        let xNumIntPos = Number.parseInt(cmd.substr(5, 1));
-        let xNumDecPos = Number.parseInt(cmd.substr(6, 1));
-        let yNumIntPos = Number.parseInt(cmd.substr(8, 1));
-        let yNumDecPos = Number.parseInt(cmd.substr(9, 1));
+        let coordZeros = primitives_1.CoordinateSkipZeros.NONE;
+        if (match[1]) {
+            coordZeros = (match[1] == 'T') ? primitives_1.CoordinateSkipZeros.TRAILING : primitives_1.CoordinateSkipZeros.LEADING;
+        }
+        let coordType = (match[2] == 'A') ? primitives_1.CoordinateType.ABSOLUTE : primitives_1.CoordinateType.INCREMENTAL;
+        let xNumIntPos = Number.parseInt(match[3]);
+        let xNumDecPos = Number.parseInt(match[4]);
+        let yNumIntPos = Number.parseInt(match[5]);
+        let yNumDecPos = Number.parseInt(match[6]);
         this.coordinateFormat =
-            new primitives_1.CoordinateFormatSpec(xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
+            new primitives_1.CoordinateFormatSpec(coordZeros, coordType, xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
     }
     formatOutput() {
-        return "FSLAX" + this.coordinateFormat.xNumIntPos
-            + this.coordinateFormat.xNumDecPos
-            + "Y" + this.coordinateFormat.yNumIntPos
-            + this.coordinateFormat.yNumDecPos
-            + "*";
+        let result = "FS";
+        if (this.coordinateFormat.coordFormat != primitives_1.CoordinateSkipZeros.NONE) {
+            result += (this.coordinateFormat.coordFormat == primitives_1.CoordinateSkipZeros.LEADING) ? "L" : "T";
+        }
+        result += (this.coordinateFormat.coordType == primitives_1.CoordinateType.ABSOLUTE) ? "A" : "I";
+        result += "X";
+        result += this.coordinateFormat.xNumIntPos;
+        result += this.coordinateFormat.xNumDecPos;
+        result += "Y";
+        result += this.coordinateFormat.yNumIntPos;
+        result += this.coordinateFormat.yNumDecPos;
+        result += "*";
+        return result;
     }
     execute(ctx) {
         ctx.coordinateFormatSpec = this.coordinateFormat;
     }
 }
+FSCommand.matchExp = /^FS([LT]?)([IA])X(\d)(\d)Y(\d)(\d)\*$/;
 exports.FSCommand = FSCommand;
 class MOCommand {
     constructor(cmd) {
@@ -380,22 +395,85 @@ class DCommand {
 DCommand.matchExp = /^(?:G54)?D(\d+)$/;
 exports.DCommand = DCommand;
 function parseCoordinateX(coordinate, fmt) {
+    let xLen = fmt.xNumIntPos + fmt.xNumDecPos;
+    let sign = 1;
+    if (coordinate[0] == '-') {
+        sign = -1;
+        coordinate = coordinate.substring(1);
+    }
+    if (coordinate.length > xLen) {
+        throw new primitives_1.GerberParseException(`Coordinate ${coordinate} longer than the X format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
+    }
+    let zeroMult = 1;
+    if (fmt.coordFormat == primitives_1.CoordinateSkipZeros.TRAILING && coordinate.length < xLen) {
+        zeroMult = Math.pow(10, xLen - coordinate.length);
+    }
     let num = Number.parseFloat(coordinate);
-    return num * fmt.xPow;
+    return sign * num * fmt.xPow * zeroMult;
 }
+exports.parseCoordinateX = parseCoordinateX;
 function parseCoordinateY(coordinate, fmt) {
+    let yLen = fmt.yNumIntPos + fmt.yNumDecPos;
+    let sign = 1;
+    if (coordinate[0] == '-') {
+        sign = -1;
+        coordinate = coordinate.substring(1);
+    }
+    if (coordinate.length > yLen) {
+        throw new primitives_1.GerberParseException(`Coordinate ${coordinate} longer than the Y format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
+    }
+    let zeroMult = 1;
+    if (fmt.coordFormat == primitives_1.CoordinateSkipZeros.TRAILING && coordinate.length < yLen) {
+        zeroMult = Math.pow(10, yLen - coordinate.length);
+    }
     let num = Number.parseFloat(coordinate);
-    return num * fmt.yPow;
+    return sign * num * fmt.yPow * zeroMult;
 }
-function formatFixedNumber(value, precision) {
+exports.parseCoordinateY = parseCoordinateY;
+function formatFixedNumber(value, precision, intPos, skip) {
+    let totalLen = intPos + precision;
+    let sign = "";
+    if (value < 0) {
+        value = -value;
+        sign = "-";
+    }
     let intValue = Math.round(value * Math.pow(10, precision));
-    return intValue.toString();
+    let strValue = intValue.toString();
+    switch (skip) {
+        case primitives_1.CoordinateSkipZeros.NONE:
+            if (strValue.length < totalLen) {
+                strValue = "0".repeat(totalLen - strValue.length) + strValue;
+            }
+            if (strValue.length > totalLen) {
+                throw new primitives_1.GerberParseException(`Value ${value} does note fit format ${intPos}${precision}.`);
+            }
+            return sign + strValue;
+        case primitives_1.CoordinateSkipZeros.LEADING:
+            if (strValue.length > totalLen) {
+                throw new primitives_1.GerberParseException(`Value ${value} does note fit format ${intPos}${precision}.`);
+            }
+            return sign + strValue;
+        case primitives_1.CoordinateSkipZeros.TRAILING:
+            if (strValue.length < totalLen) {
+                strValue = "0".repeat(totalLen - strValue.length) + strValue;
+            }
+            if (strValue.length > totalLen) {
+                throw new primitives_1.GerberParseException(`Value ${value} does note fit format ${intPos}${precision}.`);
+            }
+            let endTrim = strValue.length - 1;
+            while (endTrim >= 0 && strValue[endTrim] == '0') {
+                endTrim--;
+            }
+            strValue = strValue.substr(0, endTrim + 1);
+            return sign + strValue;
+    }
 }
+exports.formatFixedNumber = formatFixedNumber;
 function formatCoordinateX(value, fmt) {
-    return formatFixedNumber(value, fmt.xNumDecPos);
+    return formatFixedNumber(value, fmt.xNumDecPos, fmt.xNumIntPos, fmt.coordFormat);
 }
 function formatCoordinateY(value, fmt) {
-    return formatFixedNumber(value, fmt.yNumDecPos);
+    return formatFixedNumber(value, fmt.yNumDecPos, fmt.yNumIntPos, fmt.coordFormat);
 }
 class D01Command {
     constructor(cmd, fmt) {

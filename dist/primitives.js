@@ -70,8 +70,21 @@ function reverseObjectsPolarity(objects) {
         return { polySet: o.polySet, polarity: reversePolarity(o.polarity) };
     });
 }
+var CoordinateSkipZeros;
+(function (CoordinateSkipZeros) {
+    CoordinateSkipZeros[CoordinateSkipZeros["NONE"] = 0] = "NONE";
+    CoordinateSkipZeros[CoordinateSkipZeros["LEADING"] = 1] = "LEADING";
+    CoordinateSkipZeros[CoordinateSkipZeros["TRAILING"] = 2] = "TRAILING";
+})(CoordinateSkipZeros = exports.CoordinateSkipZeros || (exports.CoordinateSkipZeros = {}));
+var CoordinateType;
+(function (CoordinateType) {
+    CoordinateType[CoordinateType["ABSOLUTE"] = 1] = "ABSOLUTE";
+    CoordinateType[CoordinateType["INCREMENTAL"] = 2] = "INCREMENTAL";
+})(CoordinateType = exports.CoordinateType || (exports.CoordinateType = {}));
 class CoordinateFormatSpec {
-    constructor(xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos) {
+    constructor(coordFormat, coordType, xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos) {
+        this.coordFormat = coordFormat;
+        this.coordType = coordType;
         this.xNumIntPos = xNumIntPos;
         this.xNumDecPos = xNumDecPos;
         this.yNumIntPos = yNumIntPos;
