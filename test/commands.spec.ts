@@ -136,6 +136,14 @@ describe("Commands tests", () => {
         cmd = new cm.AMCommand(testCmd);
         let out = cmd.formatOutput();
         assert.equal(out.replace(/\n/g, ""), testCmd);
+        cmd = new cm.AMCommand(
+                "AMROUNDEDRECTD42*"
+            + "21,1,0.0335,0.0000,0,0,180.0*"
+            + "1,1,0.0177,-0.0079,0.0000*"
+            + "1,1,0.0177,0.0079,0.0000*"
+            + "1,1,0.0177,0.0079,0.0000*"
+            + "1,1,0.0177,-0.0079,0.0000*");
+        out = cmd.formatOutput();
     });
     it('Dxx Command', () => {
         let cmd = new cm.DCommand("D15");

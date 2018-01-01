@@ -39,7 +39,7 @@ export function rotatePolygon(poly:Polygon, angle:number):Polygon {
     let sinA = Math.sin(angleRadians);
     let len = poly.length;
     let result = new Float64Array(len);
-    for (let idx = len - 2; idx >= 0; idx -= 2) {
+    for (let idx = 0; idx < len; idx += 2) {
         let x = poly[idx];
         let y = poly[idx + 1];
         result[idx] = x * cosA - y * sinA;
@@ -62,7 +62,7 @@ export function translatePolygon(poly:Polygon, offset:Point):Polygon {
     }
     let len = poly.length;
     let result = new Float64Array(len);
-    for (let idx = len - 2; idx >= 0; idx -= 2) {
+    for (let idx = 0; idx < len; idx += 2) {
         result[idx] = poly[idx] + offset.x;
         result[idx + 1] = poly[idx + 1] + offset.y;
     }
@@ -93,7 +93,7 @@ export function scalePolygon(poly:Polygon, scale:number):Polygon {
     }
     let len = poly.length;
     let result = new Float64Array(len);
-    for (let idx = len - 1; idx >= 0; idx--) {
+    for (let idx = 0; idx < len; idx++) {
         result[idx] = poly[idx] * scale;
     }
     return result;
@@ -114,19 +114,19 @@ export function mirrorPolygon(poly:Polygon, mirror:ObjectMirroring):Polygon {
     let result = new Float64Array(len);
     switch (mirror) {
         case ObjectMirroring.X_AXIS:
-            for (let idx = len - 2; idx >= 0; idx -= 2) {
+            for (let idx = 0; idx < len; idx += 2) {
                 result[idx] = -poly[idx];
                 result[idx + 1] = poly[idx + 1];
             }
             break;
         case ObjectMirroring.Y_AXIS:
-            for (let idx = len - 2; idx >= 0; idx -= 2) {
+            for (let idx = 0; idx < len; idx += 2) {
                 result[idx] = poly[idx];
                 result[idx + 1] = -poly[idx + 1];
             }
             break;
         case ObjectMirroring.XY_AXIS:
-            for (let idx = len - 2; idx >= 0; idx -= 2) {
+            for (let idx = 0; idx < len; idx += 2) {
                 result[idx] = -poly[idx];
                 result[idx + 1] = -poly[idx + 1];
             }
@@ -149,7 +149,7 @@ export function polygonBounds(poly:Polygon):Bounds {
     let start = new Point(poly[0], poly[1]);
     let bounds = new Bounds(start, start.clone());
     let len = poly.length;
-    for (let idx = len - 2; idx >= 2; idx -= 2) {
+    for (let idx = 0; idx < len; idx += 2) {
         bounds.mergexy(poly[idx], poly[idx + 1]);
     }
     return bounds;

@@ -230,4 +230,16 @@ describe("Primitives tests", () => {
         let result = aperture.toPolygonSet([]);
         saveSVGPolygons(result, "macro_vectorLine.svg");
     });
+    it('Aperture macro - bug', () => {
+        let aperture = new pr.ApertureMacro("MACRO", [
+            //1,1,0.0177,-0.0079,0.0000*
+            //1,1,0.0177,0.0079,0.0000*
+            //1,1,0.0177,0.0079,0.0000*
+            //1,1,0.0177,-0.0079,0.0000*
+            new pr.Primitive(1, perseExpressions(["1", "0.0177", "-0.0079" , "0.0000"])),
+            //new pr.Primitive(1, perseExpressions(["1", "0.0177", "0.0079" , "0.0000"])),
+        ]);
+        let result = aperture.toPolygonSet([]);
+        saveSVGPolygons(result, "macro_bug.svg");
+    });
 });

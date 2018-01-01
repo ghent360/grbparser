@@ -569,7 +569,7 @@ export class ApertureMacro {
                                     ApertureMacro.getValue(modifiers, 4))];
                         } else {
                             shape = [];
-                            console.log("Empty circle shape");
+                            //console.log("Empty circle shape");
                         }
                         break;
 
@@ -602,7 +602,7 @@ export class ApertureMacro {
                                     ApertureMacro.getValue(modifiers, 5))];
                         } else {
                             shape = [];
-                            console.log("Empty polygon shape");
+                            //console.log("Empty polygon shape");
                         }
                         break;
 
@@ -637,7 +637,7 @@ export class ApertureMacro {
                             shape = unionPolygonSet(shape, []).polygonSet;
                         }
                         if (shape.length < 1) {
-                            console.log("Empty moire shape");
+                            //console.log("Empty moire shape");
                         }
                         break;
 
@@ -774,7 +774,7 @@ export class ApertureMacro {
                             }
                         } else {
                             shape = [];
-                            console.log("Empty thermal shape");
+                            //console.log("Empty thermal shape");
                         }
                         break;
 
@@ -820,7 +820,7 @@ export class ApertureMacro {
                                 rotatePolygon(translatePolygon(rectangleToPolygon(width, height), center), rotation)];
                         } else {
                             shape = [];
-                            console.log("Empty center line shape");
+                            //console.log("Empty center line shape");
                         }
                         break;
                     default:

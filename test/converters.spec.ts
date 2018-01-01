@@ -44,11 +44,12 @@ describe("Conveter tests", () => {
                 let content = fs.readFileSync(fullFileName).toString();
                 //console.log(`Convert ${fileName}`);
                 let result = cv.SVGConverter.GerberToSvg(
-                    content, 0x101010, 1, 0);
+                    content, 0x101010, 1000, 0);
                 let outputFileName = folder + "/" + fileName + ".svg";
                 let stream = fs.createWriteStream(outputFileName);
                 stream.write(result);
                 stream.end();
+                //cv.GerberToPolygons(content);
             });
     }).timeout(10000);
     it('eagle files to SVG', () => {
