@@ -39,6 +39,8 @@ import {
     GerberState,
     Epsilon,
     BlockParams,
+    CoordinateSkipZeros,
+    CoordinateType,
 } from './primitives';
 import {Point} from "./point";
 import {
@@ -51,30 +53,46 @@ import {
     AritmeticOperation,
     ExpressionParser
 } from "./expressions";
+import { toASCII } from 'punycode';
 
 export class FSCommand implements GerberCommand {
     readonly name:string = "FS";
     readonly isAdvanced = true;
     readonly coordinateFormat:CoordinateFormatSpec;
+    private static matchExp = /^FS([LT]?)([IA])X(\d)(\d)Y(\d)(\d)\*$/;
 
     constructor(cmd:string) {
-        if (cmd.length < 10 || !cmd.startsWith("FSLAX") || cmd[7] != "Y") {
+        let match = FSCommand.matchExp.exec(cmd);
+        if (!match) {
             throw new GerberParseException(`Unsuported FS command ${cmd}`);
         }
-        let xNumIntPos = Number.parseInt(cmd.substr(5, 1));
-        let xNumDecPos = Number.parseInt(cmd.substr(6, 1));
-        let yNumIntPos = Number.parseInt(cmd.substr(8, 1));
-        let yNumDecPos = Number.parseInt(cmd.substr(9, 1));
+        let coordZeros = CoordinateSkipZeros.NONE;
+        if (match[1]) {
+            coordZeros = (match[1] == 'T') ? CoordinateSkipZeros.TRAILING : CoordinateSkipZeros.LEADING;
+        }
+        let coordType = (match[2] == 'A') ? CoordinateType.ABSOLUTE : CoordinateType.INCREMENTAL;
+        let xNumIntPos = Number.parseInt(match[3]);
+        let xNumDecPos = Number.parseInt(match[4]);
+        let yNumIntPos = Number.parseInt(match[5]);
+        let yNumDecPos = Number.parseInt(match[6]);
         this.coordinateFormat =
-            new CoordinateFormatSpec(xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
+            new CoordinateFormatSpec(coordZeros, coordType, xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
     }
 
     formatOutput():string {
-        return "FSLAX" + this.coordinateFormat.xNumIntPos
-            + this.coordinateFormat.xNumDecPos
-            + "Y" + this.coordinateFormat.yNumIntPos
-            + this.coordinateFormat.yNumDecPos
-            + "*";
+        let result = "FS";
+        if (this.coordinateFormat.coordFormat != CoordinateSkipZeros.NONE) {
+            result += (this.coordinateFormat.coordFormat == CoordinateSkipZeros.LEADING) ? "L" : "T";
+        }
+        result += (this.coordinateFormat.coordType == CoordinateType.ABSOLUTE) ? "A" : "I";
+        result += "X";
+        result += this.coordinateFormat.xNumIntPos;
+        result += this.coordinateFormat.xNumDecPos;
+        result += "Y";
+        result += this.coordinateFormat.yNumIntPos;
+        result += this.coordinateFormat.yNumDecPos;
+        result += "*";
+        return result;
     }
 
     execute(ctx:GerberState) {
@@ -442,27 +460,87 @@ export class DCommand implements GerberCommand {
     }
 }
 
-function parseCoordinateX(coordinate:string, fmt:CoordinateFormatSpec):number {
+export function parseCoordinateX(coordinate:string, fmt:CoordinateFormatSpec):number {
+    let xLen = fmt.xNumIntPos + fmt.xNumDecPos;
+    let sign = 1;
+    if (coordinate[0] == '-') {
+        sign = -1;
+        coordinate = coordinate.substring(1);
+    }
+    if (coordinate.length > xLen) {
+        throw new GerberParseException(`Coordinate ${coordinate} longer than the X format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
+    }
+    let zeroMult = 1;
+    if (fmt.coordFormat == CoordinateSkipZeros.TRAILING && coordinate.length < xLen) {
+        zeroMult = Math.pow(10, xLen - coordinate.length);
+    }
     let num = Number.parseFloat(coordinate);
-    return num * fmt.xPow;
+    return sign * num * fmt.xPow * zeroMult;
 }
 
-function parseCoordinateY(coordinate:string, fmt:CoordinateFormatSpec):number {
+export function parseCoordinateY(coordinate:string, fmt:CoordinateFormatSpec):number {
+    let yLen = fmt.yNumIntPos + fmt.yNumDecPos;
+    let sign = 1;
+    if (coordinate[0] == '-') {
+        sign = -1;
+        coordinate = coordinate.substring(1);
+    }
+    if (coordinate.length > yLen) {
+        throw new GerberParseException(`Coordinate ${coordinate} longer than the Y format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
+    }
+    let zeroMult = 1;
+    if (fmt.coordFormat == CoordinateSkipZeros.TRAILING && coordinate.length < yLen) {
+        zeroMult = Math.pow(10, yLen - coordinate.length);
+    }
     let num = Number.parseFloat(coordinate);
-    return num * fmt.yPow;
+    return sign * num * fmt.yPow * zeroMult;
 }
 
-function formatFixedNumber(value:number, precision:number):string {
+export function formatFixedNumber(value:number, precision:number, intPos:number, skip:CoordinateSkipZeros):string {
+    let totalLen = intPos + precision;
+    let sign = "";
+    if (value < 0) {
+        value = -value;
+        sign = "-";
+    }
     let intValue = Math.round(value * Math.pow(10, precision));
-    return intValue.toString();
+    let strValue = intValue.toString();
+    switch (skip) {
+        case CoordinateSkipZeros.NONE:
+            if (strValue.length < totalLen) {
+                strValue = "0".repeat(totalLen - strValue.length) + strValue;
+            }
+            if (strValue.length > totalLen) {
+                throw new GerberParseException(`Value ${value} does note fit format ${intPos}${precision}.`);
+            }
+            return sign + strValue;
+        case CoordinateSkipZeros.LEADING:
+            if (strValue.length > totalLen) {
+                throw new GerberParseException(`Value ${value} does note fit format ${intPos}${precision}.`);
+            }
+            return sign + strValue;
+        case CoordinateSkipZeros.TRAILING:
+            if (strValue.length < totalLen) {
+                strValue = "0".repeat(totalLen - strValue.length) + strValue;
+            }
+            if (strValue.length > totalLen) {
+                throw new GerberParseException(`Value ${value} does note fit format ${intPos}${precision}.`);
+            }
+            let endTrim = strValue.length - 1;
+            while (endTrim >= 0 && strValue[endTrim] == '0') {
+                endTrim--;
+            }
+            strValue = strValue.substr(0, endTrim + 1);
+            return sign + strValue;
+    }
 }
 
 function formatCoordinateX(value:number, fmt:CoordinateFormatSpec):string {
-    return formatFixedNumber(value, fmt.xNumDecPos);
+    return formatFixedNumber(value, fmt.xNumDecPos, fmt.xNumIntPos, fmt.coordFormat);
 }
 
 function formatCoordinateY(value:number, fmt:CoordinateFormatSpec):string {
-    return formatFixedNumber(value, fmt.yNumDecPos);
+    return formatFixedNumber(value, fmt.yNumDecPos, fmt.yNumIntPos, fmt.coordFormat);
 }
 
 export class D01Command implements GerberCommand {

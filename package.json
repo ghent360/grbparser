@@ -22,11 +22,13 @@
   "homepage": "https://github.com/ghent360/grbparser#readme",
   "dependencies": {
     "@types/node": "^8.5.2",
+    "jszip": "^3.1.5",
     "node": "^9.3.0",
     "ts-node": "^4.1.0",
     "typescript": "^2.6.2"
   },
   "devDependencies": {
+    "@types/jszip": "^3.1.2",
     "@types/mocha": "^2.2.45",
     "assert": "^1.4.1",
     "babel-core": "^6.26.0",

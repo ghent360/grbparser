@@ -7,7 +7,7 @@
  * License: MIT License, see LICENSE.txt
  */
 
-import { GerberParseException } from '../primitives';
+import { GerberParseException, CoordinateSkipZeros, CoordinateType, CoordinateFormatSpec } from '../primitives';
 import { AMCommand, D01Command, D02Command, D03Command, DCommand } from '../commands';
 import * as assert from 'assert';
 import * as fs from 'fs';
@@ -15,6 +15,61 @@ import * as cm from '../commands';
 import * as pr from '../primitives';
 
 describe("Commands tests", () => {
+    it('Number format', () => {
+        let str = cm.formatFixedNumber(1, 3, 2, CoordinateSkipZeros.NONE);
+        assert.equal(str, "01000");
+        str = cm.formatFixedNumber(-1, 3, 2, CoordinateSkipZeros.NONE);
+        assert.equal(str, "-01000");
+        str = cm.formatFixedNumber(-1.23441, 3, 2, CoordinateSkipZeros.NONE);
+        assert.equal(str, "-01234");
+        str = cm.formatFixedNumber(12.3441, 3, 2, CoordinateSkipZeros.NONE);
+        assert.equal(str, "12344");
+        assert.throws(() => cm.formatFixedNumber(123, 3, 2, CoordinateSkipZeros.NONE));
+
+        str = cm.formatFixedNumber(1, 3, 2, CoordinateSkipZeros.LEADING);
+        assert.equal(str, "1000");
+        str = cm.formatFixedNumber(-1, 3, 2, CoordinateSkipZeros.LEADING);
+        assert.equal(str, "-1000");
+        str = cm.formatFixedNumber(-1.23441, 3, 2, CoordinateSkipZeros.LEADING);
+        assert.equal(str, "-1234");
+        str = cm.formatFixedNumber(12.3441, 3, 2, CoordinateSkipZeros.LEADING);
+        assert.equal(str, "12344");
+        assert.throws(() => cm.formatFixedNumber(1234, 3, 2, CoordinateSkipZeros.LEADING));
+
+        str = cm.formatFixedNumber(1, 2, 3, CoordinateSkipZeros.TRAILING);
+        assert.equal(str, "001");
+        str = cm.formatFixedNumber(-1, 2, 3, CoordinateSkipZeros.TRAILING);
+        assert.equal(str, "-001");
+        str = cm.formatFixedNumber(-1.23441, 2, 3, CoordinateSkipZeros.TRAILING);
+        assert.equal(str, "-00123");
+        str = cm.formatFixedNumber(-1.2, 2, 3, CoordinateSkipZeros.TRAILING);
+        assert.equal(str, "-0012");
+        str = cm.formatFixedNumber(123.441, 2, 3, CoordinateSkipZeros.TRAILING);
+        assert.equal(str, "12344");
+        assert.throws(() => cm.formatFixedNumber(1000, 2, 3, CoordinateSkipZeros.TRAILING));
+    });
+    it('Number parse', () => {
+        let fmt = new CoordinateFormatSpec(CoordinateSkipZeros.NONE, CoordinateType.ABSOLUTE, 2, 3, 2, 3);
+        let value = cm.parseCoordinateX("-12345", fmt);
+        assert.equal(value, -12.345);
+        value = cm.parseCoordinateX("2345", fmt);
+        assert.equal(value, 2.345);
+        assert.throws(() => cm.parseCoordinateX("123456", fmt))
+
+        fmt = new CoordinateFormatSpec(CoordinateSkipZeros.LEADING, CoordinateType.ABSOLUTE, 2, 3, 2, 3);
+        value = cm.parseCoordinateX("-12345", fmt);
+        assert.equal(value, -12.345);
+        value = cm.parseCoordinateX("2345", fmt);
+        assert.equal(value, 2.345);
+        assert.throws(() => cm.parseCoordinateX("123456", fmt))
+
+        fmt = new CoordinateFormatSpec(CoordinateSkipZeros.TRAILING, CoordinateType.ABSOLUTE, 2, 3, 2, 3);
+        value = cm.parseCoordinateX("-12345", fmt);
+        assert.equal(value, -12.345);
+        value = cm.parseCoordinateX("2345", fmt);
+        assert.ok(Math.abs(value - 23.45) < 0.000001);
+        assert.throws(() => cm.parseCoordinateX("123456", fmt))
+    });
     it('FS Command', () => {
         let cmd = new cm.FSCommand("FSLAX26Y37*");
         assert.equal(cmd.coordinateFormat.xNumIntPos, 2);
@@ -91,7 +146,7 @@ describe("Commands tests", () => {
     it('D0x Command', () => {
         let cmd:cm.D01Command|cm.D02Command|cm.D03Command;
 
-        let fmt = new pr.CoordinateFormatSpec(1, 3, 1, 3);
+        let fmt = new pr.CoordinateFormatSpec(CoordinateSkipZeros.LEADING, CoordinateType.ABSOLUTE, 1, 3, 1, 3);
 
         cmd = new cm.D01Command("X0005Y1111D1", fmt);
         assert.equal(cmd.x, 0.005);
@@ -127,7 +182,7 @@ describe("Commands tests", () => {
         cmd = new cm.G75Command("G75");
     });
     it("Arc commands", () => {
-        let fmt = new pr.CoordinateFormatSpec(1, 3, 1, 3);
+        let fmt = new pr.CoordinateFormatSpec(CoordinateSkipZeros.LEADING, CoordinateType.ABSOLUTE, 2, 3, 2, 3);
         // Arc to 7.071, 7.071 center offset -10, 0
         let cmd = new cm.D01Command("X7071Y7071I-10000J0D01", fmt);
         let ctx = new pr.GerberState();

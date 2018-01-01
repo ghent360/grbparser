@@ -110,11 +110,24 @@ function reverseObjectsPolarity(objects:GraphicsObjects):GraphicsObjects {
     });
 }
 
+export enum CoordinateSkipZeros {
+    NONE = 0,
+    LEADING = 1,
+    TRAILING = 2
+}
+
+export enum CoordinateType {
+    ABSOLUTE = 1,
+    INCREMENTAL = 2
+}
+
 export class CoordinateFormatSpec {
     readonly xPow:number;  // The power of 1 to multiply the X coordinate by 10^(-xNumDecPos)
     readonly yPow:number;  // The power of 1 to multiply the Y coordinate by 10^(-yNumDecPos)
 
     constructor(
+        readonly coordFormat:CoordinateSkipZeros,
+        readonly coordType:CoordinateType,
         readonly xNumIntPos:number,
         readonly xNumDecPos:number,
         readonly yNumIntPos:number,
