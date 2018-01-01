@@ -469,7 +469,7 @@ class ApertureMacro {
                         }
                         else {
                             shape = [];
-                            console.log("Empty circle shape");
+                            //console.log("Empty circle shape");
                         }
                         break;
                     case 4:// Outline (exposure, num vertices, start x, start y, ..., (3+2n) end x, 4+2n end y, rotation)
@@ -500,7 +500,7 @@ class ApertureMacro {
                         }
                         else {
                             shape = [];
-                            console.log("Empty polygon shape");
+                            //console.log("Empty polygon shape");
                         }
                         break;
                     case 6:// Moire (center x, center y, outer diam, ring thickness, gap, num rings, cross hair thickness, cross hair len, rotation)
@@ -533,7 +533,7 @@ class ApertureMacro {
                             shape = polygonSet_1.unionPolygonSet(shape, []).polygonSet;
                         }
                         if (shape.length < 1) {
-                            console.log("Empty moire shape");
+                            //console.log("Empty moire shape");
                         }
                         break;
                     case 7:// Thermal (center x, center y, outer diam, inner diam, gap, rotation)
@@ -666,7 +666,7 @@ class ApertureMacro {
                         }
                         else {
                             shape = [];
-                            console.log("Empty thermal shape");
+                            //console.log("Empty thermal shape");
                         }
                         break;
                     case 20:// Vector line (exposure, width, start x, start y, end x, end y, rotation)
@@ -696,7 +696,7 @@ class ApertureMacro {
                         }
                         else {
                             shape = [];
-                            console.log("Empty center line shape");
+                            //console.log("Empty center line shape");
                         }
                         break;
                     default:

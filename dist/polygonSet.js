@@ -35,7 +35,7 @@ function rotatePolygon(poly, angle) {
     let sinA = Math.sin(angleRadians);
     let len = poly.length;
     let result = new Float64Array(len);
-    for (let idx = len - 2; idx >= 0; idx -= 2) {
+    for (let idx = 0; idx < len; idx += 2) {
         let x = poly[idx];
         let y = poly[idx + 1];
         result[idx] = x * cosA - y * sinA;
@@ -58,7 +58,7 @@ function translatePolygon(poly, offset) {
     }
     let len = poly.length;
     let result = new Float64Array(len);
-    for (let idx = len - 2; idx >= 0; idx -= 2) {
+    for (let idx = 0; idx < len; idx += 2) {
         result[idx] = poly[idx] + offset.x;
         result[idx + 1] = poly[idx + 1] + offset.y;
     }
@@ -89,7 +89,7 @@ function scalePolygon(poly, scale) {
     }
     let len = poly.length;
     let result = new Float64Array(len);
-    for (let idx = len - 1; idx >= 0; idx--) {
+    for (let idx = 0; idx < len; idx++) {
         result[idx] = poly[idx] * scale;
     }
     return result;
@@ -110,19 +110,19 @@ function mirrorPolygon(poly, mirror) {
     let result = new Float64Array(len);
     switch (mirror) {
         case primitives_1.ObjectMirroring.X_AXIS:
-            for (let idx = len - 2; idx >= 0; idx -= 2) {
+            for (let idx = 0; idx < len; idx += 2) {
                 result[idx] = -poly[idx];
                 result[idx + 1] = poly[idx + 1];
             }
             break;
         case primitives_1.ObjectMirroring.Y_AXIS:
-            for (let idx = len - 2; idx >= 0; idx -= 2) {
+            for (let idx = 0; idx < len; idx += 2) {
                 result[idx] = poly[idx];
                 result[idx + 1] = -poly[idx + 1];
             }
             break;
         case primitives_1.ObjectMirroring.XY_AXIS:
-            for (let idx = len - 2; idx >= 0; idx -= 2) {
+            for (let idx = 0; idx < len; idx += 2) {
                 result[idx] = -poly[idx];
                 result[idx + 1] = -poly[idx + 1];
             }
@@ -145,7 +145,7 @@ function polygonBounds(poly) {
     let start = new point_1.Point(poly[0], poly[1]);
     let bounds = new primitives_1.Bounds(start, start.clone());
     let len = poly.length;
-    for (let idx = len - 2; idx >= 2; idx -= 2) {
+    for (let idx = 0; idx < len; idx += 2) {
         bounds.mergexy(poly[idx], poly[idx + 1]);
     }
     return bounds;
