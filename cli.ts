@@ -8,8 +8,8 @@ import {GerberToPolygons, Init} from "./converters";
 let results = [];
 
 async function parseGerber(zipFileName:string, fileName:string, content:string) {
-    await Init;
     try {
+        await Init;
         //console.log(`Parsing '${fileName}'`);
         GerberToPolygons(content);
         results.push({zipFileName: zipFileName, gerber:fileName, status:"success"});
@@ -21,8 +21,20 @@ async function parseGerber(zipFileName:string, fileName:string, content:string) 
 
 async function processZipFile(zipFileName:string) {
     console.log(`Processing ${zipFileName}`);
-    let data = await fs.readFileAsync(zipFileName);
-    let zip = await new JSZip().loadAsync(data);
+    let data;
+    try {
+        data = await fs.readFileAsync(zipFileName);
+    } catch (err) {
+        results.push({zipFileName: zipFileName, status:"io error", err:err});
+        return;
+    }
+    let zip;
+    try {
+        zip = await new JSZip().loadAsync(data);
+    } catch (err) {
+        results.push({zipFileName: zipFileName, status:"unzip error", err:err});
+        return;
+    }
     for (let fileName in zip.files) {
         let file = zip.files[fileName];
         if (file.dir) {
@@ -34,7 +46,13 @@ async function processZipFile(zipFileName:string) {
             let info = ut.GerberUtils.determineSideAndLayer(fileName);
             //console.log(`File: ${fileName} ${ut.BoardSide[info.side]} ${ut.BoardLayer[info.layer]}`);
             if (info.layer != ut.BoardLayer.Unknown && info.side != ut.BoardSide.Unknown) {
-                let content = await file.async("text");
+                let content:string;
+                try {
+                    content = await file.async("text");
+                } catch (err) {
+                    results.push({zipFileName: zipFileName, gerber:fileName, status:"unzip error", err:err});
+                    return;
+                }
                 let result = await parseGerber(zipFileName, fileName, content);
             } else {
                 results.push({zipFileName: zipFileName, gerber:fileName, status:"skip"});
@@ -43,25 +61,21 @@ async function processZipFile(zipFileName:string) {
     }
 }
 
-async function asyncForEach<T>(array:Array<T>, callback: (input:T) => Promise<void>) {
-    for (let index = 0; index < array.length; index++) {
-      await callback(array[index])
-    }
-}
-
-const start = async (folder:string) => {
-    let inputFiles = fs.readdirSync(folder).filter(fileName => fileName.endsWith('.zip'));
+const start = async (inputFiles:Array<string>) => {
     console.log(`${inputFiles.length} input files`);
-    await asyncForEach(
-        inputFiles,
-        async (fileName) => {
-            let zipFileName = folder + "/" + fileName;
-            await processZipFile(zipFileName);
-        });
-    console.log('done');
+    for (let w of inputFiles) {
+        await processZipFile(w);
+    }
     let stream = fs.createWriteStream('test-results.json');
     stream.write(JSON.stringify(results, null, 2));
     stream.end();
 };
 
-start("../pcbs/gerbers");
+let folder = "../pcbs/gerbers";
+let inputFiles = fs.readdirSync(folder)
+    .filter(fileName => fileName.endsWith('.zip'))
+    .map(fileName => folder + "/" + fileName);
+
+start(inputFiles)
+    .then(() => console.log('done'))
+    .catch(err => console.error(err));
