@@ -41,8 +41,19 @@ function focus(result:Array<any>) {
         topErrors.push({count:count, message:key});
     }
     topErrors.sort((a, b) => b.count - a.count);
+    console.log('-----------------------------------');
+    console.log('Top Errors');
     for (let idx = 0; idx < topErrors.length && idx < 10; idx++) {
         console.log(`${topErrors[idx].count}\t\t${topErrors[idx].message}`);
+    }
+
+    console.log('-----------------------------------');
+    console.log('Error examples');
+    for (let idx = 0; idx < topErrors.length && idx < 10; idx++) {
+        console.log(`${topErrors[idx].message}`);
+        let samples = result.filter(r => r.err && r.err.message == topErrors[idx].message);
+        samples.slice(0, 5).forEach(r => console.log(`  ${r.zipFileName}:${r.gerber}`));
+        console.log('');
     }
 }
 

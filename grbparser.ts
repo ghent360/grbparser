@@ -181,6 +181,7 @@ export class GerberParser {
         [/^AM/, (cmd) => new cmds.AMCommand(cmd)],
         [/^AB/, (cmd) => new cmds.ABCommand(cmd)],
         [/^G[0]*4[^\d]/, (cmd) => new cmds.G04Command(cmd)],
+        [/^G[0]*4$/, (cmd) => new cmds.G04Command(cmd)],
         [/D[0]*1$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
         [/[XY]-?\d+$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
         [/D[0]*2$/, (cmd) => new cmds.D02Command(cmd, this.fmt)],
