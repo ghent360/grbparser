@@ -61,7 +61,7 @@ async function processZipFile(zipFileName:string) {
     }
 }
 
-const start = async (inputFiles:Array<string>) => {
+async function processGerbers(inputFiles:Array<string>) {
     console.log(`${inputFiles.length} input files`);
     for (let w of inputFiles) {
         await processZipFile(w);
@@ -71,11 +71,62 @@ const start = async (inputFiles:Array<string>) => {
     stream.end();
 };
 
-let folder = "../pcbs/gerbers";
-let inputFiles = fs.readdirSync(folder)
-    .filter(fileName => fileName.endsWith('.zip'))
-    .map(fileName => folder + "/" + fileName);
+function percent(n:number):string {
+    return (n * 100).toFixed(2) + "%";
+}
 
-start(inputFiles)
+function analyze(result:Array<any>):any {
+    let totalCount = result.length;
+    let successCount = result.filter(r => r.status == "success").length;
+    let parseErrorCount = result.filter(r => r.status == "parse error").length;
+    let ioErrorCount = result.filter(r => r.status == "io error").length;
+    let unzipErrorCount = result.filter(r => r.status == "unzip error").length;
+    let skipCount = result.filter(r => r.status == "skip").length;
+    let gerbersTried = totalCount - skipCount - unzipErrorCount - ioErrorCount;
+    console.log(`Total results ${totalCount}`);
+    console.log(`Skipped       ${skipCount}\t${percent(skipCount / totalCount)}`);
+    console.log(`Success       ${successCount}\t${percent(successCount / gerbersTried)}`);
+    console.log(`Parse Error   ${parseErrorCount}\t${percent(parseErrorCount / gerbersTried)}`);
+    console.log(`I/O Error     ${ioErrorCount}`);
+    console.log(`Unzip Error   ${unzipErrorCount}`);
+    return {
+        totalCount:totalCount,
+        successCount:successCount,
+        parseErrorCount:parseErrorCount,
+        ioErrorCount:ioErrorCount,
+        unzipErrorCount:unzipErrorCount,
+        skipCount:skipCount,
+        gerbersTried:gerbersTried
+    };
+}
+
+function compare(oldResult:any, newResult:any) {
+    console.log('-------------------------------------------------');
+    console.log('New and old comparison:');
+    console.log(`Total results ${oldResult.totalCount}\t\t\t${newResult.totalCount}`);
+    console.log(`Skipped       ${oldResult.skipCount}\t${percent(oldResult.skipCount / oldResult.totalCount)}\t\t${newResult.skipCount}\t${percent(newResult.skipCount / newResult.totalCount)}`);
+    console.log(`Success       ${oldResult.successCount}\t${percent(oldResult.successCount / oldResult.gerbersTried)}\t\t${newResult.successCount}\t${percent(newResult.successCount / newResult.gerbersTried)}`);
+    console.log(`Parse Error   ${oldResult.parseErrorCount}\t${percent(oldResult.parseErrorCount / oldResult.gerbersTried)}\t\t${newResult.parseErrorCount}\t${percent(newResult.parseErrorCount / newResult.gerbersTried)}`);
+    console.log(`I/O Error     ${oldResult.ioErrorCount}\t\t\t\t${newResult.ioErrorCount}`);
+    console.log(`Unzip Error   ${oldResult.unzipErrorCount}\t\t\t\t${newResult.unzipErrorCount}`);
+}
+
+async function main () {
+    let oldStats = {};
+    if (fs.existsSync('test-results.json')) {
+        let prevResults = await fs.readFileAsync('test-results.json')
+            .then(jsonText => JSON.parse(jsonText.toString()));
+        oldStats = analyze(prevResults);
+    }
+    let folder = "../pcbs/gerbers";
+    let inputFiles = fs.readdirSync(folder)
+        .filter(fileName => fileName.endsWith('.zip'))
+        .map(fileName => folder + "/" + fileName);
+    await processGerbers(inputFiles);
+    let newStats = analyze(results);
+    compare(oldStats, newStats);
+}
+
+main()
     .then(() => console.log('done'))
-    .catch(err => console.error(err));
+    .catch(error => console.error(error));
