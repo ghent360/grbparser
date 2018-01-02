@@ -1040,7 +1040,7 @@ export class GerberState {
 
     setAperture(ap:ApertureBase) {
         if (this.apertures[ap.apertureId] != undefined) {
-            this.error(`Overriding aperture ${ap.apertureId}`);
+            this.warning(`Overriding aperture ${ap.apertureId}`);
         }
         this.apertures[ap.apertureId] = ap;
     }
@@ -1054,13 +1054,17 @@ export class GerberState {
 
     setApertureMacro(apm:ApertureMacro) {
         if (this.apertureMacros[apm.macroName] != undefined) {
-            this.error(`Overriding aperture macro ${apm.macroName}`);
+            this.warning(`Overriding aperture macro ${apm.macroName}`);
         }
         this.apertureMacros[apm.macroName] = apm;
     }
 
     error(message:string) {
         throw new GerberParseException(message);
+    }
+
+    warning(message:string) {
+        console.log(`Warning: ${message}`);
     }
 
     line(from:Point, to:Point) {

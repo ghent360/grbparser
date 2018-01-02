@@ -686,9 +686,14 @@ export class D01Command implements GerberCommand {
             let v2 = {x:v.x / 2, y:v.y / 2};
             let v2len = vectorLength(v2);
             let d2 = radius * radius - v2len * v2len;
-            if (d2 < 0) {
+            // We consider everything in (-Epsilon, +Epsion) to be 0
+            if (d2 < -Epsilon) {
                 ctx.error("D01 Invalid arc, radius too small");
                 return;
+            }
+            // Fix values (-Epsion, 0) to be 0, so Math.sqrt does not complain.
+            if (d2 < 0) {
+                d2 = 0;
             }
             let d = Math.sqrt(d2);
             let center: {x:number, y:number};
