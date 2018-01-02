@@ -31,7 +31,7 @@ export class CommandParser {
     private command = "";
     private errorHandler:(line:number, buffer:string, idx:number) => void
         = CommandParser.consoleError;
-    private static gCodeSplit = /^(G\d+)(.*D\d+)$/;
+    private static gCodeSplit = /^(G\d+)((?:[XYIJ][\+\-]?\d+)*(?:D\d+)?)$/;
     private static g04Match = /^G0*4$/;
     private static dCmdMatch = /^([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?(D\d+)$/;
     private static coordinatesOrder = "XYIJ";
@@ -102,7 +102,7 @@ export class CommandParser {
             // Look for Gxx.....Dxx command
             // we would split it to Gxx*; ....Dxx*
             let match = CommandParser.gCodeSplit.exec(cmd);
-            if (match) {
+            if (match && match[2]) {
                 let gCodeCmd = match[1];
                 // Except G04 comment which ends in Dxx
                 if (!CommandParser.g04Match.test(gCodeCmd)) {
@@ -199,7 +199,8 @@ export class GerberParser {
         [/^LR/, (cmd) => new cmds.LRCommand(cmd)],
         [/^LS/, (cmd) => new cmds.LSCommand(cmd)],
         [/^SR/, (cmd) => new cmds.SRCommand(cmd)],
-        [/^M02/, (cmd) => new cmds.M02Command(cmd)],
+        [/^M0[02]/, (cmd) => new cmds.M02Command(cmd)],
+        [/^M01/, null],
         [/^T(A|F|O)/, (cmd) => new cmds.TCommand(cmd)],
         [/^TD/, (cmd) => new cmds.TDCommand(cmd)],
         [/^IP(?:POS|NEG)\*$/, null],

@@ -161,8 +161,8 @@ export class ExpressionParser {
     private prevToken:Token;
     private bracketLevel = 0;
 
-    private static MetchVariable = /^\$(\d+)/;
-    private static MetchNumber = /^(\d*\.\d+|\d+)/;
+    private static MatchVariable = /^\$(\d+)/;
+    private static MatchNumber = /^(\d*\.\d*|\d+)/;
 
     constructor(expression:string) {
         this.expression_ = expression.trim();
@@ -174,13 +174,13 @@ export class ExpressionParser {
             this.token = {id:TokenID.END, len:0, token:""};
             return;
         }
-        let match = ExpressionParser.MetchVariable.exec(this.expression_);
+        let match = ExpressionParser.MatchVariable.exec(this.expression_);
         if (match) {
             this.token = {id:TokenID.VARIABLE, len:match[0].length, token:match[1]};
             this.consume();
             return
         }
-        match = ExpressionParser.MetchNumber.exec(this.expression_);
+        match = ExpressionParser.MatchNumber.exec(this.expression_);
         if (match) {
             this.token = {id:TokenID.NUMBER, len:match[0].length, token:match[1]};
             this.consume();
@@ -220,7 +220,7 @@ export class ExpressionParser {
         if (this.accept(id)) {
             return true;
         }
-        throw new Error(`Expected token ID ${id}`);
+        throw new Error(`Expected token ID ${TokenID[id]}`);
     }
 
     private operand():AritmeticOperation {

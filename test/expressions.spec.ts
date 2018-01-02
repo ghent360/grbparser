@@ -32,4 +32,14 @@ describe("Expression tests", () => {
         let expr = parser.parse();
         assert.equal(expr.toString(), "$1x-(10-$2)");
     });
+    it('Numbers', () => {
+        let expr = new ExpressionParser("123").parse();
+        assert.equal(expr.toString(), "123");
+        expr = new ExpressionParser("123.456").parse();
+        assert.equal(expr.toString(), "123.456");
+        expr = new ExpressionParser("-123.456").parse();
+        assert.equal(expr.toString(), "-123.456");
+        expr = new ExpressionParser("-123.").parse();
+        assert.equal(expr.toString(), "-123");
+    });
 });

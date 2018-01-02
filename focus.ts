@@ -29,6 +29,9 @@ function focus(result:Array<any>) {
     let byErrorText = {};
     parseErrors.forEach(e => {
         let msg = e.err.message;
+        if (!msg) {
+            console.log(JSON.stringify(e));
+        }
         let counter = byErrorText[msg];
         if (!counter) {
             byErrorText[msg] = 0;
