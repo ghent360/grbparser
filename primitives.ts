@@ -455,33 +455,33 @@ export class ApertureDefinition implements ApertureBase {
                 throw new GerberParseException('Can not convert zero size aperture to polyset');
             }
             result.push(circleToPolygon(radius));
-            if (this.modifiers.length == 2) {
+            if (this.modifiers.length == 2 && this.modifiers[1] > Epsilon) {
                 let hole = circleToPolygon(this.modifiers[1] / 2);
                 reversePolygon(hole);
                 result.push(hole);
-            } else if (this.modifiers.length == 3) {
+            } else if (this.modifiers.length == 3 && this.modifiers[1] > Epsilon && this.modifiers[2] > Epsilon) {
                 let hole = rectangleToPolygon(this.modifiers[1], this.modifiers[2]);
                 reversePolygon(hole);
                 result.push(hole);
             }
         } else if (this.templateName === "R") {
             result.push(rectangleToPolygon(this.modifiers[0], this.modifiers[1]));
-            if (this.modifiers.length == 3) {
+            if (this.modifiers.length == 3 && this.modifiers[2] > Epsilon) {
                 let hole = circleToPolygon(this.modifiers[2] / 2);
                 reversePolygon(hole);
                 result.push(hole);
-            } else if (this.modifiers.length == 4) {
+            } else if (this.modifiers.length == 4 && this.modifiers[2] > Epsilon && this.modifiers[3] > Epsilon) {
                 let hole = rectangleToPolygon(this.modifiers[2], this.modifiers[3]);
                 reversePolygon(hole);
                 result.push(hole);
             }
         } else if (this.templateName === "O") {
             result.push(obroundToPolygon(this.modifiers[0], this.modifiers[1]));
-            if (this.modifiers.length == 3) {
+            if (this.modifiers.length == 3 && this.modifiers[2] > Epsilon) {
                 let hole = circleToPolygon(this.modifiers[2] / 2);
                 reversePolygon(hole);
                 result.push(hole);
-            } else if (this.modifiers.length == 4) {
+            } else if (this.modifiers.length == 4 && this.modifiers[3] > Epsilon && this.modifiers[4] > Epsilon) {
                 let hole = rectangleToPolygon(this.modifiers[2], this.modifiers[3]);
                 reversePolygon(hole);
                 result.push(hole);
@@ -492,11 +492,11 @@ export class ApertureDefinition implements ApertureBase {
             } else if (this.modifiers.length > 2) {
                 result.push(circleToPolygon(this.modifiers[0] / 2, this.modifiers[1], this.modifiers[2]));
             }
-            if (this.modifiers.length == 4) {
+            if (this.modifiers.length == 4 && this.modifiers[3] > Epsilon) {
                 let hole = circleToPolygon(this.modifiers[3] / 2);
                 reversePolygon(hole);
                 result.push(hole);
-            } else if (this.modifiers.length == 5) {
+            } else if (this.modifiers.length == 5 && this.modifiers[3] > Epsilon && this.modifiers[4] > Epsilon) {
                 let hole = rectangleToPolygon(this.modifiers[3], this.modifiers[4]);
                 reversePolygon(hole);
                 result.push(hole);

@@ -32,6 +32,7 @@ export class CommandParser {
     private errorHandler:(line:number, buffer:string, idx:number) => void
         = CommandParser.consoleError;
     private static gCodeSplit = /^(G\d+)((?:[XYIJ][\+\-]?\d+)*(?:D\d+)?)$/;
+    private static gdmnCodeSplit = /^([GDMN]\d+)([GDMN]\d+)*$/;
     private static g04Match = /^G0*4$/;
     private static dCmdMatch = /^([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?(D\d+)$/;
     private static coordinatesOrder = "XYIJ";
@@ -112,6 +113,16 @@ export class CommandParser {
                     return;
                 }
             }
+            do {
+                match = CommandParser.gdmnCodeSplit.exec(cmd);
+                if (match) {
+                    let firstCmd = match[1];
+                    if (!CommandParser.g04Match.test(firstCmd)) {
+                        let cmd = match[2];
+                        this.consumer(firstCmd, this.commandLineStart, false);
+                    }
+                }
+            } while (cmd && cmd.length > 0);
         } else {
             // Some advanced commands can be combined together as per
             // the old spec. See if we have to split them apart.
@@ -183,7 +194,7 @@ export class GerberParser {
         [/^G[0]*4[^\d]/, (cmd) => new cmds.G04Command(cmd)],
         [/^G[0]*4$/, (cmd) => new cmds.G04Command(cmd)],
         [/D[0]*1$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
-        [/[XY]-?\d+$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
+        [/^(?:[XYIJ][\+\-]?\d+){1,4}$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
         [/D[0]*2$/, (cmd) => new cmds.D02Command(cmd, this.fmt)],
         [/D[0]*3$/, (cmd) => new cmds.D03Command(cmd, this.fmt)],
         [/^D(\d+)$/, (cmd) => new cmds.DCommand(cmd)],
@@ -199,13 +210,13 @@ export class GerberParser {
         [/^LR/, (cmd) => new cmds.LRCommand(cmd)],
         [/^LS/, (cmd) => new cmds.LSCommand(cmd)],
         [/^SR/, (cmd) => new cmds.SRCommand(cmd)],
-        [/^M0[02]/, (cmd) => new cmds.M02Command(cmd)],
-        [/^M01/, null],
+        [/^M0*[02]/, (cmd) => new cmds.M02Command(cmd)],
+        [/^M0*1/, null],
         [/^T(A|F|O)/, (cmd) => new cmds.TCommand(cmd)],
         [/^TD/, (cmd) => new cmds.TDCommand(cmd)],
         [/^IP(?:POS|NEG)\*$/, null],
         [/^LN(?:.+)/, null],
-        [/^IN(?:.+)\*$/, null],
+        [/^IN.*\*$/, null],
         [/^ICAS\*$/, null],
         [/^IJ(?:.+)/, null],
         [/^IO(?:.+)/, null],

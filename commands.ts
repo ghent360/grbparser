@@ -149,7 +149,7 @@ export class ADCommand implements GerberCommand {
     readonly name:string = "AD";
     readonly isAdvanced = true;
     readonly definition:ApertureDefinition;
-    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z\-0-9_.$]*)(,(?:\s*[\+\-]?(?:\d*\.?\d+)(?:[eE][\+\-]?\d+)?\s*)(?:X\s*[\+\-]?(?:\d*\.?\d+)(?:[eE][\+\-]?\d+)?\s*)*)?\*$/;
+    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z\-0-9_.$]*)(,(?:\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)(?:X\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)*)?\*$/;
 
     constructor(cmd:string) {
         let match = ADCommand.matchExp.exec(cmd);
@@ -171,7 +171,11 @@ export class ADCommand implements GerberCommand {
                     xIdx = modifiersTxt.length;
                 }
                 let valueStr = modifiersTxt.substring(modifierStrStart, xIdx);
-                modifiers.push(Number.parseFloat(valueStr));
+                let value = Number.parseFloat(valueStr);
+                if (value == NaN) {
+                    throw new GerberParseException(`Invalid aperture modifier ${valueStr}`);
+                }
+                modifiers.push(value);
                 modifierStrStart = xIdx + 1;
             }
         }
@@ -220,15 +224,15 @@ export class ADCommand implements GerberCommand {
                 + ` ${this.definition.modifiers[0]}`);
         }
         if (this.definition.modifiers.length > 0
-            && (this.definition.modifiers[1] <= 0
-                || this.definition.modifiers[1] >= this.definition.modifiers[0])) {
+            && (this.definition.modifiers[1] < 0
+                || this.definition.modifiers[1] > this.definition.modifiers[0])) {
             throw new GerberParseException(
                 `Invalid circle aperture hole radius D${this.definition.apertureId}:`
                 + ` ${this.definition.modifiers[1]}`);
         }
         if (this.definition.modifiers.length > 1
-            && (this.definition.modifiers[2] <= 0
-                || this.definition.modifiers[2] >= this.definition.modifiers[0])) {
+            && (this.definition.modifiers[2] < 0
+                || this.definition.modifiers[2] > this.definition.modifiers[0])) {
             throw new GerberParseException(
                 `Invalid circle aperture hole size D${this.definition.apertureId}:`
                 + ` ${this.definition.modifiers[1]}`);
@@ -239,14 +243,14 @@ export class ADCommand implements GerberCommand {
         if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new GerberParseException(`Invalid rectangle aperture ${this.formatOutput()}`);
         }
-        if (this.definition.modifiers[0] <= 0 || this.definition.modifiers[1] <= 0) {
+        if (this.definition.modifiers[0] < 0 || this.definition.modifiers[1] < 0) {
             throw new GerberParseException(
                 `Invalid rectangle aperture size D${this.definition.apertureId}: `
                 + `${this.definition.modifiers[0]}X${this.definition.modifiers[1]}`);
         }
         if (this.definition.modifiers.length > 2) {
             let radius = this.definition.modifiers[2];
-            if (radius <= 0) {
+            if (radius < 0) {
                 throw new GerberParseException(
                     `Invalid rectangle aperture hole radius D${this.definition.apertureId}: `
                     + `${this.definition.modifiers[2]}`);
@@ -254,7 +258,7 @@ export class ADCommand implements GerberCommand {
         }
         if (this.definition.modifiers.length > 3) {
             let height = this.definition.modifiers[4];
-            if (height <= 0) {
+            if (height < 0) {
                 throw new GerberParseException(
                     `Invalid rectangle aperture hole height D${this.definition.apertureId}: `
                     + `${this.definition.modifiers[2]}`);
@@ -487,9 +491,9 @@ export function parseCoordinateX(coordinate:string, fmt:CoordinateFormatSpec):nu
         sign = -1;
         coordinate = coordinate.substring(1);
     }
-    if (coordinate.length > xLen) {
-        throw new GerberParseException(`Coordinate ${coordinate} longer than the X format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
-    }
+    //if (coordinate.length > xLen) {
+    //    throw new GerberParseException(`Coordinate ${coordinate} longer than the X format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
+    //}
     let zeroMult = 1;
     if (fmt.coordFormat == CoordinateSkipZeros.TRAILING && coordinate.length < xLen) {
         zeroMult = Math.pow(10, xLen - coordinate.length);
@@ -505,9 +509,9 @@ export function parseCoordinateY(coordinate:string, fmt:CoordinateFormatSpec):nu
         sign = -1;
         coordinate = coordinate.substring(1);
     }
-    if (coordinate.length > yLen) {
-        throw new GerberParseException(`Coordinate ${coordinate} longer than the Y format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
-    }
+    //if (coordinate.length > yLen) {
+    //    throw new GerberParseException(`Coordinate ${coordinate} longer than the Y format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
+    //}
     let zeroMult = 1;
     if (fmt.coordFormat == CoordinateSkipZeros.TRAILING && coordinate.length < yLen) {
         zeroMult = Math.pow(10, yLen - coordinate.length);
@@ -1159,14 +1163,18 @@ export class TDCommand implements GerberCommand {
     readonly attributeName:string;
     readonly isAdvanced = true;
     readonly name = "TD";
-    private static matchExp = /^TD([a-zA-Z_.$][a-zA-Z0-9_.$]*)\*$/;
+    private static matchExp = /^TD([a-zA-Z_.$][a-zA-Z0-9_.$]*)?\*$/;
     
     constructor(cmd:string) {
         let match = TDCommand.matchExp.exec(cmd);
         if (!match) {
             throw new GerberParseException(`Invalid TD command format ${cmd}`);
         }
-        this.attributeName = match[1];
+        if (match[1]) {
+            this.attributeName = match[1];
+        } else {
+            this.attributeName = "";
+        }
     }
 
     formatOutput():string {
