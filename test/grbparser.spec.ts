@@ -81,6 +81,18 @@ G04 Create aperture*
         assert.equal(commands[1], "D10");
         assert.equal(commands[2], "G03");
         assert.equal(commands[3], "X3750Y1000I250J0D01");
+        commands=[];
+        cmdParser.parseBlock("D10M02*");
+        assert.equal(commands.length, 2);
+        assert.equal(commands[0], "D10");
+        assert.equal(commands[1], "M02");
+        commands=[];
+        cmdParser.parseBlock("G01G01G01G01*");
+        assert.equal(commands.length, 4);
+        assert.equal(commands[0], "G01");
+        assert.equal(commands[1], "G01");
+        assert.equal(commands[2], "G01");
+        assert.equal(commands[3], "G01");
     });
     it("Reorder coordinates", () => {
         let commands:string[] = [];
