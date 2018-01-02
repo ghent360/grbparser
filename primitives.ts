@@ -1676,7 +1676,7 @@ export class Region {
                         firstPt = arc.start;
                     }
                 } else if (segment instanceof CircleSegment) {
-                    numPoints += NUMSTEPS;
+                    numPoints += NUMSTEPS * 2;
                 }
             }
         );
