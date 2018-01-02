@@ -205,6 +205,7 @@ export class GerberParser {
         [/^TD/, (cmd) => new cmds.TDCommand(cmd)],
         [/^IP(?:POS|NEG)\*$/, null],
         [/^LN(?:.+)/, null],
+        [/^IN(?:.+)\*$/, null],
         [/^IJ(?:.+)/, null],
         [/^IO(?:.+)/, null],
         [/^IR(?:.+)/, null],
@@ -231,6 +232,9 @@ export class GerberParser {
     }
 
     private parseCommand(cmd:string, lineNo:number) {
+        if (cmd.length == 0) {
+            return;
+        }
         try {
             let dispatcher = this.commandDispatcher.find(d => d[0].test(cmd));
             if (dispatcher == undefined) {
