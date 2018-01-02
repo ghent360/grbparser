@@ -32,7 +32,7 @@ export class CommandParser {
     private errorHandler:(line:number, buffer:string, idx:number) => void
         = CommandParser.consoleError;
     private static gCodeSplit = /^(G\d+)((?:[XYIJ][\+\-]?\d+)*(?:D\d+)?)$/;
-    private static gdmnCodeSplit = /^([GDMN]\d+)([GDMN]\d+)*$/;
+    private static gdmnCodeSplit = /^([GDMN]\d+)([GDMN]\d+)+$/;
     private static g04Match = /^G0*4$/;
     private static dCmdMatch = /^([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?(D\d+)$/;
     private static coordinatesOrder = "XYIJ";
@@ -115,12 +115,13 @@ export class CommandParser {
             }
             do {
                 match = CommandParser.gdmnCodeSplit.exec(cmd);
-                if (match) {
-                    let firstCmd = match[1];
-                    if (!CommandParser.g04Match.test(firstCmd)) {
-                        let cmd = match[2];
-                        this.consumer(firstCmd, this.commandLineStart, false);
-                    }
+                if (!match) {
+                    break;
+                }
+                let firstCmd = match[1];
+                if (!CommandParser.g04Match.test(firstCmd)) {
+                    let cmd = match[2];
+                    this.consumer(firstCmd, this.commandLineStart, false);
                 }
             } while (cmd && cmd.length > 0);
         } else {
