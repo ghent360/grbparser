@@ -206,6 +206,7 @@ export class GerberParser {
         [/^IP(?:POS|NEG)\*$/, null],
         [/^LN(?:.+)/, null],
         [/^IN(?:.+)\*$/, null],
+        [/^ICAS\*$/, null],
         [/^IJ(?:.+)/, null],
         [/^IO(?:.+)/, null],
         [/^IR(?:.+)/, null],

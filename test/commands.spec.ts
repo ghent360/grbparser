@@ -111,6 +111,18 @@ describe("Commands tests", () => {
         assert.equal(cmd.definition.modifiers[1], 0.123);
         assert.equal(out, "ADD11C,0.555X0.123*");
 
+        cmd = new cm.ADCommand("ADD10C, 0.0100*");
+        out = cmd.formatOutput();
+        assert.equal(cmd.definition.modifiers.length, 1);
+        assert.equal(cmd.definition.modifiers[0], 0.01);
+        assert.equal(out, "ADD10C,0.01*");
+
+        cmd = new cm.ADCommand("ADD10C,2.3622e-06*");
+        out = cmd.formatOutput();
+        assert.equal(cmd.definition.modifiers.length, 1);
+        assert.equal(cmd.definition.modifiers[0], 0.0000023622);
+        assert.equal(out, "ADD10C,0.0000023622*");
+
         assert.throws(() => new cm.ADCommand("ADD05C,0.5*"), GerberParseException);
     });
     it('AM Command', () => {

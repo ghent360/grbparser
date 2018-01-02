@@ -149,7 +149,7 @@ export class ADCommand implements GerberCommand {
     readonly name:string = "AD";
     readonly isAdvanced = true;
     readonly definition:ApertureDefinition;
-    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z\-0-9_.$]*)(,(?:[\+\-]?(?:\d*\.\d+|\d+)(?:X[\+\-]?(?:\d*\.\d+|\d+))*))?\*$/;
+    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z\-0-9_.$]*)(,(?:\s*[\+\-]?(?:\d*\.?\d+)(?:[eE][\+\-]?\d+)?\s*)(?:X\s*[\+\-]?(?:\d*\.?\d+)(?:[eE][\+\-]?\d+)?\s*)*)?\*$/;
 
     constructor(cmd:string) {
         let match = ADCommand.matchExp.exec(cmd);
@@ -174,7 +174,7 @@ export class ADCommand implements GerberCommand {
                 modifiers.push(Number.parseFloat(valueStr));
                 modifierStrStart = xIdx + 1;
             }
-            }
+        }
         this.definition = new ApertureDefinition(apertureId, templateName, modifiers);
         this.checkStandardApertures();
     }
@@ -688,8 +688,7 @@ export class D01Command implements GerberCommand {
             let d2 = radius * radius - v2len * v2len;
             // We consider everything in (-Epsilon, +Epsion) to be 0
             if (d2 < -Epsilon) {
-                ctx.error("D01 Invalid arc, radius too small");
-                return;
+                ctx.warning("D01 Invalid arc, radius too small");
             }
             // Fix values (-Epsion, 0) to be 0, so Math.sqrt does not complain.
             if (d2 < 0) {
