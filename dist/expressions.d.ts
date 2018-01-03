@@ -20,8 +20,8 @@ export declare class ExpressionParser {
     private token;
     private prevToken;
     private bracketLevel;
-    private static MetchVariable;
-    private static MetchNumber;
+    private static MatchVariable;
+    private static MatchNumber;
     constructor(expression: string);
     private nextToken();
     private consume();

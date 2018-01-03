@@ -916,7 +916,7 @@ export class GerberState {
 
     set coordinateFormatSpec(value:CoordinateFormatSpec) {
         if (this.coordinateFormat_ != undefined) {
-            this.error("File coordinate format already set.");
+            this.warning("File coordinate format already set.");
         }
         this.coordinateFormat_ = value;        
     }
@@ -930,7 +930,7 @@ export class GerberState {
 
     set fileUnits(value:FileUnits) {
         if (this.fileUnits_ != undefined) {
-            this.error("File units already set.");
+            this.warning("File units already set.");
         }
         this.fileUnits_ = value;        
     }
@@ -1007,7 +1007,7 @@ export class GerberState {
 
     get primitives():Array<GraphicsPrimitive> {
         if (!this.isDone_) {
-            throw new GerberParseException("Parsing is not complete");
+            this.warning("Parsing is not complete");
         }
         return this.primitives_;
     }

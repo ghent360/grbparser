@@ -75,6 +75,7 @@ var CoordinateSkipZeros;
     CoordinateSkipZeros[CoordinateSkipZeros["NONE"] = 0] = "NONE";
     CoordinateSkipZeros[CoordinateSkipZeros["LEADING"] = 1] = "LEADING";
     CoordinateSkipZeros[CoordinateSkipZeros["TRAILING"] = 2] = "TRAILING";
+    CoordinateSkipZeros[CoordinateSkipZeros["DIRECT"] = 3] = "DIRECT";
 })(CoordinateSkipZeros = exports.CoordinateSkipZeros || (exports.CoordinateSkipZeros = {}));
 var CoordinateType;
 (function (CoordinateType) {
@@ -342,12 +343,12 @@ class ApertureDefinition {
                 throw new GerberParseException('Can not convert zero size aperture to polyset');
             }
             result.push(polygonTools_1.circleToPolygon(radius));
-            if (this.modifiers.length == 2) {
+            if (this.modifiers.length == 2 && this.modifiers[1] > exports.Epsilon) {
                 let hole = polygonTools_1.circleToPolygon(this.modifiers[1] / 2);
                 polygonTools_1.reversePolygon(hole);
                 result.push(hole);
             }
-            else if (this.modifiers.length == 3) {
+            else if (this.modifiers.length == 3 && this.modifiers[1] > exports.Epsilon && this.modifiers[2] > exports.Epsilon) {
                 let hole = polygonTools_1.rectangleToPolygon(this.modifiers[1], this.modifiers[2]);
                 polygonTools_1.reversePolygon(hole);
                 result.push(hole);
@@ -355,12 +356,12 @@ class ApertureDefinition {
         }
         else if (this.templateName === "R") {
             result.push(polygonTools_1.rectangleToPolygon(this.modifiers[0], this.modifiers[1]));
-            if (this.modifiers.length == 3) {
+            if (this.modifiers.length == 3 && this.modifiers[2] > exports.Epsilon) {
                 let hole = polygonTools_1.circleToPolygon(this.modifiers[2] / 2);
                 polygonTools_1.reversePolygon(hole);
                 result.push(hole);
             }
-            else if (this.modifiers.length == 4) {
+            else if (this.modifiers.length == 4 && this.modifiers[2] > exports.Epsilon && this.modifiers[3] > exports.Epsilon) {
                 let hole = polygonTools_1.rectangleToPolygon(this.modifiers[2], this.modifiers[3]);
                 polygonTools_1.reversePolygon(hole);
                 result.push(hole);
@@ -368,12 +369,12 @@ class ApertureDefinition {
         }
         else if (this.templateName === "O") {
             result.push(polygonTools_1.obroundToPolygon(this.modifiers[0], this.modifiers[1]));
-            if (this.modifiers.length == 3) {
+            if (this.modifiers.length == 3 && this.modifiers[2] > exports.Epsilon) {
                 let hole = polygonTools_1.circleToPolygon(this.modifiers[2] / 2);
                 polygonTools_1.reversePolygon(hole);
                 result.push(hole);
             }
-            else if (this.modifiers.length == 4) {
+            else if (this.modifiers.length == 4 && this.modifiers[3] > exports.Epsilon && this.modifiers[4] > exports.Epsilon) {
                 let hole = polygonTools_1.rectangleToPolygon(this.modifiers[2], this.modifiers[3]);
                 polygonTools_1.reversePolygon(hole);
                 result.push(hole);
@@ -386,12 +387,12 @@ class ApertureDefinition {
             else if (this.modifiers.length > 2) {
                 result.push(polygonTools_1.circleToPolygon(this.modifiers[0] / 2, this.modifiers[1], this.modifiers[2]));
             }
-            if (this.modifiers.length == 4) {
+            if (this.modifiers.length == 4 && this.modifiers[3] > exports.Epsilon) {
                 let hole = polygonTools_1.circleToPolygon(this.modifiers[3] / 2);
                 polygonTools_1.reversePolygon(hole);
                 result.push(hole);
             }
-            else if (this.modifiers.length == 5) {
+            else if (this.modifiers.length == 5 && this.modifiers[3] > exports.Epsilon && this.modifiers[4] > exports.Epsilon) {
                 let hole = polygonTools_1.rectangleToPolygon(this.modifiers[3], this.modifiers[4]);
                 polygonTools_1.reversePolygon(hole);
                 result.push(hole);
@@ -781,7 +782,7 @@ class GerberState {
     }
     set coordinateFormatSpec(value) {
         if (this.coordinateFormat_ != undefined) {
-            this.error("File coordinate format already set.");
+            this.warning("File coordinate format already set.");
         }
         this.coordinateFormat_ = value;
     }
@@ -793,7 +794,7 @@ class GerberState {
     }
     set fileUnits(value) {
         if (this.fileUnits_ != undefined) {
-            this.error("File units already set.");
+            this.warning("File units already set.");
         }
         this.fileUnits_ = value;
     }
@@ -856,7 +857,7 @@ class GerberState {
     }
     get primitives() {
         if (!this.isDone_) {
-            throw new GerberParseException("Parsing is not complete");
+            this.warning("Parsing is not complete");
         }
         return this.primitives_;
     }
@@ -881,7 +882,7 @@ class GerberState {
     }
     setAperture(ap) {
         if (this.apertures[ap.apertureId] != undefined) {
-            this.error(`Overriding aperture ${ap.apertureId}`);
+            this.warning(`Overriding aperture ${ap.apertureId}`);
         }
         this.apertures[ap.apertureId] = ap;
     }
@@ -893,12 +894,15 @@ class GerberState {
     }
     setApertureMacro(apm) {
         if (this.apertureMacros[apm.macroName] != undefined) {
-            this.error(`Overriding aperture macro ${apm.macroName}`);
+            this.warning(`Overriding aperture macro ${apm.macroName}`);
         }
         this.apertureMacros[apm.macroName] = apm;
     }
     error(message) {
         throw new GerberParseException(message);
+    }
+    warning(message) {
+        console.log(`Warning: ${message}`);
     }
     line(from, to) {
         if (!from.isValid() || !to.isValid()) {
@@ -1385,7 +1389,7 @@ class Region {
                 }
             }
             else if (segment instanceof CircleSegment) {
-                numPoints += polygonTools_1.NUMSTEPS;
+                numPoints += polygonTools_1.NUMSTEPS * 2;
             }
         });
         let needsClose = firstPt && lastPt

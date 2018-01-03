@@ -89,7 +89,7 @@ class CommandParser {
             // Look for Gxx.....Dxx command
             // we would split it to Gxx*; ....Dxx*
             let match = CommandParser.gCodeSplit.exec(cmd);
-            if (match) {
+            if (match && match[2]) {
                 let gCodeCmd = match[1];
                 // Except G04 comment which ends in Dxx
                 if (!CommandParser.g04Match.test(gCodeCmd)) {
@@ -99,6 +99,17 @@ class CommandParser {
                     return;
                 }
             }
+            do {
+                match = CommandParser.gdmnCodeSplit.exec(cmd);
+                if (!match) {
+                    break;
+                }
+                let firstCmd = match[1];
+                if (!CommandParser.g04Match.test(firstCmd)) {
+                    cmd = match[2];
+                    this.consumer(firstCmd, this.commandLineStart, false);
+                }
+            } while (cmd && cmd.length > 0);
         }
         else {
             // Some advanced commands can be combined together as per
@@ -144,7 +155,8 @@ class CommandParser {
         return result;
     }
 }
-CommandParser.gCodeSplit = /^(G\d+)(.*D\d+)$/;
+CommandParser.gCodeSplit = /^(G\d+)((?:[XYIJ][\+\-]?\d+)*(?:D\d+)?)$/;
+CommandParser.gdmnCodeSplit = /^([GDMN]\d+)((?:[GDMN]\d+)+)$/;
 CommandParser.g04Match = /^G0*4$/;
 CommandParser.dCmdMatch = /^([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?(D\d+)$/;
 CommandParser.coordinatesOrder = "XYIJ";
@@ -172,7 +184,9 @@ class GerberParser {
             [/^AM/, (cmd) => new cmds.AMCommand(cmd)],
             [/^AB/, (cmd) => new cmds.ABCommand(cmd)],
             [/^G[0]*4[^\d]/, (cmd) => new cmds.G04Command(cmd)],
+            [/^G[0]*4$/, (cmd) => new cmds.G04Command(cmd)],
             [/D[0]*1$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
+            [/^(?:[XYIJ][\+\-]?\d+){1,4}$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
             [/D[0]*2$/, (cmd) => new cmds.D02Command(cmd, this.fmt)],
             [/D[0]*3$/, (cmd) => new cmds.D03Command(cmd, this.fmt)],
             [/^D(\d+)$/, (cmd) => new cmds.DCommand(cmd)],
@@ -188,11 +202,14 @@ class GerberParser {
             [/^LR/, (cmd) => new cmds.LRCommand(cmd)],
             [/^LS/, (cmd) => new cmds.LSCommand(cmd)],
             [/^SR/, (cmd) => new cmds.SRCommand(cmd)],
-            [/^M02/, (cmd) => new cmds.M02Command(cmd)],
+            [/^M0*[02]/, (cmd) => new cmds.M02Command(cmd)],
+            [/^M0*1/, null],
             [/^T(A|F|O)/, (cmd) => new cmds.TCommand(cmd)],
             [/^TD/, (cmd) => new cmds.TDCommand(cmd)],
             [/^IP(?:POS|NEG)\*$/, null],
             [/^LN(?:.+)/, null],
+            [/^IN.*\*$/, null],
+            [/^ICAS\*$/, null],
             [/^IJ(?:.+)/, null],
             [/^IO(?:.+)/, null],
             [/^IR(?:.+)/, null],
@@ -215,6 +232,9 @@ class GerberParser {
         this.commandParser.parseBlock(block);
     }
     parseCommand(cmd, lineNo) {
+        if (cmd.length == 0) {
+            return;
+        }
         try {
             let dispatcher = this.commandDispatcher.find(d => d[0].test(cmd));
             if (dispatcher == undefined) {
@@ -229,7 +249,8 @@ class GerberParser {
             if (command.name === "FS") {
                 let fsCmd = command;
                 if (this.fmt != undefined) {
-                    throw new primitives_1.GerberParseException("Format is already defined");
+                    //throw new GerberParseException("Format is already defined");
+                    console.log("Format is already defined");
                 }
                 this.fmt = fsCmd.coordinateFormat;
             }

@@ -47,6 +47,7 @@ export declare enum CoordinateSkipZeros {
     NONE = 0,
     LEADING = 1,
     TRAILING = 2,
+    DIRECT = 3,
 }
 export declare enum CoordinateType {
     ABSOLUTE = 1,
@@ -193,6 +194,7 @@ export declare class GerberState {
     getApertureMacro(name: string): ApertureMacro;
     setApertureMacro(apm: ApertureMacro): void;
     error(message: string): void;
+    warning(message: string): void;
     line(from: Point, to: Point): void;
     circle(center: Point, radius: number): void;
     arc(center: Point, radius: number, start: Point, end: Point): void;

@@ -142,13 +142,13 @@ class ExpressionParser {
             this.token = { id: TokenID.END, len: 0, token: "" };
             return;
         }
-        let match = ExpressionParser.MetchVariable.exec(this.expression_);
+        let match = ExpressionParser.MatchVariable.exec(this.expression_);
         if (match) {
             this.token = { id: TokenID.VARIABLE, len: match[0].length, token: match[1] };
             this.consume();
             return;
         }
-        match = ExpressionParser.MetchNumber.exec(this.expression_);
+        match = ExpressionParser.MatchNumber.exec(this.expression_);
         if (match) {
             this.token = { id: TokenID.NUMBER, len: match[0].length, token: match[1] };
             this.consume();
@@ -190,7 +190,7 @@ class ExpressionParser {
         if (this.accept(id)) {
             return true;
         }
-        throw new Error(`Expected token ID ${id}`);
+        throw new Error(`Expected token ID ${TokenID[id]}`);
     }
     operand() {
         if (this.accept(TokenID.VARIABLE)) {
@@ -257,7 +257,7 @@ class ExpressionParser {
         return result;
     }
 }
-ExpressionParser.MetchVariable = /^\$(\d+)/;
-ExpressionParser.MetchNumber = /^(\d*\.\d+|\d+)/;
+ExpressionParser.MatchVariable = /^\$(\d+)/;
+ExpressionParser.MatchNumber = /^(\d*\.\d*|\d+)/;
 exports.ExpressionParser = ExpressionParser;
 //# sourceMappingURL=expressions.js.map

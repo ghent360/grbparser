@@ -216,6 +216,7 @@ export declare class SRCommand implements GerberCommand {
 export declare class M02Command implements GerberCommand {
     readonly isAdvanced: boolean;
     readonly name: string;
+    private static matchExp;
     constructor(cmd: string);
     formatOutput(): string;
     execute(ctx: GerberState): void;

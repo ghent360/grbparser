@@ -16,6 +16,7 @@ const primitives_1 = require("./primitives");
 const point_1 = require("./point");
 const polygonSet_1 = require("./polygonSet");
 const grbparser_1 = require("./grbparser");
+const build_1 = require("./build");
 class ConverterBase {
     convert(primitives) {
         let result = this.header(primitives);
@@ -267,4 +268,5 @@ class PrimitiveConverter {
     }
 }
 exports.PrimitiveConverter = PrimitiveConverter;
+console.log(`GerberParser build ${build_1.Build}`);
 //# sourceMappingURL=converters.js.map

@@ -262,7 +262,8 @@ export class GerberParser {
             if (command.name === "FS") {
                 let fsCmd = command as cmds.FSCommand;
                 if (this.fmt != undefined) {
-                    throw new GerberParseException("Format is already defined");
+                    //throw new GerberParseException("Format is already defined");
+                    console.log("Format is already defined");
                 }
                 this.fmt = fsCmd.coordinateFormat;
             }

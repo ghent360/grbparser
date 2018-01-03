@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --require ts-node/register 'test/**/*.spec.ts'",
-    "prepublish": "tsc -p ./tsconfig.release.json --outDir dist/"
+    "prepublish": "date -u +\"export const Build='%g%m%d.%H%M';\" >build.ts && tsc -p ./tsconfig.release.json --outDir dist/"
   },
   "repository": {
     "type": "git",

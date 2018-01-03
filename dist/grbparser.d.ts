@@ -23,6 +23,7 @@ export declare class CommandParser {
     private command;
     private errorHandler;
     private static gCodeSplit;
+    private static gdmnCodeSplit;
     private static g04Match;
     private static dCmdMatch;
     private static coordinatesOrder;

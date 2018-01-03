@@ -34,20 +34,40 @@ class FSCommand {
         }
         let coordZeros = primitives_1.CoordinateSkipZeros.NONE;
         if (match[1]) {
-            coordZeros = (match[1] == 'T') ? primitives_1.CoordinateSkipZeros.TRAILING : primitives_1.CoordinateSkipZeros.LEADING;
+            switch (match[1]) {
+                case 'L':
+                    coordZeros = primitives_1.CoordinateSkipZeros.LEADING;
+                    break;
+                case 'T':
+                    coordZeros = primitives_1.CoordinateSkipZeros.TRAILING;
+                    break;
+                case 'D':
+                    coordZeros = primitives_1.CoordinateSkipZeros.DIRECT;
+                    break;
+            }
         }
         let coordType = (match[2] == 'A') ? primitives_1.CoordinateType.ABSOLUTE : primitives_1.CoordinateType.INCREMENTAL;
-        let xNumIntPos = Number.parseInt(match[3]);
-        let xNumDecPos = Number.parseInt(match[4]);
-        let yNumIntPos = Number.parseInt(match[5]);
-        let yNumDecPos = Number.parseInt(match[6]);
+        let xNumIntPos = Number.parseInt(match[5]);
+        let xNumDecPos = Number.parseInt(match[6]);
+        let yNumIntPos = Number.parseInt(match[7]);
+        let yNumDecPos = Number.parseInt(match[8]);
         this.coordinateFormat =
             new primitives_1.CoordinateFormatSpec(coordZeros, coordType, xNumIntPos, xNumDecPos, yNumIntPos, yNumDecPos);
     }
     formatOutput() {
         let result = "FS";
         if (this.coordinateFormat.coordFormat != primitives_1.CoordinateSkipZeros.NONE) {
-            result += (this.coordinateFormat.coordFormat == primitives_1.CoordinateSkipZeros.LEADING) ? "L" : "T";
+            switch (this.coordinateFormat.coordFormat) {
+                case primitives_1.CoordinateSkipZeros.LEADING:
+                    result += "L";
+                    break;
+                case primitives_1.CoordinateSkipZeros.TRAILING:
+                    result += "T";
+                    break;
+                case primitives_1.CoordinateSkipZeros.DIRECT:
+                    result += "D";
+                    break;
+            }
         }
         result += (this.coordinateFormat.coordType == primitives_1.CoordinateType.ABSOLUTE) ? "A" : "I";
         result += "X";
@@ -63,7 +83,7 @@ class FSCommand {
         ctx.coordinateFormatSpec = this.coordinateFormat;
     }
 }
-FSCommand.matchExp = /^FS([LT]?)([IA])X(\d)(\d)Y(\d)(\d)\*$/;
+FSCommand.matchExp = /^FS([LTD]?)([IA])(N\d)?(G\d)?X(\d)(\d)Y(\d)(\d)(Z\d+)?(D\d)?(M\d)?\*$/;
 exports.FSCommand = FSCommand;
 class MOCommand {
     constructor(cmd) {
@@ -111,7 +131,11 @@ class ADCommand {
                     xIdx = modifiersTxt.length;
                 }
                 let valueStr = modifiersTxt.substring(modifierStrStart, xIdx);
-                modifiers.push(Number.parseFloat(valueStr));
+                let value = Number.parseFloat(valueStr);
+                if (value == NaN) {
+                    throw new primitives_1.GerberParseException(`Invalid aperture modifier ${valueStr}`);
+                }
+                modifiers.push(value);
                 modifierStrStart = xIdx + 1;
             }
         }
@@ -158,14 +182,14 @@ class ADCommand {
                 + ` ${this.definition.modifiers[0]}`);
         }
         if (this.definition.modifiers.length > 0
-            && (this.definition.modifiers[1] <= 0
-                || this.definition.modifiers[1] >= this.definition.modifiers[0])) {
+            && (this.definition.modifiers[1] < 0
+                || this.definition.modifiers[1] > this.definition.modifiers[0])) {
             throw new primitives_1.GerberParseException(`Invalid circle aperture hole radius D${this.definition.apertureId}:`
                 + ` ${this.definition.modifiers[1]}`);
         }
         if (this.definition.modifiers.length > 1
-            && (this.definition.modifiers[2] <= 0
-                || this.definition.modifiers[2] >= this.definition.modifiers[0])) {
+            && (this.definition.modifiers[2] < 0
+                || this.definition.modifiers[2] > this.definition.modifiers[0])) {
             throw new primitives_1.GerberParseException(`Invalid circle aperture hole size D${this.definition.apertureId}:`
                 + ` ${this.definition.modifiers[1]}`);
         }
@@ -174,20 +198,20 @@ class ADCommand {
         if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new primitives_1.GerberParseException(`Invalid rectangle aperture ${this.formatOutput()}`);
         }
-        if (this.definition.modifiers[0] <= 0 || this.definition.modifiers[1] <= 0) {
+        if (this.definition.modifiers[0] < 0 || this.definition.modifiers[1] < 0) {
             throw new primitives_1.GerberParseException(`Invalid rectangle aperture size D${this.definition.apertureId}: `
                 + `${this.definition.modifiers[0]}X${this.definition.modifiers[1]}`);
         }
         if (this.definition.modifiers.length > 2) {
             let radius = this.definition.modifiers[2];
-            if (radius <= 0) {
+            if (radius < 0) {
                 throw new primitives_1.GerberParseException(`Invalid rectangle aperture hole radius D${this.definition.apertureId}: `
                     + `${this.definition.modifiers[2]}`);
             }
         }
         if (this.definition.modifiers.length > 3) {
             let height = this.definition.modifiers[4];
-            if (height <= 0) {
+            if (height < 0) {
                 throw new primitives_1.GerberParseException(`Invalid rectangle aperture hole height D${this.definition.apertureId}: `
                     + `${this.definition.modifiers[2]}`);
             }
@@ -239,7 +263,7 @@ class ADCommand {
         }
     }
 }
-ADCommand.matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z0-9_.$]*)(,(?:[\+\-]?(?:\d*\.\d+|\d+)(?:X[\+\-]?(?:\d*\.\d+|\d+))*))?\*$/;
+ADCommand.matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z\-0-9_~.$]*)(,(?:\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)(?:X\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)*)?\*$/;
 exports.ADCommand = ADCommand;
 function skipIntCode(cmd, start = 1) {
     for (let startIdx = start; startIdx < cmd.length; startIdx++) {
@@ -401,9 +425,9 @@ function parseCoordinateX(coordinate, fmt) {
         sign = -1;
         coordinate = coordinate.substring(1);
     }
-    if (coordinate.length > xLen) {
-        throw new primitives_1.GerberParseException(`Coordinate ${coordinate} longer than the X format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
-    }
+    //if (coordinate.length > xLen) {
+    //    throw new GerberParseException(`Coordinate ${coordinate} longer than the X format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
+    //}
     let zeroMult = 1;
     if (fmt.coordFormat == primitives_1.CoordinateSkipZeros.TRAILING && coordinate.length < xLen) {
         zeroMult = Math.pow(10, xLen - coordinate.length);
@@ -419,9 +443,9 @@ function parseCoordinateY(coordinate, fmt) {
         sign = -1;
         coordinate = coordinate.substring(1);
     }
-    if (coordinate.length > yLen) {
-        throw new primitives_1.GerberParseException(`Coordinate ${coordinate} longer than the Y format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
-    }
+    //if (coordinate.length > yLen) {
+    //    throw new GerberParseException(`Coordinate ${coordinate} longer than the Y format allows ${fmt.xNumIntPos}${fmt.xNumDecPos}`);
+    //}
     let zeroMult = 1;
     if (fmt.coordFormat == primitives_1.CoordinateSkipZeros.TRAILING && coordinate.length < yLen) {
         zeroMult = Math.pow(10, yLen - coordinate.length);
@@ -600,9 +624,13 @@ class D01Command {
             let v2 = { x: v.x / 2, y: v.y / 2 };
             let v2len = vectorUtils_1.vectorLength(v2);
             let d2 = radius * radius - v2len * v2len;
+            // We consider everything in (-Epsilon, +Epsion) to be 0
+            if (d2 < -primitives_1.Epsilon) {
+                ctx.warning("D01 Invalid arc, radius too small");
+            }
+            // Fix values (-Epsion, 0) to be 0, so Math.sqrt does not complain.
             if (d2 < 0) {
-                ctx.error("D01 Invalid arc, radius too small");
-                return;
+                d2 = 0;
             }
             let d = Math.sqrt(d2);
             let center;
@@ -619,7 +647,7 @@ class D01Command {
         }
     }
 }
-D01Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(I([\+\-]?\d+))?(J([\+\-]?\d+))?D[0]*1$/;
+D01Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(I([\+\-]?\d+))?(J([\+\-]?\d+))?(?:D[0]*1)?$/;
 exports.D01Command = D01Command;
 class D02Command {
     constructor(cmd, fmt) {
@@ -962,7 +990,8 @@ class M02Command {
     constructor(cmd) {
         this.isAdvanced = false;
         this.name = "M02";
-        if (cmd != "M02") {
+        let match = M02Command.matchExp.exec(cmd);
+        if (!match) {
             throw new primitives_1.GerberParseException(`Invalid M02 command ${cmd}`);
         }
     }
@@ -973,6 +1002,7 @@ class M02Command {
         ctx.endFile();
     }
 }
+M02Command.matchExp = /^M0*[20]$/;
 exports.M02Command = M02Command;
 class TCommand {
     constructor(cmd) {
@@ -1037,7 +1067,12 @@ class TDCommand {
         if (!match) {
             throw new primitives_1.GerberParseException(`Invalid TD command format ${cmd}`);
         }
-        this.attributeName = match[1];
+        if (match[1]) {
+            this.attributeName = match[1];
+        }
+        else {
+            this.attributeName = "";
+        }
     }
     formatOutput() {
         return "TD" + this.attributeName + "*";
@@ -1047,6 +1082,6 @@ class TDCommand {
         //console.log("TD command is not implemnted");
     }
 }
-TDCommand.matchExp = /^TD([a-zA-Z_.$][a-zA-Z0-9_.$]*)\*$/;
+TDCommand.matchExp = /^TD([a-zA-Z_.$][a-zA-Z0-9_.$]*)?\*$/;
 exports.TDCommand = TDCommand;
 //# sourceMappingURL=commands.js.map

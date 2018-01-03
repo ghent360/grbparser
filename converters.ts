@@ -36,6 +36,7 @@ import {Point} from "./point";
 import {PolygonSet, waitClipperLoad, connectWires, polySetBounds} from "./polygonSet";
 import {formatFloat} from "./utils";
 import {GerberParser} from "./grbparser";
+import {Build} from "./build";
 
 export abstract class ConverterBase<T> {
     convert(primitives:Array<GraphicsPrimitive>):Array<T> {
@@ -314,3 +315,5 @@ export class PrimitiveConverter {
         return ctx.primitives;
     }
 }
+
+console.log(`GerberParser build ${Build}`);

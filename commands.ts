@@ -149,7 +149,7 @@ export class ADCommand implements GerberCommand {
     readonly name:string = "AD";
     readonly isAdvanced = true;
     readonly definition:ApertureDefinition;
-    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z\-0-9_.$]*)(,(?:\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)(?:X\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)*)?\*$/;
+    private static matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z\-0-9_~.$]*)(,(?:\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)(?:X\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)*)?\*$/;
 
     constructor(cmd:string) {
         let match = ADCommand.matchExp.exec(cmd);
@@ -1090,9 +1090,11 @@ export class SRCommand implements GerberCommand {
 export class M02Command implements GerberCommand {
     readonly isAdvanced = false;
     readonly name:string = "M02";
+    private static matchExp = /^M0*[20]$/;
 
     constructor(cmd:string) {
-        if (cmd != "M02" && cmd != "M00") {
+        let match = M02Command.matchExp.exec(cmd);
+        if (!match) {
             throw new GerberParseException(`Invalid M02 command ${cmd}`);
         }
     }
