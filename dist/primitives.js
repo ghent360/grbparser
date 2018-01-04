@@ -164,16 +164,14 @@ class ApertureDefinition {
                 if (radius < exports.Epsilon) {
                     return { polygon: Float64Array.of(), is_solid: false };
                 }
-                return {
-                    polygon: polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(radius), start.midPoint(end)),
-                    is_solid: true
-                };
+                let polygon = polygonTools_1.circleToPolygon(radius);
+                polygonSet_1.translatePolygon(polygon, start.midPoint(end));
+                return { polygon: polygon, is_solid: true };
             }
             else if (this.templateName == "R") {
-                return {
-                    polygon: polygonSet_1.translatePolygon(polygonTools_1.rectangleToPolygon(state.scale * this.modifiers[0], state.scale * this.modifiers[1]), start.midPoint(end)),
-                    is_solid: true
-                };
+                let polygon = polygonTools_1.rectangleToPolygon(state.scale * this.modifiers[0], state.scale * this.modifiers[1]);
+                polygonSet_1.translatePolygon(polygon, start.midPoint(end));
+                return { polygon: polygon, is_solid: true };
             }
             throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
         }
@@ -239,10 +237,15 @@ class ApertureDefinition {
             let result = [];
             let apertureRadius = state.scale * this.modifiers[0] / 2;
             if (apertureRadius < exports.Epsilon) {
-                return { polygonSet: [polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(radius), center)], is_solid: false };
+                let polygon = polygonTools_1.circleToPolygon(radius);
+                polygonSet_1.translatePolygon(polygon, center);
+                return { polygonSet: [polygon], is_solid: false };
             }
-            result.push(polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(radius + apertureRadius), center));
-            let innerCircle = polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(radius - apertureRadius), center);
+            let polygon = polygonTools_1.circleToPolygon(radius + apertureRadius);
+            polygonSet_1.translatePolygon(polygon, center);
+            result.push(polygon);
+            let innerCircle = polygonTools_1.circleToPolygon(radius - apertureRadius);
+            polygonSet_1.translatePolygon(innerCircle, center);
             polygonTools_1.reversePolygon(innerCircle);
             result.push(innerCircle);
             return { polygonSet: result, is_solid: true };
@@ -257,16 +260,16 @@ class ApertureDefinition {
                 if (radius < exports.Epsilon) {
                     return { polygon: Float64Array.of(), is_solid: false };
                 }
-                return {
-                    polygon: polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(radius), start.midPoint(end)),
-                    is_solid: true
-                };
+                let polygon = polygonTools_1.circleToPolygon(radius);
+                polygonSet_1.translatePolygon(polygon, start.midPoint(end));
+                return { polygon: polygon, is_solid: true };
             }
             else if (this.templateName == "R") {
-                return {
-                    polygon: polygonSet_1.translatePolygon(polygonSet_1.rotatePolygon(polygonSet_1.mirrorPolygon(polygonTools_1.rectangleToPolygon(state.scale * this.modifiers[0], state.scale * this.modifiers[1]), state.mirroring), state.rotation), start.midPoint(end)),
-                    is_solid: true
-                };
+                let polygon = polygonTools_1.rectangleToPolygon(state.scale * this.modifiers[0], state.scale * this.modifiers[1]);
+                polygonSet_1.mirrorPolygon(polygon, state.mirroring);
+                polygonSet_1.rotatePolygon(polygon, state.rotation);
+                polygonSet_1.translatePolygon(polygon, start.midPoint(end));
+                return { polygon: polygon, is_solid: true };
             }
             throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
         }
@@ -299,16 +302,14 @@ class ApertureDefinition {
             let width2 = state.scale * this.modifiers[0] / 2;
             let height2 = state.scale * this.modifiers[1] / 2;
             if (Math.abs(start.x - end.x) < exports.Epsilon) {
-                return {
-                    polygon: polygonSet_1.translatePolygon(polygonTools_1.rectangleToPolygon(this.modifiers[0], Math.abs(end.y - start.y) + this.modifiers[1]), start.midPoint(end)),
-                    is_solid: true
-                };
+                let polygon = polygonTools_1.rectangleToPolygon(this.modifiers[0], Math.abs(end.y - start.y) + this.modifiers[1]);
+                polygonSet_1.translatePolygon(polygon, start.midPoint(end));
+                return { polygon: polygon, is_solid: true };
             }
             else if (Math.abs(start.y - end.y) < exports.Epsilon) {
-                return {
-                    polygon: polygonSet_1.translatePolygon(polygonTools_1.rectangleToPolygon(Math.abs(end.x - start.x) + this.modifiers[0], this.modifiers[1]), start.midPoint(end)),
-                    is_solid: true
-                };
+                let polygon = polygonTools_1.rectangleToPolygon(Math.abs(end.x - start.x) + this.modifiers[0], this.modifiers[1]);
+                polygonSet_1.translatePolygon(polygon, start.midPoint(end));
+                return { polygon: polygon, is_solid: true };
             }
             else {
                 let vector = { x: end.x - start.x, y: end.y - start.y };
@@ -464,9 +465,10 @@ class ApertureMacro {
                         diameter = ApertureMacro.getValue(modifiers, 1);
                         center = new point_1.Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
                         if (diameter > exports.Epsilon) {
-                            shape = [
-                                polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(diameter / 2), center), ApertureMacro.getValue(modifiers, 4))
-                            ];
+                            let polygon = polygonTools_1.circleToPolygon(diameter / 2);
+                            polygonSet_1.translatePolygon(polygon, center);
+                            polygonSet_1.rotatePolygon(polygon, ApertureMacro.getValue(modifiers, 4));
+                            shape = [polygon];
                         }
                         else {
                             shape = [];
@@ -484,7 +486,8 @@ class ApertureMacro {
                             outline[idx * 2] = ApertureMacro.getValue(modifiers, 2 * idx + 2);
                             outline[idx * 2 + 1] = ApertureMacro.getValue(modifiers, 2 * idx + 3);
                         }
-                        shape = [polygonSet_1.rotatePolygon(outline, ApertureMacro.getValue(modifiers, 2 * numPoints + 4))];
+                        polygonSet_1.rotatePolygon(outline, ApertureMacro.getValue(modifiers, 2 * numPoints + 4));
+                        shape = [outline];
                         break;
                     case 5:// Polygon (exposure, num vertices, center x, center y, diameter, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
@@ -495,9 +498,10 @@ class ApertureMacro {
                             throw new GerberParseException(`Invalid number of steps in a macro polygon ${numSteps}`);
                         }
                         if (diameter > exports.Epsilon) {
-                            shape = [
-                                polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(diameter / 2, numSteps), center), ApertureMacro.getValue(modifiers, 5))
-                            ];
+                            let polygon = polygonTools_1.circleToPolygon(diameter / 2, numSteps);
+                            polygonSet_1.translatePolygon(polygon, center);
+                            polygonSet_1.rotatePolygon(polygon, ApertureMacro.getValue(modifiers, 5));
+                            shape = [polygon];
                         }
                         else {
                             shape = [];
@@ -519,19 +523,30 @@ class ApertureMacro {
                         if (ringThickness > exports.Epsilon) {
                             for (let ringNo = 0; ringNo < maxRings && outerDiameter > exports.Epsilon; ringNo++) {
                                 let innerDiameter = outerDiameter - ringThickness * 2;
-                                shape.push(polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(outerDiameter / 2), center), rotation));
+                                let polygon = polygonTools_1.circleToPolygon(outerDiameter / 2);
+                                polygonSet_1.translatePolygon(polygon, center);
+                                polygonSet_1.rotatePolygon(polygon, rotation);
+                                shape.push(polygon);
                                 if (innerDiameter > exports.Epsilon) {
                                     let closingCircle = polygonTools_1.circleToPolygon(innerDiameter / 2);
                                     polygonTools_1.reversePolygon(closingCircle);
-                                    shape.push(polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(closingCircle, center), rotation));
+                                    polygonSet_1.translatePolygon(closingCircle, center);
+                                    polygonSet_1.rotatePolygon(closingCircle, rotation);
+                                    shape.push(closingCircle);
                                 }
                                 outerDiameter = innerDiameter - gap * 2;
                             }
                         }
                         if (crossLen > exports.Epsilon && crossThickness > exports.Epsilon) {
-                            shape.push(polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.rectangleToPolygon(crossLen, crossThickness), center), rotation));
-                            shape.push(polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.rectangleToPolygon(crossThickness, crossLen), center), rotation));
-                            shape = polygonSet_1.unionPolygonSet(shape, []).polygonSet;
+                            let hLine = polygonTools_1.rectangleToPolygon(crossLen, crossThickness);
+                            let vLine = polygonTools_1.rectangleToPolygon(crossThickness, crossLen);
+                            polygonSet_1.translatePolygon(hLine, center);
+                            polygonSet_1.translatePolygon(vLine, center);
+                            polygonSet_1.rotatePolygon(hLine, rotation);
+                            polygonSet_1.rotatePolygon(vLine, rotation);
+                            shape.push(hLine);
+                            shape.push(vLine);
+                            //shape = unionPolygonSet(shape, []).polygonSet;
                         }
                         if (shape.length < 1) {
                             //console.log("Empty moire shape");
@@ -570,7 +585,8 @@ class ApertureMacro {
                                     let closingArc = polygonTools_1.arcToPolygon(innerStart, innerEnd, center);
                                     polygonTools_1.reversePolygon(closingArc);
                                     polygon.set(closingArc, 2 + polygonTools_1.NUMSTEPS * 2);
-                                    shape.push(polygonSet_1.rotatePolygon(polygon, rotation));
+                                    polygonSet_1.rotatePolygon(polygon, rotation);
+                                    shape.push(polygon);
                                     // Quadrant 2 shape
                                     polygon = new Float64Array(2 + polygonTools_1.NUMSTEPS * 4);
                                     innerStart = new point_1.Point(-gap2 + center.x, innerRadius + center.y);
@@ -583,7 +599,8 @@ class ApertureMacro {
                                     closingArc = polygonTools_1.arcToPolygon(innerStart, innerEnd, center);
                                     polygonTools_1.reversePolygon(closingArc);
                                     polygon.set(closingArc, 2 + polygonTools_1.NUMSTEPS * 2);
-                                    shape.push(polygonSet_1.rotatePolygon(polygon, rotation));
+                                    polygonSet_1.rotatePolygon(polygon, rotation);
+                                    shape.push(polygon);
                                     // Quadrant 3 shape
                                     polygon = new Float64Array(2 + polygonTools_1.NUMSTEPS * 4);
                                     innerStart = new point_1.Point(-innerRadius + center.x, -gap2 + center.y);
@@ -596,7 +613,8 @@ class ApertureMacro {
                                     closingArc = polygonTools_1.arcToPolygon(innerStart, innerEnd, center);
                                     polygonTools_1.reversePolygon(closingArc);
                                     polygon.set(closingArc, 2 + polygonTools_1.NUMSTEPS * 2);
-                                    shape.push(polygonSet_1.rotatePolygon(polygon, rotation));
+                                    polygonSet_1.rotatePolygon(polygon, rotation);
+                                    shape.push(polygon);
                                     // Quadrant 4 shape
                                     polygon = new Float64Array(2 + polygonTools_1.NUMSTEPS * 4);
                                     innerStart = new point_1.Point(gap2 + center.x, -innerRadius + center.y);
@@ -609,7 +627,8 @@ class ApertureMacro {
                                     closingArc = polygonTools_1.arcToPolygon(innerStart, innerEnd, center);
                                     polygonTools_1.reversePolygon(closingArc);
                                     polygon.set(closingArc, 2 + polygonTools_1.NUMSTEPS * 2);
-                                    shape.push(polygonSet_1.rotatePolygon(polygon, rotation));
+                                    polygonSet_1.rotatePolygon(polygon, rotation);
+                                    shape.push(polygon);
                                 }
                                 else {
                                     // Quadrant 1 shape
@@ -622,7 +641,8 @@ class ApertureMacro {
                                     polygon.set(polygonTools_1.arcToPolygon(outerStart, outerEnd, center), 2);
                                     polygon[2 + polygonTools_1.NUMSTEPS * 2] = innerPoint.x;
                                     polygon[3 + polygonTools_1.NUMSTEPS * 2] = innerPoint.y;
-                                    shape.push(polygonSet_1.rotatePolygon(polygon, rotation));
+                                    polygonSet_1.rotatePolygon(polygon, rotation);
+                                    shape.push(polygon);
                                     // Quadrant 2 shape
                                     polygon = new Float64Array(4 + polygonTools_1.NUMSTEPS * 2);
                                     innerPoint = new point_1.Point(-gap2 + center.x, gap2 + center.y);
@@ -633,7 +653,8 @@ class ApertureMacro {
                                     polygon.set(polygonTools_1.arcToPolygon(outerStart, outerEnd, center), 2);
                                     polygon[2 + polygonTools_1.NUMSTEPS * 2] = innerPoint.x;
                                     polygon[3 + polygonTools_1.NUMSTEPS * 2] = innerPoint.y;
-                                    shape.push(polygonSet_1.rotatePolygon(polygon, rotation));
+                                    polygonSet_1.rotatePolygon(polygon, rotation);
+                                    shape.push(polygon);
                                     // Quadrant 3 shape
                                     polygon = new Float64Array(4 + polygonTools_1.NUMSTEPS * 2);
                                     innerPoint = new point_1.Point(-gap2 + center.x, -gap2 + center.y);
@@ -644,7 +665,8 @@ class ApertureMacro {
                                     polygon.set(polygonTools_1.arcToPolygon(outerStart, outerEnd, center), 2);
                                     polygon[2 + polygonTools_1.NUMSTEPS * 2] = innerPoint.x;
                                     polygon[3 + polygonTools_1.NUMSTEPS * 2] = innerPoint.y;
-                                    shape.push(polygonSet_1.rotatePolygon(polygon, rotation));
+                                    polygonSet_1.rotatePolygon(polygon, rotation);
+                                    shape.push(polygon);
                                     // Quadrant 4 shape
                                     polygon = new Float64Array(4 + polygonTools_1.NUMSTEPS * 2);
                                     innerPoint = new point_1.Point(gap2 + center.x, -gap2 + center.y);
@@ -655,13 +677,21 @@ class ApertureMacro {
                                     polygon.set(polygonTools_1.arcToPolygon(outerStart, outerEnd, center), 2);
                                     polygon[2 + polygonTools_1.NUMSTEPS * 2] = innerPoint.x;
                                     polygon[3 + polygonTools_1.NUMSTEPS * 2] = innerPoint.y;
-                                    shape.push(polygonSet_1.rotatePolygon(polygon, rotation));
+                                    polygonSet_1.rotatePolygon(polygon, rotation);
+                                    shape.push(polygon);
                                 }
                             }
                             else {
-                                shape.push(polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(outerRadius), center), rotation));
+                                let circle = polygonTools_1.circleToPolygon(outerRadius);
+                                polygonSet_1.translatePolygon(circle, center);
+                                polygonSet_1.rotatePolygon(circle, rotation);
+                                shape.push(circle);
                                 if (innerDiameter > exports.Epsilon) {
-                                    shape.push(polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(innerRadius), center), rotation));
+                                    let closingCircle = polygonTools_1.circleToPolygon(innerRadius);
+                                    polygonTools_1.reversePolygon(closingCircle);
+                                    polygonSet_1.translatePolygon(closingCircle, center);
+                                    polygonSet_1.rotatePolygon(closingCircle, rotation);
+                                    shape.push(closingCircle);
                                 }
                             }
                         }
@@ -682,7 +712,9 @@ class ApertureMacro {
                         let startRight = new point_1.Point(centerStart.x - dirNormalCCW.x, centerStart.y - dirNormalCCW.y);
                         let endLeft = new point_1.Point(centerEnd.x + dirNormalCCW.x, centerEnd.y + dirNormalCCW.y);
                         let endRight = new point_1.Point(centerEnd.x - dirNormalCCW.x, centerEnd.y - dirNormalCCW.y);
-                        shape = [polygonSet_1.rotatePolygon(Float64Array.of(startLeft.x, startLeft.y, startRight.x, startRight.y, endRight.x, endRight.y, endLeft.x, endLeft.y, startLeft.x, startLeft.y), rotation)];
+                        let line = Float64Array.of(startLeft.x, startLeft.y, startRight.x, startRight.y, endRight.x, endRight.y, endLeft.x, endLeft.y, startLeft.x, startLeft.y);
+                        polygonSet_1.rotatePolygon(line, rotation);
+                        shape = [line];
                         break;
                     case 21:// Center line (exposure, width, height, center x, center y, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
@@ -691,9 +723,10 @@ class ApertureMacro {
                         center = new point_1.Point(ApertureMacro.getValue(modifiers, 3), ApertureMacro.getValue(modifiers, 4));
                         rotation = ApertureMacro.getValue(modifiers, 5);
                         if (width > exports.Epsilon && height > exports.Epsilon) {
-                            shape = [
-                                polygonSet_1.rotatePolygon(polygonSet_1.translatePolygon(polygonTools_1.rectangleToPolygon(width, height), center), rotation)
-                            ];
+                            let line = polygonTools_1.rectangleToPolygon(width, height);
+                            polygonSet_1.translatePolygon(line, center);
+                            polygonSet_1.rotatePolygon(line, rotation);
+                            shape = [line];
                         }
                         else {
                             shape = [];
@@ -1315,11 +1348,12 @@ class Flash {
     }
     get objects() {
         if (!this.objects_) {
-            this.objects_ = this.aperture.objects(this.state.polarity).map(o => {
-                return {
-                    polySet: polygonSet_1.translatePolySet(polygonSet_1.scalePolySet(polygonSet_1.rotatePolySet(polygonSet_1.mirrorPolySet(o.polySet, this.state.mirroring), this.state.rotation), this.state.scale), this.center),
-                    polarity: o.polarity
-                };
+            this.objects_ = polygonSet_1.copyObjects(this.aperture.objects(this.state.polarity));
+            this.objects_.forEach(o => {
+                polygonSet_1.mirrorPolySet(o.polySet, this.state.mirroring);
+                polygonSet_1.rotatePolySet(o.polySet, this.state.rotation);
+                polygonSet_1.scalePolySet(o.polySet, this.state.scale);
+                polygonSet_1.translatePolySet(o.polySet, this.center);
             });
         }
         return this.objects_;
@@ -1409,7 +1443,9 @@ class Region {
             }
             else if (segment instanceof CircleSegment) {
                 let circle = segment;
-                result.set(polygonSet_1.translatePolygon(polygonTools_1.circleToPolygon(circle.radius), circle.center), arrayOffset);
+                let polygon = polygonTools_1.circleToPolygon(circle.radius);
+                polygonSet_1.translatePolygon(polygon, circle.center);
+                result.set(polygon, arrayOffset);
                 arrayOffset += polygonTools_1.NUMSTEPS * 2;
             }
             else {
@@ -1474,7 +1510,9 @@ class Repeat {
             let yOffset = this.yOffset;
             for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
                 let translateVector = new point_1.Point(xOffset, yOffset);
-                this.objects_.push(...polygonSet_1.translateObjects(this.block.objects, translateVector));
+                let blockObjects = polygonSet_1.copyObjects(this.block.objects);
+                polygonSet_1.translateObjects(blockObjects, translateVector);
+                this.objects_.push(...blockObjects);
                 yOffset += this.block.yDelta;
             }
             xOffset += this.block.xDelta;

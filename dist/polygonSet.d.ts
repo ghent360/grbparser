@@ -15,15 +15,18 @@ export interface PolygonSetWithBounds {
     readonly polygonSet: PolygonSet;
     readonly bounds: SimpleBounds;
 }
-export declare function rotatePolygon(poly: Polygon, angle: number): Polygon;
-export declare function rotatePolySet(polySet: PolygonSet, angle: number): PolygonSet;
-export declare function translatePolygon(poly: Polygon, offset: Point): Polygon;
-export declare function translatePolySet(polySet: PolygonSet, offset: Point): PolygonSet;
-export declare function translateObjects(objects: GraphicsObjects, offset: Point): GraphicsObjects;
-export declare function scalePolygon(poly: Polygon, scale: number): Polygon;
-export declare function scalePolySet(polySet: PolygonSet, scale: number): PolygonSet;
-export declare function mirrorPolygon(poly: Polygon, mirror: ObjectMirroring): Polygon;
-export declare function mirrorPolySet(polySet: PolygonSet, mirror: ObjectMirroring): PolygonSet;
+export declare function copyPolygon(poly: Polygon): Polygon;
+export declare function copyPolygonSet(polySet: PolygonSet): PolygonSet;
+export declare function copyObjects(objects: GraphicsObjects): GraphicsObjects;
+export declare function rotatePolygon(poly: Polygon, angle: number): void;
+export declare function rotatePolySet(polySet: PolygonSet, angle: number): void;
+export declare function translatePolygon(poly: Polygon, offset: Point): void;
+export declare function translatePolySet(polySet: PolygonSet, offset: Point): void;
+export declare function translateObjects(objects: GraphicsObjects, offset: Point): void;
+export declare function scalePolygon(poly: Polygon, scale: number): void;
+export declare function scalePolySet(polySet: PolygonSet, scale: number): void;
+export declare function mirrorPolygon(poly: Polygon, mirror: ObjectMirroring): void;
+export declare function mirrorPolySet(polySet: PolygonSet, mirror: ObjectMirroring): void;
 export declare function polygonBounds(poly: Polygon): Bounds;
 export declare function polySetBounds(polygonSet: PolygonSet): Bounds;
 export declare function objectsBounds(objects: GraphicsObjects): Bounds;

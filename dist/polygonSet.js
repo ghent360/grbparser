@@ -26,116 +26,125 @@ function waitClipperLoad() {
     });
 }
 exports.waitClipperLoad = waitClipperLoad;
+function copyPolygon(poly) {
+    let result = new Float64Array(poly.length);
+    result.set(poly);
+    return result;
+}
+exports.copyPolygon = copyPolygon;
+function copyPolygonSet(polySet) {
+    return polySet.map(p => copyPolygon(p));
+}
+exports.copyPolygonSet = copyPolygonSet;
+function copyObjects(objects) {
+    return objects.map(object => {
+        return {
+            polySet: copyPolygonSet(object.polySet),
+            polarity: object.polarity
+        };
+    });
+}
+exports.copyObjects = copyObjects;
 function rotatePolygon(poly, angle) {
     if (Math.abs(angle) < primitives_1.Epsilon) {
-        return poly;
+        return;
     }
     let angleRadians = angle * (Math.PI * 2.0) / 360;
     let cosA = Math.cos(angleRadians);
     let sinA = Math.sin(angleRadians);
     let len = poly.length;
-    let result = new Float64Array(len);
     for (let idx = 0; idx < len; idx += 2) {
         let x = poly[idx];
         let y = poly[idx + 1];
-        result[idx] = x * cosA - y * sinA;
-        result[idx + 1] = x * sinA + y * cosA;
+        poly[idx] = x * cosA - y * sinA;
+        poly[idx + 1] = x * sinA + y * cosA;
     }
-    return result;
 }
 exports.rotatePolygon = rotatePolygon;
 function rotatePolySet(polySet, angle) {
     if (Math.abs(angle) < primitives_1.Epsilon) {
-        return polySet;
+        return;
     }
-    return polySet.map(polygon => rotatePolygon(polygon, angle));
+    polySet.forEach(polygon => rotatePolygon(polygon, angle));
 }
 exports.rotatePolySet = rotatePolySet;
 function translatePolygon(poly, offset) {
     if (Math.abs(offset.x) < primitives_1.Epsilon
         && Math.abs(offset.y) < primitives_1.Epsilon) {
-        return poly;
+        return;
     }
     let len = poly.length;
-    let result = new Float64Array(len);
     for (let idx = 0; idx < len; idx += 2) {
-        result[idx] = poly[idx] + offset.x;
-        result[idx + 1] = poly[idx + 1] + offset.y;
+        poly[idx] += offset.x;
+        poly[idx + 1] += offset.y;
     }
-    return result;
 }
 exports.translatePolygon = translatePolygon;
 function translatePolySet(polySet, offset) {
     if (Math.abs(offset.x) < primitives_1.Epsilon
         && Math.abs(offset.y) < primitives_1.Epsilon) {
-        return polySet;
+        return;
     }
-    return polySet.map(polygon => translatePolygon(polygon, offset));
+    polySet.forEach(polygon => translatePolygon(polygon, offset));
 }
 exports.translatePolySet = translatePolySet;
 function translateObjects(objects, offset) {
     if (Math.abs(offset.x) < primitives_1.Epsilon
         && Math.abs(offset.y) < primitives_1.Epsilon) {
-        return objects;
+        return;
     }
-    return objects.map(object => {
-        return { polySet: translatePolySet(object.polySet, offset), polarity: object.polarity };
-    });
+    objects.forEach(object => translatePolySet(object.polySet, offset));
 }
 exports.translateObjects = translateObjects;
 function scalePolygon(poly, scale) {
     if (Math.abs(scale - 1) < primitives_1.Epsilon) {
-        return poly;
+        return;
     }
     let len = poly.length;
-    let result = new Float64Array(len);
     for (let idx = 0; idx < len; idx++) {
-        result[idx] = poly[idx] * scale;
+        poly[idx] *= scale;
     }
-    return result;
 }
 exports.scalePolygon = scalePolygon;
 function scalePolySet(polySet, scale) {
     if (Math.abs(scale - 1) < primitives_1.Epsilon) {
-        return polySet;
+        return;
     }
-    return polySet.map(polygon => scalePolygon(polygon, scale));
+    polySet.forEach(polygon => scalePolygon(polygon, scale));
 }
 exports.scalePolySet = scalePolySet;
 function mirrorPolygon(poly, mirror) {
     if (mirror === primitives_1.ObjectMirroring.NONE) {
-        return poly;
+        return;
     }
     let len = poly.length;
-    let result = new Float64Array(len);
     switch (mirror) {
         case primitives_1.ObjectMirroring.X_AXIS:
             for (let idx = 0; idx < len; idx += 2) {
-                result[idx] = -poly[idx];
-                result[idx + 1] = poly[idx + 1];
+                poly[idx] = -poly[idx];
+                //poly[idx + 1] = poly[idx + 1];
             }
             break;
         case primitives_1.ObjectMirroring.Y_AXIS:
             for (let idx = 0; idx < len; idx += 2) {
-                result[idx] = poly[idx];
-                result[idx + 1] = -poly[idx + 1];
+                //poly[idx] = poly[idx];
+                poly[idx + 1] = -poly[idx + 1];
             }
             break;
         case primitives_1.ObjectMirroring.XY_AXIS:
             for (let idx = 0; idx < len; idx += 2) {
-                result[idx] = -poly[idx];
-                result[idx + 1] = -poly[idx + 1];
+                poly[idx] = -poly[idx];
+                poly[idx + 1] = -poly[idx + 1];
             }
             break;
     }
-    return result;
 }
 exports.mirrorPolygon = mirrorPolygon;
 function mirrorPolySet(polySet, mirror) {
     if (mirror == primitives_1.ObjectMirroring.NONE) {
-        return polySet;
+        return;
     }
-    return polySet.map(polygon => mirrorPolygon(polygon, mirror));
+    polySet.forEach(polygon => mirrorPolygon(polygon, mirror));
 }
 exports.mirrorPolySet = mirrorPolySet;
 function polygonBounds(poly) {
