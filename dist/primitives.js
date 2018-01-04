@@ -1318,9 +1318,7 @@ class Flash {
             this.objects_ = this.aperture.objects(this.state.polarity).map(o => {
                 return {
                     polySet: polygonSet_1.translatePolySet(polygonSet_1.scalePolySet(polygonSet_1.rotatePolySet(polygonSet_1.mirrorPolySet(o.polySet, this.state.mirroring), this.state.rotation), this.state.scale), this.center),
-                    polarity: (this.state.polarity === ObjectPolarity.DARK)
-                        ? o.polarity
-                        : reversePolarity(o.polarity)
+                    polarity: o.polarity
                 };
             });
         }
@@ -1424,7 +1422,7 @@ class Region {
             result[arrayOffset++] = result[1];
         }
         // If the contour is clockwise, reverse the polygon.
-        if (contourOrientation(contour)) {
+        if (contourOrientation(contour) > 0) {
             polygonTools_1.reversePolygon(result);
         }
         return result;
