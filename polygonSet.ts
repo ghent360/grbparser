@@ -47,9 +47,9 @@ export function copyObjects(objects:GraphicsObjects):GraphicsObjects {
     }});
 }
 
-export function rotatePolygon(poly:Polygon, angle:number):Polygon {
+export function rotatePolygon(poly:Polygon, angle:number) {
     if (Math.abs(angle) < Epsilon) {
-        return poly;
+        return;
     }
     let angleRadians = angle * (Math.PI * 2.0) / 360;
     let cosA = Math.cos(angleRadians);
@@ -61,72 +61,63 @@ export function rotatePolygon(poly:Polygon, angle:number):Polygon {
         poly[idx] = x * cosA - y * sinA;
         poly[idx + 1] = x * sinA + y * cosA;
     }
-    return poly;
 }
 
-export function rotatePolySet(polySet:PolygonSet, angle:number):PolygonSet {
+export function rotatePolySet(polySet:PolygonSet, angle:number) {
     if (Math.abs(angle) < Epsilon) {
-        return polySet;
+        return;
     }
     polySet.forEach(polygon => rotatePolygon(polygon, angle));
-    return polySet;
 }
 
-export function translatePolygon(poly:Polygon, offset:Point):Polygon {
+export function translatePolygon(poly:Polygon, offset:Point) {
     if (Math.abs(offset.x) < Epsilon
         && Math.abs(offset.y) < Epsilon) {
-        return poly;
+        return;
     }
     let len = poly.length;
     for (let idx = 0; idx < len; idx += 2) {
         poly[idx] += offset.x;
         poly[idx + 1] += offset.y;
     }
-    return poly;
 }
 
-export function translatePolySet(polySet:PolygonSet, offset:Point):PolygonSet {
+export function translatePolySet(polySet:PolygonSet, offset:Point) {
     if (Math.abs(offset.x) < Epsilon
         && Math.abs(offset.y) < Epsilon) {
-        return polySet;
+        return;
     }
     polySet.forEach(polygon => translatePolygon(polygon, offset));
-    return polySet;
 }
 
-export function translateObjects(objects:GraphicsObjects, offset:Point):GraphicsObjects {
+export function translateObjects(objects:GraphicsObjects, offset:Point) {
     if (Math.abs(offset.x) < Epsilon
         && Math.abs(offset.y) < Epsilon) {
-        return objects;
+        return;
     }
-    objects.forEach(object => {
-        translatePolySet(object.polySet, offset);
-    });
-    return objects;
+    objects.forEach(object => translatePolySet(object.polySet, offset));
 }
 
-export function scalePolygon(poly:Polygon, scale:number):Polygon {
+export function scalePolygon(poly:Polygon, scale:number) {
     if (Math.abs(scale - 1) < Epsilon) {
-        return poly;
+        return;
     }
     let len = poly.length;
     for (let idx = 0; idx < len; idx++) {
         poly[idx] *= scale;
     }
-    return poly;
 }
 
-export function scalePolySet(polySet:PolygonSet, scale:number):PolygonSet {
+export function scalePolySet(polySet:PolygonSet, scale:number) {
     if (Math.abs(scale - 1) < Epsilon) {
-        return polySet;
+        return;
     }
     polySet.forEach(polygon => scalePolygon(polygon, scale));
-    return polySet;
 }
 
-export function mirrorPolygon(poly:Polygon, mirror:ObjectMirroring):Polygon {
+export function mirrorPolygon(poly:Polygon, mirror:ObjectMirroring) {
     if (mirror === ObjectMirroring.NONE) {
-        return poly;
+        return;
     }
     let len = poly.length;
     switch (mirror) {
@@ -149,15 +140,13 @@ export function mirrorPolygon(poly:Polygon, mirror:ObjectMirroring):Polygon {
             }
             break;
     }
-    return poly;
 }
 
-export function mirrorPolySet(polySet:PolygonSet, mirror:ObjectMirroring):PolygonSet {
+export function mirrorPolySet(polySet:PolygonSet, mirror:ObjectMirroring) {
     if (mirror == ObjectMirroring.NONE) {
-        return polySet;
+        return;
     }
     polySet.forEach(polygon => mirrorPolygon(polygon, mirror));
-    return polySet;
 }
 
 export function polygonBounds(poly:Polygon):Bounds {
