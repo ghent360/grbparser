@@ -42,6 +42,7 @@ import {
     translateObjects,
     distance2,
     PolygonSetWithBounds,
+    copyObjects,
 } from "./polygonSet";
 import {Point} from "./point";
 import {
@@ -1591,16 +1592,12 @@ export class Flash {
 
     get objects():GraphicsObjects {
         if (!this.objects_) {
-            this.objects_ = this.aperture.objects(this.state.polarity).map(o => {
-                return {
-                    polySet:translatePolySet(
-                        scalePolySet(
-                            rotatePolySet(
-                                mirrorPolySet(o.polySet, this.state.mirroring),
-                                this.state.rotation),
-                                this.state.scale),
-                        this.center),
-                    polarity: o.polarity};
+            this.objects_ = copyObjects(this.aperture.objects(this.state.polarity));
+            this.objects_.forEach(o => {
+                mirrorPolySet(o.polySet, this.state.mirroring);
+                rotatePolySet(o.polySet, this.state.rotation);
+                scalePolySet(o.polySet, this.state.scale);
+                translatePolySet(o.polySet, this.center);
             });
         }
         return this.objects_;
@@ -1776,7 +1773,9 @@ export class Repeat {
             for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
                 let translateVector = new Point(xOffset, yOffset);
                 this.objects_.push(
-                    ...translateObjects(this.block.objects, translateVector));
+                    ...translateObjects(
+                        copyObjects(this.block.objects),
+                        translateVector));
                 yOffset += this.block.yDelta;
             }
             xOffset += this.block.xDelta;
