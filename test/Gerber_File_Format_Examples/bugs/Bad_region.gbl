@@ -1,7 +1,5 @@
 %FSLAX22Y22*%
-%ADD10C,1*%
-%ADD13C,4*%
-%ADD14C,5*%
+%ADD10R,1X1*%
 D10*
 G04 A rectangle *
 X1000Y0D02*

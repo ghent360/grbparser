@@ -1600,9 +1600,7 @@ export class Flash {
                                 this.state.rotation),
                                 this.state.scale),
                         this.center),
-                    polarity: (this.state.polarity === ObjectPolarity.DARK)
-                        ? o.polarity 
-                        : reversePolarity(o.polarity)};
+                    polarity: o.polarity};
             });
         }
         return this.objects_;
@@ -1715,7 +1713,7 @@ export class Region {
             result[arrayOffset++] = result[1];
         }
         // If the contour is clockwise, reverse the polygon.
-        if (contourOrientation(contour)) {
+        if (contourOrientation(contour) > 0) {
             reversePolygon(result);
         }
         return result;
