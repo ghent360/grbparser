@@ -1,5 +1,6 @@
 *.js
 *.js.map
+*.svg
 test/*.js
 test/*.js.map
 test/Gerber_File_Format_Examples/*.svg

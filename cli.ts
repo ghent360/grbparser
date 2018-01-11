@@ -40,10 +40,12 @@ async function processZipFile(zipFileName:string) {
         if (file.dir) {
             //console.log(`Folder ${fileName}`);
         } else {
-            if (fileName.endsWith('.DS_Store') || fileName.toLowerCase().endsWith('.drl')) {
+            if (fileName.endsWith('.DS_Store')
+                || fileName.toLowerCase().endsWith('.drl')
+                || fileName.toLowerCase().endsWith('.drill')) {
                 continue;
             }
-            if (fileName.startsWith('__MACOSX')) {
+            if (fileName.indexOf('__MACOSX') >= 0) {
                 continue;
             }
             let info = ut.GerberUtils.determineSideAndLayer(fileName);
