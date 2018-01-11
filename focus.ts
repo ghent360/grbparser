@@ -1,7 +1,7 @@
 import * as cvt from "./converters";
 import * as fs from "fs-extra-promise";
 import * as JSZip from "jszip";
-import * as ut from "./GerberUtils";
+import * as ut from "./gerberutils";
 
 function percent(n:number):string {
     return (n * 100).toFixed(2) + "%";
