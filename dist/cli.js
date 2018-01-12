@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs-extra-promise");
 const JSZip = require("jszip");
-const ut = require("./GerberUtils");
+const ut = require("./gerberutils");
 const converters_1 = require("./converters");
 let results = [];
 function parseGerber(zipFileName, fileName, content) {
@@ -52,10 +52,12 @@ function processZipFile(zipFileName) {
                 //console.log(`Folder ${fileName}`);
             }
             else {
-                if (fileName.endsWith('.DS_Store') || fileName.toLowerCase().endsWith('.drl')) {
+                if (fileName.endsWith('.DS_Store')
+                    || fileName.toLowerCase().endsWith('.drl')
+                    || fileName.toLowerCase().endsWith('.drill')) {
                     continue;
                 }
-                if (fileName.startsWith('__MACOSX')) {
+                if (fileName.indexOf('__MACOSX') >= 0) {
                     continue;
                 }
                 let info = ut.GerberUtils.determineSideAndLayer(fileName);
