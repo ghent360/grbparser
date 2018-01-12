@@ -16,7 +16,7 @@ import { SVGConverter, Init } from '../converters';
 
 describe("Conveter tests", () => {
     it('Wait to init', () => Init);
-    it('parse and convert gerber file', () => {
+    /*it('parse and convert gerber file', () => {
         let folder = "test/Gerber_File_Format_Examples";
         fs.readdirSync(folder)
             .filter(fileName => fileName.endsWith(".gbr"))
@@ -34,11 +34,12 @@ describe("Conveter tests", () => {
                 stream.end();
                 //console.log(`Conversion result for ${fileName}`);
             });
-    });
+    });*/
     it('Bugs files to SVG', () => {
         let folder = "test/Gerber_File_Format_Examples/bugs";
         fs.readdirSync(folder)
             .filter(fileName => !fileName.match(/\.svg$/))
+            .filter(fileName => fileName.endsWith("parse.gbl"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();

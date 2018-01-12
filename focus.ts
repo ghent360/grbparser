@@ -60,6 +60,42 @@ function focus(result:Array<any>) {
     }
 }
 
+function focusSkip(result:Array<any>) {
+    let parseErrors = result.filter(r => r.status == "skip");
+    let byErrorText = {};
+    parseErrors.forEach(e => {
+        let msg = e.gerber;
+        if (!msg) {
+            console.log(JSON.stringify(e));
+        }
+        let counter = byErrorText[msg];
+        if (!counter) {
+            byErrorText[msg] = 0;
+        }
+        byErrorText[msg]++;
+    });
+    let topErrors = [];
+    for (let key in byErrorText) {
+        let count = byErrorText[key];
+        topErrors.push({count:count, message:key});
+    }
+    topErrors.sort((a, b) => b.count - a.count);
+    console.log('-----------------------------------');
+    console.log('Top Errors');
+    for (let idx = 0; idx < topErrors.length && idx < 10; idx++) {
+        console.log(`${topErrors[idx].count}\t\t${topErrors[idx].message}`);
+    }
+
+    console.log('-----------------------------------');
+    console.log('Error examples');
+    for (let idx = 0; idx < topErrors.length && idx < 10; idx++) {
+        console.log(`${topErrors[idx].message}`);
+        let samples = result.filter(r => r.err && r.err.message == topErrors[idx].message);
+        samples.slice(0, 5).forEach(r => console.log(`  ${r.zipFileName}:${r.gerber}`));
+        console.log('');
+    }
+}
+
 async function main () {
     if (fs.existsSync('test-results.json')) {
         let results = await fs.readFileAsync('test-results.json')

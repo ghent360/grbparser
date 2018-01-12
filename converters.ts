@@ -240,6 +240,9 @@ export class SVGConverter extends ConverterBase<string> {
         parser.parseBlock(content);
         let ctx = new GerberState();
         parser.execute(ctx);
+        if (!ctx.isDone) {
+            ctx.endFile();
+        }
         let primitives = ctx.primitives;
         let cvt = new SVGConverter();
         cvt.layerColor = layerColor;
@@ -263,6 +266,9 @@ export function GerberToPolygons(content:string, union:boolean = false):PolygonC
     //let parseEnd = performance.now();
     let ctx = new GerberState();
     parser.execute(ctx);
+    if (!ctx.isDone) {
+        ctx.endFile();
+    }
     //let executeEnd = performance.now();
     let primitives = ctx.primitives;
     let objects:GraphicsObjects = [];
