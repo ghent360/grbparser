@@ -67,6 +67,9 @@ class GerberUtils {
         let fileNameLowerCase = fileName.toLowerCase();
         switch (ext) {
             case "gbr":
+            case "grb":
+            case "ger":
+            case "art":
                 let fileNameNoExt = fileSplit[0].toLowerCase();
                 switch (fileNameNoExt) {
                     case "boardoutline":
@@ -139,14 +142,59 @@ class GerberUtils {
                         else if (fileNameLowerCase.indexOf("-f_paste") >= 0) {
                             result = { side: BoardSide.Top, layer: BoardLayer.Paste };
                         }
+                        else {
+                            let side = BoardSide.Unknown;
+                            let layer = BoardLayer.Unknown;
+                            if (fileNameLowerCase.indexOf("top") >= 0) {
+                                side = BoardSide.Top;
+                                layer = BoardLayer.Copper;
+                            }
+                            else if (fileNameLowerCase.indexOf("bottom") >= 0) {
+                                side = BoardSide.Bottom;
+                                layer = BoardLayer.Copper;
+                            }
+                            else if (fileNameLowerCase.indexOf("board") >= 0) {
+                                side = BoardSide.Both;
+                            }
+                            if (fileNameLowerCase.indexOf("copper") >= 0) {
+                                layer = BoardLayer.Copper;
+                            }
+                            else if (fileNameLowerCase.indexOf("paste") >= 0
+                                || fileNameLowerCase.indexOf("cream") >= 0) {
+                                layer = BoardLayer.Paste;
+                            }
+                            else if (fileNameLowerCase.indexOf("mask") >= 0) {
+                                layer = BoardLayer.SolderMask;
+                            }
+                            else if (fileNameLowerCase.indexOf("silk") >= 0) {
+                                layer = BoardLayer.Silk;
+                            }
+                            else if (fileNameLowerCase.indexOf("Asm") >= 0
+                                || fileNameLowerCase.indexOf("Assm") >= 0
+                                || fileNameLowerCase.indexOf("Assy") >= 0
+                                || fileNameLowerCase.indexOf("Assem") >= 0) {
+                                layer = BoardLayer.Assembly;
+                            }
+                            else if (fileNameLowerCase.indexOf("outline") >= 0
+                                || fileNameLowerCase.indexOf("dimension") >= 0) {
+                                layer = BoardLayer.Outline;
+                            }
+                            else if (fileNameLowerCase.indexOf("layer") >= 0) {
+                                layer = BoardLayer.Copper;
+                                side = BoardSide.Internal;
+                            }
+                            if (layer != BoardLayer.Unknown && side != BoardSide.Unknown) {
+                                result = { side: side, layer: layer };
+                            }
+                        }
                         break;
                 }
-                break;
-            case "ger":
-                for (let descriptor of gerFileDescriptors) {
-                    if (fileNameLowerCase.indexOf(descriptor.fileString) >= 0) {
-                        result = descriptor.boardType;
-                        break;
+                if (result.side == BoardSide.Unknown) {
+                    for (let descriptor of gerFileDescriptors) {
+                        if (fileNameLowerCase.indexOf(descriptor.fileString) >= 0) {
+                            result = descriptor.boardType;
+                            break;
+                        }
                     }
                 }
                 break;
@@ -156,9 +204,11 @@ class GerberUtils {
             case "fabrd":
             case "oln":
             case "gko":
+            case "outline":
                 result = { side: BoardSide.Both, layer: BoardLayer.Outline };
                 break;
             case "l2":
+            case "g2":
             case "gl1":
             case "g2l":
                 result = { side: BoardSide.Internal1, layer: BoardLayer.Copper };
@@ -173,6 +223,7 @@ class GerberUtils {
                 result = { side: BoardSide.Both, layer: BoardLayer.Notes };
                 break;
             case "l3":
+            case "g3":
             case "gl2":
             case "g3l":
                 result = { side: BoardSide.Internal2, layer: BoardLayer.Copper };
@@ -285,6 +336,92 @@ class GerberUtils {
         }
         return result;
     }
+    static getFileExt(fileName) {
+        let dotIdx = fileName.lastIndexOf(".");
+        if (dotIdx < 0) {
+            return "";
+        }
+        return fileName.substring(dotIdx + 1);
+    }
+    static getFileName(fileName) {
+        let dotIdx = fileName.lastIndexOf("/");
+        if (dotIdx < 0) {
+            return fileName;
+        }
+        return fileName.substring(dotIdx + 1);
+    }
 }
+GerberUtils.bannedExtensions = [
+    "c",
+    "cc",
+    "cpp",
+    "cxx",
+    "h",
+    "hxx",
+    "py",
+    "doc",
+    "dsn",
+    "schdoc",
+    "pcbdoc",
+    "dwg",
+    "dxf",
+    "xls",
+    "exe",
+    "dll",
+    "png",
+    "jpg",
+    "bmp",
+    "tif",
+    "tiff",
+    "ps",
+    "ttf",
+    "html",
+    "htm",
+    "svg",
+    "css",
+    "js",
+    "map",
+    "md5",
+    "outputstatus",
+    "apr_lib",
+    "apr",
+    "extrep",
+    "rul",
+    "rpt",
+    "pdf",
+    "xln",
+    "gpi",
+    "dri",
+    "drr",
+    "rep",
+    "txt",
+    "info",
+    "tool",
+    "cfg",
+    "epf",
+    "ini",
+    "gitignore",
+    "md",
+    "sch",
+    "brd",
+    "s#1",
+    "s#2",
+    "s#3",
+    "s#4",
+    "s#5",
+    "s#6",
+    "s#7",
+    "s#8",
+    "s#9",
+    "b#1",
+    "b#2",
+    "b#3",
+    "b#4",
+    "b#5",
+    "b#6",
+    "b#7",
+    "b#8",
+    "b#9",
+];
 exports.GerberUtils = GerberUtils;
-//# sourceMappingURL=GerberUtils.js.map
+//# sourceMappingURL=gerberutils.js.map
