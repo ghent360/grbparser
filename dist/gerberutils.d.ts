@@ -32,4 +32,7 @@ export declare class GerberUtils {
         side: BoardSide;
         layer: BoardLayer;
     };
+    static getFileExt(fileName: string): string;
+    static getFileName(fileName: string): string;
+    static bannedExtensions: string[];
 }

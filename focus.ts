@@ -64,15 +64,24 @@ function focusSkip(result:Array<any>) {
     let parseErrors = result.filter(r => r.status == "skip");
     let byErrorText = {};
     parseErrors.forEach(e => {
-        let msg = e.gerber;
-        if (!msg) {
+        let fileName:string = e.gerber;
+        if (!fileName) {
             console.log(JSON.stringify(e));
         }
-        let counter = byErrorText[msg];
-        if (!counter) {
-            byErrorText[msg] = 0;
+        fileName = ut.GerberUtils.getFileName(fileName.toLowerCase());
+        let fileExt = ut.GerberUtils.getFileExt(fileName);
+        if (fileExt.length == 0) {
+            //console.log(`Can not get file extension of ${e.gerber}`);
+            return;
         }
-        byErrorText[msg]++;
+        if (ut.GerberUtils.bannedExtensions.indexOf(fileExt) >= 0) {
+            return;
+        }
+        let counter = byErrorText[fileName];
+        if (!counter) {
+            byErrorText[fileName] = 0;
+        }
+        byErrorText[fileName]++;
     });
     let topErrors = [];
     for (let key in byErrorText) {
@@ -81,18 +90,9 @@ function focusSkip(result:Array<any>) {
     }
     topErrors.sort((a, b) => b.count - a.count);
     console.log('-----------------------------------');
-    console.log('Top Errors');
+    console.log('Top Skipped names');
     for (let idx = 0; idx < topErrors.length && idx < 10; idx++) {
         console.log(`${topErrors[idx].count}\t\t${topErrors[idx].message}`);
-    }
-
-    console.log('-----------------------------------');
-    console.log('Error examples');
-    for (let idx = 0; idx < topErrors.length && idx < 10; idx++) {
-        console.log(`${topErrors[idx].message}`);
-        let samples = result.filter(r => r.err && r.err.message == topErrors[idx].message);
-        samples.slice(0, 5).forEach(r => console.log(`  ${r.zipFileName}:${r.gerber}`));
-        console.log('');
     }
 }
 
@@ -101,7 +101,8 @@ async function main () {
         let results = await fs.readFileAsync('test-results.json')
             .then(jsonText => JSON.parse(jsonText.toString()));
         analyze(results);
-        focus(results);
+        //focus(results);
+        focusSkip(results);
     }
 }
 

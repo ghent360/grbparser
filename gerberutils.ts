@@ -69,6 +69,7 @@ export class GerberUtils {
         let fileNameLowerCase = fileName.toLowerCase();
         switch (ext) {
             case "gbr":
+            case "grb":
             case "ger":
             case "art":
                 let fileNameNoExt = fileSplit[0].toLowerCase();
@@ -139,8 +140,10 @@ export class GerberUtils {
                             let layer = BoardLayer.Unknown;
                             if (fileNameLowerCase.indexOf("top") >= 0) {
                                 side = BoardSide.Top;
+                                layer = BoardLayer.Copper;
                             } else if (fileNameLowerCase.indexOf("bottom") >= 0) {
                                 side = BoardSide.Bottom;
+                                layer = BoardLayer.Copper;
                             } else if (fileNameLowerCase.indexOf("board") >= 0) {
                                 side = BoardSide.Both;
                             }
@@ -155,9 +158,11 @@ export class GerberUtils {
                                 layer = BoardLayer.Silk;
                             } else if (fileNameLowerCase.indexOf("Asm") >= 0
                                 || fileNameLowerCase.indexOf("Assm") >= 0
+                                || fileNameLowerCase.indexOf("Assy") >= 0
                                 || fileNameLowerCase.indexOf("Assem") >= 0) {
                                 layer = BoardLayer.Assembly;
-                            } else if (fileNameLowerCase.indexOf("outline") >= 0) {
+                            } else if (fileNameLowerCase.indexOf("outline") >= 0
+                                || fileNameLowerCase.indexOf("dimension") >= 0) {
                                 layer = BoardLayer.Outline;
                             } else if (fileNameLowerCase.indexOf("layer") >= 0) {
                                 layer = BoardLayer.Copper;
@@ -185,9 +190,11 @@ export class GerberUtils {
             case "fabrd":
             case "oln":
             case "gko":
+            case "outline":
                 result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
                 break;
             case "l2":
+            case "g2":
             case "gl1":
             case "g2l":
                 result  = { side:BoardSide.Internal1, layer:BoardLayer.Copper };
@@ -202,6 +209,7 @@ export class GerberUtils {
                 result  = { side:BoardSide.Both, layer:BoardLayer.Notes };
                 break;
             case "l3":
+            case "g3":
             case "gl2":
             case "g3l":
                 result  = { side:BoardSide.Internal2, layer:BoardLayer.Copper };
@@ -335,4 +343,66 @@ export class GerberUtils {
         }
         return result;
     }
+
+    public static getFileExt(fileName:string):string {
+        let dotIdx = fileName.lastIndexOf(".");
+        if (dotIdx < 0) {
+            return "";
+        }
+        return fileName.substring(dotIdx + 1);
+    }
+
+    public static getFileName(fileName:string):string {
+        let dotIdx = fileName.lastIndexOf("/");
+        if (dotIdx < 0) {
+            return fileName;
+        }
+        return fileName.substring(dotIdx + 1);
+    }
+
+    public static bannedExtensions = [
+        "c",
+        "exe",
+        "dll",
+        "outputstatus",
+        "apr_lib",
+        "apr",
+        "extrep",
+        "rul",
+        "rpt",
+        "pdf",
+        "xln",
+        "gpi",
+        "dri",
+        "drr",
+        "rep",
+        "txt",
+        "info",
+        "tool",
+        "cfg",
+        "epf",
+        "ini",
+        "gitignore",
+        "md",
+        "sch",
+        "brd",
+        "s#1",
+        "s#2",
+        "s#3",
+        "s#4",
+        "s#5",
+        "s#6",
+        "s#7",
+        "s#8",
+        "s#9",
+        "b#1",
+        "b#2",
+        "b#3",
+        "b#4",
+        "b#5",
+        "b#6",
+        "b#7",
+        "b#8",
+        "b#9",
+    ];
 }

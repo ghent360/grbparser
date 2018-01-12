@@ -48,6 +48,10 @@ async function processZipFile(zipFileName:string) {
             if (fileName.indexOf('__MACOSX') >= 0) {
                 continue;
             }
+            let fileExt = ut.GerberUtils.getFileExt(fileName.toLowerCase());
+            if (ut.GerberUtils.bannedExtensions.indexOf(fileExt) >= 0) {
+                continue;
+            }
             let info = ut.GerberUtils.determineSideAndLayer(fileName);
             //console.log(`File: ${fileName} ${ut.BoardSide[info.side]} ${ut.BoardLayer[info.layer]}`);
             if (info.layer != ut.BoardLayer.Unknown && info.side != ut.BoardSide.Unknown) {
