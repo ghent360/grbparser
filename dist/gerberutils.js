@@ -382,6 +382,7 @@ GerberUtils.bannedExtensions = [
     "js",
     "map",
     "md5",
+    "ino",
     "outputstatus",
     "apr_lib",
     "apr",
