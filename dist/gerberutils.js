@@ -2,28 +2,32 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var BoardLayer;
 (function (BoardLayer) {
-    BoardLayer[BoardLayer["Silk"] = 0] = "Silk";
-    BoardLayer[BoardLayer["Copper"] = 1] = "Copper";
-    BoardLayer[BoardLayer["Paste"] = 2] = "Paste";
-    BoardLayer[BoardLayer["SolderMask"] = 3] = "SolderMask";
-    BoardLayer[BoardLayer["Carbon"] = 4] = "Carbon";
-    BoardLayer[BoardLayer["Drill"] = 5] = "Drill";
+    BoardLayer[BoardLayer["Copper"] = 0] = "Copper";
+    BoardLayer[BoardLayer["SolderMask"] = 1] = "SolderMask";
+    BoardLayer[BoardLayer["Silk"] = 2] = "Silk";
+    BoardLayer[BoardLayer["Paste"] = 3] = "Paste";
+    BoardLayer[BoardLayer["Drill"] = 4] = "Drill";
+    BoardLayer[BoardLayer["Mill"] = 5] = "Mill";
     BoardLayer[BoardLayer["Outline"] = 6] = "Outline";
-    BoardLayer[BoardLayer["Mill"] = 7] = "Mill";
-    BoardLayer[BoardLayer["Unknown"] = 8] = "Unknown";
-    BoardLayer[BoardLayer["Notes"] = 9] = "Notes";
-    BoardLayer[BoardLayer["Assembly"] = 10] = "Assembly";
-    BoardLayer[BoardLayer["Mechanical"] = 11] = "Mechanical";
+    BoardLayer[BoardLayer["Carbon"] = 7] = "Carbon";
+    BoardLayer[BoardLayer["Notes"] = 8] = "Notes";
+    BoardLayer[BoardLayer["Assembly"] = 9] = "Assembly";
+    BoardLayer[BoardLayer["Mechanical"] = 10] = "Mechanical";
+    BoardLayer[BoardLayer["Unknown"] = 11] = "Unknown";
 })(BoardLayer = exports.BoardLayer || (exports.BoardLayer = {}));
 var BoardSide;
 (function (BoardSide) {
     BoardSide[BoardSide["Top"] = 0] = "Top";
     BoardSide[BoardSide["Bottom"] = 1] = "Bottom";
-    BoardSide[BoardSide["Internal"] = 2] = "Internal";
-    BoardSide[BoardSide["Both"] = 3] = "Both";
-    BoardSide[BoardSide["Unknown"] = 4] = "Unknown";
-    BoardSide[BoardSide["Internal1"] = 5] = "Internal1";
-    BoardSide[BoardSide["Internal2"] = 6] = "Internal2";
+    BoardSide[BoardSide["Both"] = 2] = "Both";
+    BoardSide[BoardSide["Internal"] = 3] = "Internal";
+    BoardSide[BoardSide["Internal1"] = 4] = "Internal1";
+    BoardSide[BoardSide["Internal2"] = 5] = "Internal2";
+    BoardSide[BoardSide["Internal3"] = 6] = "Internal3";
+    BoardSide[BoardSide["Internal4"] = 7] = "Internal4";
+    BoardSide[BoardSide["Internal5"] = 8] = "Internal5";
+    BoardSide[BoardSide["Internal6"] = 9] = "Internal6";
+    BoardSide[BoardSide["Unknown"] = 10] = "Unknown";
 })(BoardSide = exports.BoardSide || (exports.BoardSide = {}));
 var BoardFileType;
 (function (BoardFileType) {
@@ -141,6 +145,51 @@ class GerberUtils {
                         }
                         else if (fileNameLowerCase.indexOf("-f_paste") >= 0) {
                             result = { side: BoardSide.Top, layer: BoardLayer.Paste };
+                        }
+                        else if (fileNameLowerCase.indexOf("_fab") >= 0) {
+                            result = { side: BoardSide.Both, layer: BoardLayer.Outline };
+                        }
+                        else if (fileNameLowerCase.indexOf("_bslk") >= 0) {
+                            result = { side: BoardSide.Bottom, layer: BoardLayer.Silk };
+                        }
+                        else if (fileNameLowerCase.indexOf("_tslk") >= 0) {
+                            result = { side: BoardSide.Top, layer: BoardLayer.Silk };
+                        }
+                        else if (fileNameLowerCase.indexOf("_smc") >= 0) {
+                            result = { side: BoardSide.Top, layer: BoardLayer.SolderMask };
+                        }
+                        else if (fileNameLowerCase.indexOf("_sms") >= 0) {
+                            result = { side: BoardSide.Bottom, layer: BoardLayer.SolderMask };
+                        }
+                        else if (fileNameLowerCase.indexOf("_spc") >= 0) {
+                            result = { side: BoardSide.Top, layer: BoardLayer.Paste };
+                        }
+                        else if (fileNameLowerCase.indexOf("_sps") >= 0) {
+                            result = { side: BoardSide.Bottom, layer: BoardLayer.Paste };
+                        }
+                        else if (fileNameLowerCase.indexOf("_lyr1") >= 0) {
+                            result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
+                        }
+                        else if (fileNameLowerCase.indexOf("_lyr2") >= 0) {
+                            result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
+                        }
+                        else if (fileNameLowerCase.indexOf("_lyr3") >= 0) {
+                            result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
+                        }
+                        else if (fileNameLowerCase.indexOf("_lyr4") >= 0) {
+                            result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
+                        }
+                        else if (fileNameLowerCase.indexOf("_lyr5") >= 0) {
+                            result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
+                        }
+                        else if (fileNameLowerCase.indexOf("_lyr6") >= 0) {
+                            result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
+                        }
+                        else if (fileNameLowerCase.indexOf("_lyr7") >= 0) {
+                            result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
+                        }
+                        else if (fileNameLowerCase.indexOf("_lyr8") >= 0) {
+                            result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
                         }
                         else {
                             let side = BoardSide.Unknown;

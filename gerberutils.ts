@@ -1,26 +1,30 @@
 export enum BoardLayer {
-    Silk,
     Copper,
-    Paste,
     SolderMask,
-    Carbon,
+    Silk,
+    Paste,
     Drill,
-    Outline,
     Mill,
-    Unknown,
+    Outline,
+    Carbon,
     Notes,
     Assembly,
-    Mechanical
+    Mechanical,
+    Unknown,
 }
 
 export enum BoardSide {
     Top,
     Bottom,
-    Internal,
     Both,
-    Unknown,
+    Internal,
     Internal1,
-    Internal2
+    Internal2,
+    Internal3,
+    Internal4,
+    Internal5,
+    Internal6,
+    Unknown,
 }
 
 export enum BoardFileType {
@@ -127,14 +131,44 @@ export class GerberUtils {
                             result  = { side:BoardSide.Bottom, layer:BoardLayer.Silk };
                         } else if (fileNameLowerCase.indexOf("-f_silks") >= 0) {
                             result  = { side:BoardSide.Top, layer:BoardLayer.Silk };
-                        } else if (fileNameLowerCase.indexOf("-b_mask") >= 0) { 
+                        } else if (fileNameLowerCase.indexOf("-b_mask") >= 0) {
                             result  = { side:BoardSide.Bottom, layer:BoardLayer.SolderMask };
-                        } else if (fileNameLowerCase.indexOf("-f_mask") >= 0) { 
+                        } else if (fileNameLowerCase.indexOf("-f_mask") >= 0) {
                             result  = { side:BoardSide.Top, layer:BoardLayer.SolderMask };
-                        } else if (fileNameLowerCase.indexOf("-b_paste") >= 0) { 
+                        } else if (fileNameLowerCase.indexOf("-b_paste") >= 0) {
                             result  = { side:BoardSide.Bottom, layer:BoardLayer.Paste };
-                        } else if (fileNameLowerCase.indexOf("-f_paste") >= 0) { 
+                        } else if (fileNameLowerCase.indexOf("-f_paste") >= 0) {
                             result  = { side:BoardSide.Top, layer:BoardLayer.Paste };
+                        } else if (fileNameLowerCase.indexOf("_fab") >= 0) {
+                            result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
+                        } else if (fileNameLowerCase.indexOf("_bslk") >= 0) {
+                            result  = { side:BoardSide.Bottom, layer:BoardLayer.Silk };
+                        } else if (fileNameLowerCase.indexOf("_tslk") >= 0) {
+                            result  = { side:BoardSide.Top, layer:BoardLayer.Silk };
+                        } else if (fileNameLowerCase.indexOf("_smc") >= 0) {
+                            result  = { side:BoardSide.Top, layer:BoardLayer.SolderMask };
+                        } else if (fileNameLowerCase.indexOf("_sms") >= 0) {
+                            result  = { side:BoardSide.Bottom, layer:BoardLayer.SolderMask };
+                        } else if (fileNameLowerCase.indexOf("_spc") >= 0) {
+                            result  = { side:BoardSide.Top, layer:BoardLayer.Paste };
+                        } else if (fileNameLowerCase.indexOf("_sps") >= 0) {
+                            result  = { side:BoardSide.Bottom, layer:BoardLayer.Paste };
+                        } else if (fileNameLowerCase.indexOf("_lyr1") >= 0) {
+                            result  = { side:BoardSide.Internal, layer:BoardLayer.Copper };
+                        } else if (fileNameLowerCase.indexOf("_lyr2") >= 0) {
+                            result  = { side:BoardSide.Internal, layer:BoardLayer.Copper };
+                        } else if (fileNameLowerCase.indexOf("_lyr3") >= 0) {
+                            result  = { side:BoardSide.Internal, layer:BoardLayer.Copper };
+                        } else if (fileNameLowerCase.indexOf("_lyr4") >= 0) {
+                            result  = { side:BoardSide.Internal, layer:BoardLayer.Copper };
+                        } else if (fileNameLowerCase.indexOf("_lyr5") >= 0) {
+                            result  = { side:BoardSide.Internal, layer:BoardLayer.Copper };
+                        } else if (fileNameLowerCase.indexOf("_lyr6") >= 0) {
+                            result  = { side:BoardSide.Internal, layer:BoardLayer.Copper };
+                        } else if (fileNameLowerCase.indexOf("_lyr7") >= 0) {
+                            result  = { side:BoardSide.Internal, layer:BoardLayer.Copper };
+                        } else if (fileNameLowerCase.indexOf("_lyr8") >= 0) {
+                            result  = { side:BoardSide.Internal, layer:BoardLayer.Copper };
                         } else {
                             let side = BoardSide.Unknown;
                             let layer = BoardLayer.Unknown;
