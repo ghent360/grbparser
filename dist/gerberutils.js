@@ -21,13 +21,7 @@ var BoardSide;
     BoardSide[BoardSide["Bottom"] = 1] = "Bottom";
     BoardSide[BoardSide["Both"] = 2] = "Both";
     BoardSide[BoardSide["Internal"] = 3] = "Internal";
-    BoardSide[BoardSide["Internal1"] = 4] = "Internal1";
-    BoardSide[BoardSide["Internal2"] = 5] = "Internal2";
-    BoardSide[BoardSide["Internal3"] = 6] = "Internal3";
-    BoardSide[BoardSide["Internal4"] = 7] = "Internal4";
-    BoardSide[BoardSide["Internal5"] = 8] = "Internal5";
-    BoardSide[BoardSide["Internal6"] = 9] = "Internal6";
-    BoardSide[BoardSide["Unknown"] = 10] = "Unknown";
+    BoardSide[BoardSide["Unknown"] = 4] = "Unknown";
 })(BoardSide = exports.BoardSide || (exports.BoardSide = {}));
 var BoardFileType;
 (function (BoardFileType) {
@@ -48,8 +42,8 @@ const gerFileDescriptors = [
     { fileString: ".bottomsilkscreen", boardType: { side: BoardSide.Bottom, layer: BoardLayer.Silk } },
     { fileString: ".bottomlayer", boardType: { side: BoardSide.Bottom, layer: BoardLayer.Copper } },
     { fileString: ".bcream", boardType: { side: BoardSide.Bottom, layer: BoardLayer.Paste } },
-    { fileString: ".internalplane1", boardType: { side: BoardSide.Internal1, layer: BoardLayer.Copper } },
-    { fileString: ".internalplane2", boardType: { side: BoardSide.Internal2, layer: BoardLayer.Copper } },
+    { fileString: ".internalplane1", boardType: { side: BoardSide.Internal, layer: BoardLayer.Copper } },
+    { fileString: ".internalplane2", boardType: { side: BoardSide.Internal, layer: BoardLayer.Copper } },
 ];
 class GerberUtils {
     static boardFileType(fileName, content) {
@@ -110,10 +104,8 @@ class GerberUtils {
                         result = { side: BoardSide.Top, layer: BoardLayer.Silk };
                         break;
                     case "inner1":
-                        result = { side: BoardSide.Internal1, layer: BoardLayer.Copper };
-                        break;
                     case "inner2":
-                        result = { side: BoardSide.Internal2, layer: BoardLayer.Copper };
+                        result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
                         break;
                     default:
                         if (fileNameLowerCase.indexOf("outline") >= 0) {
@@ -260,7 +252,11 @@ class GerberUtils {
             case "g2":
             case "gl1":
             case "g2l":
-                result = { side: BoardSide.Internal1, layer: BoardLayer.Copper };
+            case "l3":
+            case "g3":
+            case "gl2":
+            case "g3l":
+                result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
                 break;
             case "adtop":
                 result = { side: BoardSide.Top, layer: BoardLayer.Assembly };
@@ -270,12 +266,6 @@ class GerberUtils {
                 break;
             case "notes":
                 result = { side: BoardSide.Both, layer: BoardLayer.Notes };
-                break;
-            case "l3":
-            case "g3":
-            case "gl2":
-            case "g3l":
-                result = { side: BoardSide.Internal2, layer: BoardLayer.Copper };
                 break;
             case "l4":
             case "gbl":
@@ -402,6 +392,11 @@ class GerberUtils {
 }
 GerberUtils.bannedExtensions = [
     "c",
+    "o",
+    "s",
+    "ld",
+    "a",
+    "so",
     "cc",
     "cpp",
     "cxx",
@@ -412,14 +407,28 @@ GerberUtils.bannedExtensions = [
     "dsn",
     "schdoc",
     "pcbdoc",
+    "json",
     "dwg",
     "dxf",
     "xls",
+    "xlsx",
+    "v",
+    "vhdl",
+    "vhd",
+    "vhi",
+    "cmp",
     "exe",
     "dll",
+    "lib",
+    "lst",
+    "mod",
+    "csv",
+    "dcm",
     "png",
     "jpg",
     "bmp",
+    "gif",
+    "xbm",
     "tif",
     "tiff",
     "ps",
@@ -432,6 +441,26 @@ GerberUtils.bannedExtensions = [
     "map",
     "md5",
     "ino",
+    "hex",
+    "psm",
+    "ucf",
+    "ncf",
+    "bat",
+    "tcl",
+    "sh",
+    "key",
+    "fmt",
+    "gise",
+    "sym",
+    "vho",
+    "xco",
+    "xdc",
+    "xise",
+    "bit",
+    "bin",
+    "xwbt",
+    "do",
+    "sv",
     "outputstatus",
     "apr_lib",
     "apr",
@@ -441,16 +470,22 @@ GerberUtils.bannedExtensions = [
     "pdf",
     "xln",
     "gpi",
+    "kicad_pcb",
+    "prjpcb",
+    "project",
+    "cproject",
+    "net",
     "dri",
     "drr",
     "rep",
-    "txt",
     "info",
     "tool",
     "cfg",
     "epf",
     "ini",
     "gitignore",
+    "gitattributes",
+    "zip",
     "md",
     "sch",
     "brd",

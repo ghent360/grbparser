@@ -17,13 +17,7 @@ export declare enum BoardSide {
     Bottom = 1,
     Both = 2,
     Internal = 3,
-    Internal1 = 4,
-    Internal2 = 5,
-    Internal3 = 6,
-    Internal4 = 7,
-    Internal5 = 8,
-    Internal6 = 9,
-    Unknown = 10,
+    Unknown = 4,
 }
 export declare enum BoardFileType {
     Gerber = 0,
