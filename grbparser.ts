@@ -251,7 +251,7 @@ export class GerberParser {
         try {
             let dispatcher = this.commandDispatcher.find(d => d[0].test(cmd));
             if (dispatcher == undefined) {
-                throw new GerberParseException(`Invalid command ${cmd}`);
+                throw new GerberParseException(`Invalid command ${cmd.substr(0, 100)}`);
             }
             if (dispatcher[1] == null) {
                 //console.log(`WARNING: ignoring ${cmd}`);
