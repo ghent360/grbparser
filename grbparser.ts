@@ -269,7 +269,7 @@ export class GerberParser {
             }
         } catch (e) {
             console.log(`Error parsing gerber file at line ${lineNo}.`);
-            console.log(`Offending command: ${cmd}`);
+            console.log(`Offending command: ${cmd.substr(0, 100)}`);
             console.log(`Message: ${e}`);
             throw e;
         }

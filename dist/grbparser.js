@@ -238,7 +238,7 @@ class GerberParser {
         try {
             let dispatcher = this.commandDispatcher.find(d => d[0].test(cmd));
             if (dispatcher == undefined) {
-                throw new primitives_1.GerberParseException(`Invalid command ${cmd}`);
+                throw new primitives_1.GerberParseException(`Invalid command ${cmd.substr(0, 100)}`);
             }
             if (dispatcher[1] == null) {
                 //console.log(`WARNING: ignoring ${cmd}`);
@@ -257,7 +257,7 @@ class GerberParser {
         }
         catch (e) {
             console.log(`Error parsing gerber file at line ${lineNo}.`);
-            console.log(`Offending command: ${cmd}`);
+            console.log(`Offending command: ${cmd.substr(0, 100)}`);
             console.log(`Message: ${e}`);
             throw e;
         }
