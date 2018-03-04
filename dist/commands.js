@@ -164,16 +164,16 @@ class ADCommand {
     }
     checkStandardApertures() {
         if (this.definition.templateName === "C") {
-            this.checlCircleAperture();
+            this.checkCircleAperture();
         }
         else if (this.definition.templateName === "R") {
-            this.checlRectangleAperture();
+            this.checkRectangleAperture();
         }
         else if (this.definition.templateName === "O") {
-            this.checlObroundAperture();
+            this.checkObroundAperture();
         }
     }
-    checlCircleAperture() {
+    checkCircleAperture() {
         if (this.definition.modifiers.length < 1 || this.definition.modifiers.length > 3) {
             throw new primitives_1.GerberParseException(`Invalid circle aperture ${this.formatOutput()}`);
         }
@@ -194,7 +194,7 @@ class ADCommand {
                 + ` ${this.definition.modifiers[1]}`);
         }
     }
-    checlRectangleAperture() {
+    checkRectangleAperture() {
         if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new primitives_1.GerberParseException(`Invalid rectangle aperture ${this.formatOutput()}`);
         }
@@ -217,7 +217,7 @@ class ADCommand {
             }
         }
     }
-    checlObroundAperture() {
+    checkObroundAperture() {
         if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new primitives_1.GerberParseException(`Invalid obround aperture ${this.formatOutput()}`);
         }
@@ -240,7 +240,7 @@ class ADCommand {
             }
         }
     }
-    checlPolygonAperture() {
+    checkPolygonAperture() {
         if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new primitives_1.GerberParseException(`Invalid polygon aperture ${this.formatOutput()}`);
         }

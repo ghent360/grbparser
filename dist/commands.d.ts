@@ -45,10 +45,10 @@ export declare class ADCommand implements GerberCommand {
     formatOutput(): string;
     execute(ctx: GerberState): void;
     private checkStandardApertures();
-    private checlCircleAperture();
-    private checlRectangleAperture();
-    private checlObroundAperture();
-    private checlPolygonAperture();
+    private checkCircleAperture();
+    private checkRectangleAperture();
+    private checkObroundAperture();
+    private checkPolygonAperture();
 }
 export declare class G04Command implements GerberCommand {
     readonly name: string;
