@@ -111,6 +111,27 @@ function reverseObjectsPolarity(objects:GraphicsObjects):GraphicsObjects {
     });
 }
 
+function polygonOrientation(polygon:Float64Array):number {
+    let sum = 0;
+    if (polygon.length < 6) return 0;
+    let startx = polygon[0];
+    let starty = polygon[1];
+    let endx:number;
+    let endy:number;
+    for (let idx = 2; idx < polygon.length; idx += 2) {
+        endx = polygon[idx];
+        endy = polygon[idx + 1];
+        sum += (endx - startx) * (endy + starty);
+        startx = endx;
+        starty = endy;
+    }
+    // Close to the start
+    endx = polygon[0];
+    endy = polygon[1];
+    sum += (endx - startx) * (endy + starty);
+    return sum;
+}
+
 export enum CoordinateSkipZeros {
     NONE = 0,
     LEADING = 1,
@@ -581,6 +602,11 @@ export class ApertureMacro {
                             outline[idx * 2] = ApertureMacro.getValue(modifiers, 2 * idx + 2);
                             outline[idx * 2 + 1] = ApertureMacro.getValue(modifiers, 2 * idx + 3);
                         }
+                        // If the contour is clockwise, reverse the polygon.
+                        if (polygonOrientation(outline) > 0) {
+                            reversePolygon(outline);
+                        }
+                        
                         rotatePolygon(outline, ApertureMacro.getValue(modifiers, 2 * numPoints + 4));
                         shape = [outline];
                         break;

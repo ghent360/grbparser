@@ -206,15 +206,15 @@ export class ADCommand implements GerberCommand {
 
     private checkStandardApertures() {
         if (this.definition.templateName === "C") {
-            this.checlCircleAperture();
+            this.checkCircleAperture();
         } else if (this.definition.templateName === "R") {
-            this.checlRectangleAperture();
+            this.checkRectangleAperture();
         } else if (this.definition.templateName === "O") {
-            this.checlObroundAperture();
+            this.checkObroundAperture();
         }
     }
 
-    private checlCircleAperture() {
+    private checkCircleAperture() {
         if (this.definition.modifiers.length < 1 || this.definition.modifiers.length > 3) {
             throw new GerberParseException(`Invalid circle aperture ${this.formatOutput()}`);
         }
@@ -239,7 +239,7 @@ export class ADCommand implements GerberCommand {
         }
     }
 
-    private checlRectangleAperture() {
+    private checkRectangleAperture() {
         if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new GerberParseException(`Invalid rectangle aperture ${this.formatOutput()}`);
         }
@@ -266,7 +266,7 @@ export class ADCommand implements GerberCommand {
         }
     }
 
-    private checlObroundAperture() {
+    private checkObroundAperture() {
         if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new GerberParseException(`Invalid obround aperture ${this.formatOutput()}`);
         }
@@ -293,7 +293,7 @@ export class ADCommand implements GerberCommand {
         }
     }
 
-    private checlPolygonAperture() {
+    private checkPolygonAperture() {
         if (this.definition.modifiers.length < 2 || this.definition.modifiers.length > 4) {
             throw new GerberParseException(`Invalid polygon aperture ${this.formatOutput()}`);
         }
