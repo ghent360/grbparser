@@ -54,15 +54,23 @@ import {
     reversePolygon,
 } from "./polygonTools";
 
-export enum FileUnits {
+export enum CoordinateUnits {
     INCHES,
     MILIMETERS
 }
 
 export enum InterpolationMode {
-    LINEAR,
+    LINEARx1,
+    LINEARx10,
+    LINEARx01,
+    LINEARx001,
     CLOCKWISE,
     COUNTER_CLOCKWISE
+}
+
+export enum CoordinateMode {
+    ABSOLUTE,
+    RELATIVE
 }
 
 export enum QuadrantMode {
@@ -930,7 +938,7 @@ export class Block {
 export interface GraphicsOperations {
     line(from:Point, to:Point, ctx:GerberState):void;
     circle(center:Point, radius:number, ctx:GerberState):void;
-    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState):void;
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, ctx:GerberState):void;
     flash(center:Point, ctx:GerberState):void;
     region(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState):void;
     block(block:Block, ctx:GerberState):void;
@@ -938,11 +946,12 @@ export interface GraphicsOperations {
 
 export class GerberState {
     private coordinateFormat_:CoordinateFormatSpec = undefined;
-    private fileUnits_:FileUnits = undefined;
+    private coordinateUnits_:CoordinateUnits = undefined;
     private currentPoint_:Point = new Point();
     private currentCenterOffset_:Point = new Point();
     private currentAppretureId_:number = undefined;
-    public interpolationMode:InterpolationMode = InterpolationMode.LINEAR;
+    public interpolationMode:InterpolationMode = InterpolationMode.LINEARx1;
+    public coordinateMode:CoordinateMode = CoordinateMode.ABSOLUTE;
     private quadrantMode_:QuadrantMode = undefined;
     public objectPolarity:ObjectPolarity = ObjectPolarity.DARK;
     public objectMirroring:ObjectMirroring = ObjectMirroring.NONE;
@@ -971,18 +980,15 @@ export class GerberState {
         this.coordinateFormat_ = value;        
     }
 
-    get fileUnits():FileUnits {
-        if (this.fileUnits_ == undefined) {
-            this.error("File units are not set.");
+    get coordinateUnits():CoordinateUnits {
+        if (this.coordinateUnits_ == undefined) {
+            this.error("Coordinate units are not set.");
         }
-        return this.fileUnits_;
+        return this.coordinateUnits_;
     }
 
-    set fileUnits(value:FileUnits) {
-        if (this.fileUnits_ != undefined) {
-            this.warning("File units already set.");
-        }
-        this.fileUnits_ = value;        
+    set coordinateUnits(value:CoordinateUnits) {
+        this.coordinateUnits_ = value;        
     }
 
     get currentPointX():number {
@@ -1131,11 +1137,11 @@ export class GerberState {
         this.graphisOperationsConsumer_.circle(center, radius, this);
     }
 
-    arc(center:Point, radius:number, start:Point, end:Point) {
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean) {
         if (!center.isValid() || radius <= Epsilon || !start.isValid() || !end.isValid()) {
             this.error(`Invalid arc ${center} R${radius} from ${start} to ${end}`);
         }
-        this.graphisOperationsConsumer_.arc(center, radius, start, end, this);
+        this.graphisOperationsConsumer_.arc(center, radius, start, end, isCCW, this);
     }
 
     flash(center:Point) {
@@ -1374,7 +1380,8 @@ export class ArcSegment {
         readonly center:Point,
         readonly radius:number,
         readonly start:Point,
-        readonly end:Point) {
+        readonly end:Point,
+        readonly isCCW:boolean) {
     }
 
     toString():string {
@@ -1392,7 +1399,8 @@ export class ArcSegment {
             this.center.add(vector),
             this.radius,
             this.start.add(vector),
-            this.end.add(vector));
+            this.end.add(vector),
+            this.isCCW);
     }
 }
 
@@ -1444,8 +1452,8 @@ class RegionGraphicsOperationsConsumer implements GraphicsOperations {
         this.contour_.push(new CircleSegment(center, radius));
     }
 
-    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState) {
-        this.contour_.push(new ArcSegment(center, radius, start, end));
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW, ctx:GerberState) {
+        this.contour_.push(new ArcSegment(center, radius, start, end, isCCW));
     }
 
     flash(center:Point, ctx:GerberState) {
@@ -1581,6 +1589,7 @@ export class Arc {
         readonly radius:number,
         readonly start:Point,
         readonly end:Point,
+        readonly isCCW:boolean,
         readonly aperture:ApertureBase,
         readonly state:ObjectState) {
     }
@@ -1592,8 +1601,8 @@ export class Arc {
     get objects():GraphicsObjects {
         if (!this.objects_) {
             let draw = this.aperture.generateArcDraw(
-                this.start,
-                this.end,
+                (this.isCCW) ? this.start : this.end,
+                (this.isCCW) ? this.end : this.start,
                 this.center,
                 this.state);
             let polarity = (draw.is_solid) ? this.state.polarity : ObjectPolarity.THIN;
@@ -1621,6 +1630,7 @@ export class Arc {
             this.radius,
             this.start.add(vector),
             this.end.add(vector),
+            this.isCCW,
             this.aperture,
             this.state);
     }
@@ -1670,10 +1680,13 @@ export class Flash {
 
 export class Region {
     private objects_:GraphicsObjects;
-    
+    readonly contours:Array<RegionContour>;
+
     constructor(
-        readonly contours:Array<RegionContour>,
+        contours:Array<RegionContour>,
         readonly state:ObjectState) {
+        //this.contours = contours.map(c => Region.reOrderCountour(c));
+        this.contours = contours;
     }
 
     toString():string {
@@ -1696,6 +1709,61 @@ export class Region {
             result += "}";
         });
         result += "]";
+        return result;
+    }
+
+    private static startPoint(segment:RegionSegment):Point {
+        if (segment instanceof CircleSegment) {
+            throw new GerberParseException("Circle segment inside region.");
+        } else if (segment instanceof LineSegment) {
+            return (segment as LineSegment).from;
+        } else if (segment instanceof ArcSegment) {
+            return (segment as ArcSegment).start;
+        }
+        throw new GerberParseException(`Unsupportede segment ${segment} inside region.`);
+    }
+
+    private static endPoint(segment:RegionSegment):Point {
+        if (segment instanceof CircleSegment) {
+            throw new GerberParseException("Circle segment inside region.");
+        } else if (segment instanceof LineSegment) {
+            return (segment as LineSegment).to;
+        } else if (segment instanceof ArcSegment) {
+            return (segment as ArcSegment).end;
+        }
+        throw new GerberParseException(`Unsupportede segment ${segment} inside region.`);
+    }
+
+    private static matchPoint(p:Point, segment:RegionSegment, matchStart:boolean):boolean {
+        let pt = (matchStart) ? Region.startPoint(segment) : Region.endPoint(segment);
+        return pt.distance2(p) < Epsilon;
+    }
+
+    private static reOrderCountour(contour:RegionContour):RegionContour {
+        if (contour.length < 2) return contour;
+        let result:RegionContour = [];
+        let segment = contour[0];
+        console.log(`Re ordering ${contour}, started with ${segment}`);
+        contour.splice(0, 1);
+        result.push(segment);
+        while (contour.length > 0) {
+            let endPoint = Region.endPoint(segment);
+            let nextSegmentIdx = contour.findIndex(s => Region.matchPoint(endPoint, s, true));
+            if (nextSegmentIdx < 0) {
+                console.log(`No match for end point ${endPoint}`);
+                let startPoint = Region.startPoint(segment);
+                nextSegmentIdx = contour.findIndex(s => Region.matchPoint(startPoint, s, false));
+                if (nextSegmentIdx < 0) {
+                    console.log(`No match for start point ${startPoint}`);
+                    throw new GerberParseException(
+                        `Region is disconnected ${contour} - can't locate continuation for ${segment}`);
+                }
+            }
+            segment = contour[nextSegmentIdx];
+            console.log(`Matched with ${segment}`);
+            result.push(segment);
+            contour.splice(nextSegmentIdx, 1);
+        }
         return result;
     }
 
@@ -1742,7 +1810,14 @@ export class Region {
                     result[arrayOffset++] = line.to.y;
                 } else if (segment instanceof ArcSegment) {
                     let arc = segment as ArcSegment;
-                    result.set(arcToPolygon(arc.start, arc.end, arc.center), arrayOffset);
+                    let polygon = arcToPolygon(
+                        arc.isCCW ? arc.start : arc.end,
+                        arc.isCCW ? arc.end : arc.start,
+                        arc.center);
+                    if (!arc.isCCW) {
+                        reversePolygon(polygon);
+                    }
+                    result.set(polygon, arrayOffset);
                     arrayOffset += NUMSTEPS * 2;
                 } else if (segment instanceof CircleSegment) {
                     let circle = segment as CircleSegment;
@@ -1894,8 +1969,8 @@ export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
         this.primitives_.push(new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState()));
     }
 
-    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState) {
-        this.primitives_.push(new Arc(center, radius, start, end, ctx.getCurrentAperture(), ctx.getObjectState()));
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, ctx:GerberState) {
+        this.primitives_.push(new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState()));
     }
 
     flash(center:Point, ctx:GerberState) {
@@ -1939,8 +2014,8 @@ export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
         this.objects_.push(...c.objects);
     }
 
-    arc(center:Point, radius:number, start:Point, end:Point, ctx:GerberState) {
-        let a = new Arc(center, radius, start, end, ctx.getCurrentAperture(), ctx.getObjectState());
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, ctx:GerberState) {
+        let a = new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState());
         this.primitives_.push(a);
         this.objects_.push(...a.objects);
     }

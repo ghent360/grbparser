@@ -18,7 +18,7 @@
 *
 * Note that in the input text the command separators are stipped by the command tokenizer.
 */
-import { ApertureDefinition, ApertureMacro, CoordinateFormatSpec, FileUnits, ObjectPolarity, ObjectMirroring, Attribute, GerberCommand, GerberState, CoordinateSkipZeros } from './primitives';
+import { ApertureDefinition, ApertureMacro, CoordinateFormatSpec, CoordinateUnits, ObjectPolarity, ObjectMirroring, Attribute, GerberCommand, GerberState, CoordinateSkipZeros } from './primitives';
 export declare class FSCommand implements GerberCommand {
     readonly name: string;
     readonly isAdvanced: boolean;
@@ -31,7 +31,7 @@ export declare class FSCommand implements GerberCommand {
 export declare class MOCommand implements GerberCommand {
     readonly name: string;
     readonly isAdvanced: boolean;
-    readonly units: FileUnits;
+    readonly units: CoordinateUnits;
     constructor(cmd: string);
     formatOutput(): string;
     execute(ctx: GerberState): void;
@@ -145,12 +145,47 @@ export declare class G03Command extends BaseGCodeCommand implements GerberComman
     constructor(cmd: string);
     execute(ctx: GerberState): void;
 }
+export declare class G10Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name: string;
+    constructor(cmd: string);
+    execute(ctx: GerberState): void;
+}
+export declare class G11Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name: string;
+    constructor(cmd: string);
+    execute(ctx: GerberState): void;
+}
+export declare class G12Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name: string;
+    constructor(cmd: string);
+    execute(ctx: GerberState): void;
+}
 export declare class G74Command extends BaseGCodeCommand implements GerberCommand {
     readonly name: string;
     constructor(cmd: string);
     execute(ctx: GerberState): void;
 }
 export declare class G75Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name: string;
+    constructor(cmd: string);
+    execute(ctx: GerberState): void;
+}
+export declare class G90Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name: string;
+    constructor(cmd: string);
+    execute(ctx: GerberState): void;
+}
+export declare class G91Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name: string;
+    constructor(cmd: string);
+    execute(ctx: GerberState): void;
+}
+export declare class G70Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name: string;
+    constructor(cmd: string);
+    execute(ctx: GerberState): void;
+}
+export declare class G71Command extends BaseGCodeCommand implements GerberCommand {
     readonly name: string;
     constructor(cmd: string);
     execute(ctx: GerberState): void;

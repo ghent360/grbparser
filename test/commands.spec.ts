@@ -88,10 +88,10 @@ describe("Commands tests", () => {
     });
     it('MO Command', () => {
         let cmd = new cm.MOCommand("MOIN*");
-        assert.equal(cmd.units, pr.FileUnits.INCHES);
+        assert.equal(cmd.units, pr.CoordinateUnits.INCHES);
         assert.deepEqual(cmd.formatOutput(), "MOIN*");
         cmd = new cm.MOCommand("MOMM*");
-        assert.equal(cmd.units, pr.FileUnits.MILIMETERS);
+        assert.equal(cmd.units, pr.CoordinateUnits.MILIMETERS);
         assert.deepEqual(cmd.formatOutput(), "MOMM*");
     });
     it('AD Command', () => {
@@ -217,6 +217,7 @@ describe("Commands tests", () => {
         ctx.currentPointX = 10;
         ctx.currentPointY = 0;
         ctx.interpolationMode = pr.InterpolationMode.CLOCKWISE;
+        ctx.quadrantMode = pr.QuadrantMode.MULTI;
         cmd.execute(ctx);
         let primitives = (ctx.graphicsOperations as pr.BaseGraphicsOperationsConsumer).primitives;
         assert.equal(primitives.length, 1);

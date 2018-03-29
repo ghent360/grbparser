@@ -20,17 +20,25 @@ const expressions_1 = require("./expressions");
 const polygonSet_1 = require("./polygonSet");
 const point_1 = require("./point");
 const polygonTools_1 = require("./polygonTools");
-var FileUnits;
-(function (FileUnits) {
-    FileUnits[FileUnits["INCHES"] = 0] = "INCHES";
-    FileUnits[FileUnits["MILIMETERS"] = 1] = "MILIMETERS";
-})(FileUnits = exports.FileUnits || (exports.FileUnits = {}));
+var CoordinateUnits;
+(function (CoordinateUnits) {
+    CoordinateUnits[CoordinateUnits["INCHES"] = 0] = "INCHES";
+    CoordinateUnits[CoordinateUnits["MILIMETERS"] = 1] = "MILIMETERS";
+})(CoordinateUnits = exports.CoordinateUnits || (exports.CoordinateUnits = {}));
 var InterpolationMode;
 (function (InterpolationMode) {
-    InterpolationMode[InterpolationMode["LINEAR"] = 0] = "LINEAR";
-    InterpolationMode[InterpolationMode["CLOCKWISE"] = 1] = "CLOCKWISE";
-    InterpolationMode[InterpolationMode["COUNTER_CLOCKWISE"] = 2] = "COUNTER_CLOCKWISE";
+    InterpolationMode[InterpolationMode["LINEARx1"] = 0] = "LINEARx1";
+    InterpolationMode[InterpolationMode["LINEARx10"] = 1] = "LINEARx10";
+    InterpolationMode[InterpolationMode["LINEARx01"] = 2] = "LINEARx01";
+    InterpolationMode[InterpolationMode["LINEARx001"] = 3] = "LINEARx001";
+    InterpolationMode[InterpolationMode["CLOCKWISE"] = 4] = "CLOCKWISE";
+    InterpolationMode[InterpolationMode["COUNTER_CLOCKWISE"] = 5] = "COUNTER_CLOCKWISE";
 })(InterpolationMode = exports.InterpolationMode || (exports.InterpolationMode = {}));
+var CoordinateMode;
+(function (CoordinateMode) {
+    CoordinateMode[CoordinateMode["ABSOLUTE"] = 0] = "ABSOLUTE";
+    CoordinateMode[CoordinateMode["RELATIVE"] = 1] = "RELATIVE";
+})(CoordinateMode = exports.CoordinateMode || (exports.CoordinateMode = {}));
 var QuadrantMode;
 (function (QuadrantMode) {
     QuadrantMode[QuadrantMode["SINGLE"] = 0] = "SINGLE";
@@ -322,12 +330,12 @@ class ApertureDefinition {
             }
             let width2 = state.scale * this.modifiers[0] / 2;
             let height2 = state.scale * this.modifiers[1] / 2;
-            if (Math.abs(start.x - end.x) < exports.Epsilon) {
+            if (Math.abs(start.x - end.x) < exports.Epsilon) { // Vertical Line
                 let polygon = polygonTools_1.rectangleToPolygon(this.modifiers[0], Math.abs(end.y - start.y) + this.modifiers[1]);
                 polygonSet_1.translatePolygon(polygon, start.midPoint(end));
                 return { polygon: polygon, is_solid: true };
             }
-            else if (Math.abs(start.y - end.y) < exports.Epsilon) {
+            else if (Math.abs(start.y - end.y) < exports.Epsilon) { // Horizontal Line
                 let polygon = polygonTools_1.rectangleToPolygon(Math.abs(end.x - start.x) + this.modifiers[0], this.modifiers[1]);
                 polygonSet_1.translatePolygon(polygon, start.midPoint(end));
                 return { polygon: polygon, is_solid: true };
@@ -481,7 +489,7 @@ class ApertureMacro {
                 let width;
                 let height;
                 switch (primitive.code) {
-                    case 1:// Circle (exposure, diameter, center x, center y, rotation)
+                    case 1: // Circle (exposure, diameter, center x, center y, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
                         diameter = ApertureMacro.getValue(modifiers, 1);
                         center = new point_1.Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
@@ -496,7 +504,7 @@ class ApertureMacro {
                             //console.log("Empty circle shape");
                         }
                         break;
-                    case 4:// Outline (exposure, num vertices, start x, start y, ..., (3+2n) end x, 4+2n end y, rotation)
+                    case 4: // Outline (exposure, num vertices, start x, start y, ..., (3+2n) end x, 4+2n end y, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
                         let numPoints = ApertureMacro.getValue(modifiers, 1);
                         if (numPoints < 1) {
@@ -514,7 +522,7 @@ class ApertureMacro {
                         polygonSet_1.rotatePolygon(outline, ApertureMacro.getValue(modifiers, 2 * numPoints + 4));
                         shape = [outline];
                         break;
-                    case 5:// Polygon (exposure, num vertices, center x, center y, diameter, rotation)
+                    case 5: // Polygon (exposure, num vertices, center x, center y, diameter, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
                         let numSteps = ApertureMacro.getValue(modifiers, 1);
                         center = new point_1.Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
@@ -533,7 +541,7 @@ class ApertureMacro {
                             //console.log("Empty polygon shape");
                         }
                         break;
-                    case 6:// Moire (center x, center y, outer diam, ring thickness, gap, num rings, cross hair thickness, cross hair len, rotation)
+                    case 6: // Moire (center x, center y, outer diam, ring thickness, gap, num rings, cross hair thickness, cross hair len, rotation)
                         // exposure is always on
                         isPositive = true;
                         shape = [];
@@ -577,7 +585,7 @@ class ApertureMacro {
                             //console.log("Empty moire shape");
                         }
                         break;
-                    case 7:// Thermal (center x, center y, outer diam, inner diam, gap, rotation)
+                    case 7: // Thermal (center x, center y, outer diam, inner diam, gap, rotation)
                         isPositive = true;
                         center = new point_1.Point(ApertureMacro.getValue(modifiers, 0), ApertureMacro.getValue(modifiers, 1));
                         outerDiameter = ApertureMacro.getValue(modifiers, 2);
@@ -725,7 +733,7 @@ class ApertureMacro {
                             //console.log("Empty thermal shape");
                         }
                         break;
-                    case 20:// Vector line (exposure, width, start x, start y, end x, end y, rotation)
+                    case 20: // Vector line (exposure, width, start x, start y, end x, end y, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
                         width = ApertureMacro.getValue(modifiers, 1);
                         let centerStart = new point_1.Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
@@ -741,7 +749,7 @@ class ApertureMacro {
                         polygonSet_1.rotatePolygon(line, rotation);
                         shape = [line];
                         break;
-                    case 21:// Center line (exposure, width, height, center x, center y, rotation)
+                    case 21: // Center line (exposure, width, height, center x, center y, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
                         width = ApertureMacro.getValue(modifiers, 1);
                         height = ApertureMacro.getValue(modifiers, 2);
@@ -814,11 +822,12 @@ exports.Block = Block;
 class GerberState {
     constructor() {
         this.coordinateFormat_ = undefined;
-        this.fileUnits_ = undefined;
+        this.coordinateUnits_ = undefined;
         this.currentPoint_ = new point_1.Point();
         this.currentCenterOffset_ = new point_1.Point();
         this.currentAppretureId_ = undefined;
-        this.interpolationMode = InterpolationMode.LINEAR;
+        this.interpolationMode = InterpolationMode.LINEARx1;
+        this.coordinateMode = CoordinateMode.ABSOLUTE;
         this.quadrantMode_ = undefined;
         this.objectPolarity = ObjectPolarity.DARK;
         this.objectMirroring = ObjectMirroring.NONE;
@@ -844,17 +853,14 @@ class GerberState {
         }
         this.coordinateFormat_ = value;
     }
-    get fileUnits() {
-        if (this.fileUnits_ == undefined) {
-            this.error("File units are not set.");
+    get coordinateUnits() {
+        if (this.coordinateUnits_ == undefined) {
+            this.error("Coordinate units are not set.");
         }
-        return this.fileUnits_;
+        return this.coordinateUnits_;
     }
-    set fileUnits(value) {
-        if (this.fileUnits_ != undefined) {
-            this.warning("File units already set.");
-        }
-        this.fileUnits_ = value;
+    set coordinateUnits(value) {
+        this.coordinateUnits_ = value;
     }
     get currentPointX() {
         if (this.currentPoint_.x == undefined) {
@@ -974,11 +980,11 @@ class GerberState {
         }
         this.graphisOperationsConsumer_.circle(center, radius, this);
     }
-    arc(center, radius, start, end) {
+    arc(center, radius, start, end, isCCW) {
         if (!center.isValid() || radius <= exports.Epsilon || !start.isValid() || !end.isValid()) {
             this.error(`Invalid arc ${center} R${radius} from ${start} to ${end}`);
         }
-        this.graphisOperationsConsumer_.arc(center, radius, start, end, this);
+        this.graphisOperationsConsumer_.arc(center, radius, start, end, isCCW, this);
     }
     flash(center) {
         if (!center.isValid()) {
@@ -1171,11 +1177,12 @@ class CircleSegment {
 }
 exports.CircleSegment = CircleSegment;
 class ArcSegment {
-    constructor(center, radius, start, end) {
+    constructor(center, radius, start, end, isCCW) {
         this.center = center;
         this.radius = radius;
         this.start = start;
         this.end = end;
+        this.isCCW = isCCW;
     }
     toString() {
         return `a(${this.start}, ${this.end}@${this.center}R${utils_1.formatFloat(this.radius, 3)})`;
@@ -1184,7 +1191,7 @@ class ArcSegment {
         return new Bounds(new point_1.Point(Math.min(this.start.x, this.end.x), Math.min(this.start.y, this.end.y)), new point_1.Point(Math.max(this.start.x, this.end.x), Math.max(this.start.y, this.end.y)));
     }
     translate(vector) {
-        return new ArcSegment(this.center.add(vector), this.radius, this.start.add(vector), this.end.add(vector));
+        return new ArcSegment(this.center.add(vector), this.radius, this.start.add(vector), this.end.add(vector), this.isCCW);
     }
 }
 exports.ArcSegment = ArcSegment;
@@ -1230,8 +1237,8 @@ class RegionGraphicsOperationsConsumer {
     circle(center, radius) {
         this.contour_.push(new CircleSegment(center, radius));
     }
-    arc(center, radius, start, end, ctx) {
-        this.contour_.push(new ArcSegment(center, radius, start, end));
+    arc(center, radius, start, end, isCCW, ctx) {
+        this.contour_.push(new ArcSegment(center, radius, start, end, isCCW));
     }
     flash(center, ctx) {
         ctx.error("Flashes are not allowed inside a region definition.");
@@ -1327,11 +1334,12 @@ class Circle {
 }
 exports.Circle = Circle;
 class Arc {
-    constructor(center, radius, start, end, aperture, state) {
+    constructor(center, radius, start, end, isCCW, aperture, state) {
         this.center = center;
         this.radius = radius;
         this.start = start;
         this.end = end;
+        this.isCCW = isCCW;
         this.aperture = aperture;
         this.state = state;
     }
@@ -1340,7 +1348,7 @@ class Arc {
     }
     get objects() {
         if (!this.objects_) {
-            let draw = this.aperture.generateArcDraw(this.start, this.end, this.center, this.state);
+            let draw = this.aperture.generateArcDraw((this.isCCW) ? this.start : this.end, (this.isCCW) ? this.end : this.start, this.center, this.state);
             let polarity = (draw.is_solid) ? this.state.polarity : ObjectPolarity.THIN;
             this.objects_ = [
                 {
@@ -1358,7 +1366,7 @@ class Arc {
         return this;
     }
     translate(vector) {
-        return new Arc(this.center.add(vector), this.radius, this.start.add(vector), this.end.add(vector), this.aperture, this.state);
+        return new Arc(this.center.add(vector), this.radius, this.start.add(vector), this.end.add(vector), this.isCCW, this.aperture, this.state);
     }
 }
 exports.Arc = Arc;
@@ -1396,8 +1404,9 @@ class Flash {
 exports.Flash = Flash;
 class Region {
     constructor(contours, state) {
-        this.contours = contours;
         this.state = state;
+        //this.contours = contours.map(c => Region.reOrderCountour(c));
+        this.contours = contours;
     }
     toString() {
         let result = "R[";
@@ -1419,6 +1428,61 @@ class Region {
             result += "}";
         });
         result += "]";
+        return result;
+    }
+    static startPoint(segment) {
+        if (segment instanceof CircleSegment) {
+            throw new GerberParseException("Circle segment inside region.");
+        }
+        else if (segment instanceof LineSegment) {
+            return segment.from;
+        }
+        else if (segment instanceof ArcSegment) {
+            return segment.start;
+        }
+        throw new GerberParseException(`Unsupportede segment ${segment} inside region.`);
+    }
+    static endPoint(segment) {
+        if (segment instanceof CircleSegment) {
+            throw new GerberParseException("Circle segment inside region.");
+        }
+        else if (segment instanceof LineSegment) {
+            return segment.to;
+        }
+        else if (segment instanceof ArcSegment) {
+            return segment.end;
+        }
+        throw new GerberParseException(`Unsupportede segment ${segment} inside region.`);
+    }
+    static matchPoint(p, segment, matchStart) {
+        let pt = (matchStart) ? Region.startPoint(segment) : Region.endPoint(segment);
+        return pt.distance2(p) < exports.Epsilon;
+    }
+    static reOrderCountour(contour) {
+        if (contour.length < 2)
+            return contour;
+        let result = [];
+        let segment = contour[0];
+        console.log(`Re ordering ${contour}, started with ${segment}`);
+        contour.splice(0, 1);
+        result.push(segment);
+        while (contour.length > 0) {
+            let endPoint = Region.endPoint(segment);
+            let nextSegmentIdx = contour.findIndex(s => Region.matchPoint(endPoint, s, true));
+            if (nextSegmentIdx < 0) {
+                console.log(`No match for end point ${endPoint}`);
+                let startPoint = Region.startPoint(segment);
+                nextSegmentIdx = contour.findIndex(s => Region.matchPoint(startPoint, s, false));
+                if (nextSegmentIdx < 0) {
+                    console.log(`No match for start point ${startPoint}`);
+                    throw new GerberParseException(`Region is disconnected ${contour} - can't locate continuation for ${segment}`);
+                }
+            }
+            segment = contour[nextSegmentIdx];
+            console.log(`Matched with ${segment}`);
+            result.push(segment);
+            contour.splice(nextSegmentIdx, 1);
+        }
         return result;
     }
     static buildPolygonSet(contours) {
@@ -1463,7 +1527,11 @@ class Region {
             }
             else if (segment instanceof ArcSegment) {
                 let arc = segment;
-                result.set(polygonTools_1.arcToPolygon(arc.start, arc.end, arc.center), arrayOffset);
+                let polygon = polygonTools_1.arcToPolygon(arc.isCCW ? arc.start : arc.end, arc.isCCW ? arc.end : arc.start, arc.center);
+                if (!arc.isCCW) {
+                    polygonTools_1.reversePolygon(polygon);
+                }
+                result.set(polygon, arrayOffset);
                 arrayOffset += polygonTools_1.NUMSTEPS * 2;
             }
             else if (segment instanceof CircleSegment) {
@@ -1587,8 +1655,8 @@ class BaseGraphicsOperationsConsumer {
     circle(center, radius, ctx) {
         this.primitives_.push(new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState()));
     }
-    arc(center, radius, start, end, ctx) {
-        this.primitives_.push(new Arc(center, radius, start, end, ctx.getCurrentAperture(), ctx.getObjectState()));
+    arc(center, radius, start, end, isCCW, ctx) {
+        this.primitives_.push(new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState()));
     }
     flash(center, ctx) {
         this.primitives_.push(new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState()));
@@ -1622,8 +1690,8 @@ class BlockGraphicsOperationsConsumer {
         this.primitives_.push(c);
         this.objects_.push(...c.objects);
     }
-    arc(center, radius, start, end, ctx) {
-        let a = new Arc(center, radius, start, end, ctx.getCurrentAperture(), ctx.getObjectState());
+    arc(center, radius, start, end, isCCW, ctx) {
+        let a = new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState());
         this.primitives_.push(a);
         this.objects_.push(...a.objects);
     }

@@ -1,14 +1,21 @@
 import { AritmeticOperation } from "./expressions";
 import { Polygon, PolygonSet, PolygonSetWithBounds } from "./polygonSet";
 import { Point } from "./point";
-export declare enum FileUnits {
+export declare enum CoordinateUnits {
     INCHES = 0,
     MILIMETERS = 1,
 }
 export declare enum InterpolationMode {
-    LINEAR = 0,
-    CLOCKWISE = 1,
-    COUNTER_CLOCKWISE = 2,
+    LINEARx1 = 0,
+    LINEARx10 = 1,
+    LINEARx01 = 2,
+    LINEARx001 = 3,
+    CLOCKWISE = 4,
+    COUNTER_CLOCKWISE = 5,
+}
+export declare enum CoordinateMode {
+    ABSOLUTE = 0,
+    RELATIVE = 1,
 }
 export declare enum QuadrantMode {
     SINGLE = 0,
@@ -152,18 +159,19 @@ export declare class Block {
 export interface GraphicsOperations {
     line(from: Point, to: Point, ctx: GerberState): void;
     circle(center: Point, radius: number, ctx: GerberState): void;
-    arc(center: Point, radius: number, start: Point, end: Point, ctx: GerberState): void;
+    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, ctx: GerberState): void;
     flash(center: Point, ctx: GerberState): void;
     region(contours: Array<Array<LineSegment | CircleSegment | ArcSegment>>, ctx: GerberState): void;
     block(block: Block, ctx: GerberState): void;
 }
 export declare class GerberState {
     private coordinateFormat_;
-    private fileUnits_;
+    private coordinateUnits_;
     private currentPoint_;
     private currentCenterOffset_;
     private currentAppretureId_;
     interpolationMode: InterpolationMode;
+    coordinateMode: CoordinateMode;
     private quadrantMode_;
     objectPolarity: ObjectPolarity;
     objectMirroring: ObjectMirroring;
@@ -178,7 +186,7 @@ export declare class GerberState {
     private primitives_;
     private isDone_;
     coordinateFormatSpec: CoordinateFormatSpec;
-    fileUnits: FileUnits;
+    coordinateUnits: CoordinateUnits;
     currentPointX: number;
     currentPointY: number;
     currentI: number;
@@ -197,7 +205,7 @@ export declare class GerberState {
     warning(message: string): void;
     line(from: Point, to: Point): void;
     circle(center: Point, radius: number): void;
-    arc(center: Point, radius: number, start: Point, end: Point): void;
+    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean): void;
     flash(center: Point): void;
     closeRegionContour(): void;
     startRegion(): void;
@@ -249,7 +257,8 @@ export declare class ArcSegment {
     readonly radius: number;
     readonly start: Point;
     readonly end: Point;
-    constructor(center: Point, radius: number, start: Point, end: Point);
+    readonly isCCW: boolean;
+    constructor(center: Point, radius: number, start: Point, end: Point, isCCW: boolean);
     toString(): string;
     readonly bounds: Bounds;
     translate(vector: Point): ArcSegment;
@@ -294,10 +303,11 @@ export declare class Arc {
     readonly radius: number;
     readonly start: Point;
     readonly end: Point;
+    readonly isCCW: boolean;
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
     private objects_;
-    constructor(center: Point, radius: number, start: Point, end: Point, aperture: ApertureBase, state: ObjectState);
+    constructor(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, aperture: ApertureBase, state: ObjectState);
     toString(): string;
     readonly objects: GraphicsObjects;
     readonly bounds: Bounds;
@@ -317,11 +327,15 @@ export declare class Flash {
     translate(vector: Point): Flash;
 }
 export declare class Region {
-    readonly contours: Array<RegionContour>;
     readonly state: ObjectState;
     private objects_;
+    readonly contours: Array<RegionContour>;
     constructor(contours: Array<RegionContour>, state: ObjectState);
     toString(): string;
+    private static startPoint(segment);
+    private static endPoint(segment);
+    private static matchPoint(p, segment, matchStart);
+    private static reOrderCountour(contour);
     private static buildPolygonSet(contours);
     private static buildPolygon(contour);
     readonly objects: GraphicsObjects;
@@ -351,7 +365,7 @@ export declare class BaseGraphicsOperationsConsumer implements GraphicsOperation
     readonly primitives: Array<GraphicsPrimitive>;
     line(from: Point, to: Point, ctx: GerberState): void;
     circle(center: Point, radius: number, ctx: GerberState): void;
-    arc(center: Point, radius: number, start: Point, end: Point, ctx: GerberState): void;
+    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, ctx: GerberState): void;
     flash(center: Point, ctx: GerberState): void;
     region(contours: Array<RegionContour>, ctx: GerberState): void;
     block(block: Block, ctx: GerberState): void;
@@ -363,7 +377,7 @@ export declare class BlockGraphicsOperationsConsumer implements GraphicsOperatio
     readonly objects: GraphicsObjects;
     line(from: Point, to: Point, ctx: GerberState): void;
     circle(center: Point, radius: number, ctx: GerberState): void;
-    arc(center: Point, radius: number, start: Point, end: Point, ctx: GerberState): void;
+    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, ctx: GerberState): void;
     flash(center: Point, ctx: GerberState): void;
     region(contours: Array<RegionContour>, ctx: GerberState): void;
     block(block: Block, ctx: GerberState): void;

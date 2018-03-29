@@ -91,20 +91,20 @@ class MOCommand {
         this.isAdvanced = true;
         let mode = cmd.substr(2, 2);
         if (mode === "MM") {
-            this.units = primitives_1.FileUnits.MILIMETERS;
+            this.units = primitives_1.CoordinateUnits.MILIMETERS;
         }
         else if (mode = "IN") {
-            this.units = primitives_1.FileUnits.INCHES;
+            this.units = primitives_1.CoordinateUnits.INCHES;
         }
         else {
             throw new primitives_1.GerberParseException(`Invalid file units command ${cmd}`);
         }
     }
     formatOutput() {
-        return "MO" + (this.units == primitives_1.FileUnits.MILIMETERS ? "MM" : "IN") + "*";
+        return "MO" + (this.units == primitives_1.CoordinateUnits.MILIMETERS ? "MM" : "IN") + "*";
     }
     execute(ctx) {
-        ctx.fileUnits = this.units;
+        ctx.coordinateUnits = this.units;
     }
 }
 exports.MOCommand = MOCommand;
@@ -550,7 +550,7 @@ class D01Command {
         return result;
     }
     execute(ctx) {
-        if (ctx.interpolationMode == primitives_1.InterpolationMode.LINEAR) {
+        if (ctx.interpolationMode == primitives_1.InterpolationMode.LINEARx1) {
             let startPointX = ctx.currentPointX;
             let startPointY = ctx.currentPointY;
             let endPointX;
@@ -612,13 +612,51 @@ class D01Command {
                 if (ctx.quadrantMode == primitives_1.QuadrantMode.SINGLE) {
                     ctx.error("D01 zero length arc.");
                 }
-                else {
+                else if (radius > primitives_1.Epsilon) {
                     let centerX = startPointX + targetI;
                     let centerY = startPointY + targetJ;
                     ctx.circle(new point_1.Point(centerX, centerY), radius);
                 }
+                else {
+                    ctx.warning("D01 arc radius too small.");
+                }
                 return;
             }
+            /*
+                        let centerX:number;
+                        let centerY:number;
+                        if (ctx.quadrantMode == QuadrantMode.MULTI) {
+                            centerX = startPointX + targetI;
+                            centerY = startPointY + targetJ;
+                        } else {
+                            centerX = targetI;
+                            centerY = targetJ;
+                            let dx = endPointX - startPointX;
+                            let dy = endPointY - startPointY;
+                            if (dx >= 0 && dy >= 0) {
+                                centerX = -centerX;
+                            } else if (dx >= 0 && dy < 0) {
+                                // nothing
+                            } else if (dx < 0 && dy >= 0) {
+                                centerX = -centerX;
+                                centerY = -centerY;
+                            } else {
+                                centerY = -centerY;
+                            }
+                            if (ctx.interpolationMode == InterpolationMode.CLOCKWISE) {
+                                centerX = -centerX;
+                                centerY = -centerY;
+                            }
+                            centerX += startPointX;
+                            centerY += startPointY;
+                        }
+                        ctx.arc(
+                            new Point(centerX, centerY),
+                            radius,
+                            new Point(startPointX, startPointY),
+                            new Point(endPointX, endPointY),
+                            ctx.interpolationMode == InterpolationMode.COUNTER_CLOCKWISE);
+            */
             let mid = { x: (startPointX + endPointX) / 2, y: (startPointY + endPointY) / 2 };
             let v = { x: (startPointX - endPointX), y: (startPointY - endPointY) };
             let v2 = { x: v.x / 2, y: v.y / 2 };
@@ -633,17 +671,34 @@ class D01Command {
                 d2 = 0;
             }
             let d = Math.sqrt(d2);
-            let center;
+            let pvCW = vectorUtils_1.unitVector({ x: -v.y, y: v.x });
             if (ctx.interpolationMode == primitives_1.InterpolationMode.CLOCKWISE) {
-                let pvCW = vectorUtils_1.unitVector({ x: -v.y, y: v.x });
-                center = vectorUtils_1.addVector(mid, vectorUtils_1.scaleVector(pvCW, d));
-                ctx.arc(new point_1.Point(center.x, center.y), radius, new point_1.Point(endPointX, endPointY), new point_1.Point(startPointX, startPointY));
+                let centerCW = vectorUtils_1.addVector(mid, vectorUtils_1.scaleVector(pvCW, d));
+                let centerCCW = vectorUtils_1.addVector(mid, vectorUtils_1.scaleVector(pvCW, -d));
+                let center;
+                if (ctx.quadrantMode == primitives_1.QuadrantMode.MULTI) {
+                    let ctr = { x: startPointX + targetI, y: startPointY + targetJ };
+                    center = (vectorUtils_1.distanceVector2(ctr, centerCW) < vectorUtils_1.distanceVector2(ctr, centerCCW)) ? centerCW : centerCCW;
+                }
+                else {
+                    center = centerCW;
+                }
+                ctx.arc(new point_1.Point(center.x, center.y), radius, new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY), false);
             }
             else {
-                let pvCCW = vectorUtils_1.unitVector({ x: v.y, y: -v.x });
-                center = vectorUtils_1.addVector(mid, vectorUtils_1.scaleVector(pvCCW, d));
-                ctx.arc(new point_1.Point(center.x, center.y), radius, new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY));
+                let centerCW = vectorUtils_1.addVector(mid, vectorUtils_1.scaleVector(pvCW, d));
+                let centerCCW = vectorUtils_1.addVector(mid, vectorUtils_1.scaleVector(pvCW, -d));
+                let center;
+                if (ctx.quadrantMode == primitives_1.QuadrantMode.MULTI) {
+                    let ctr = { x: startPointX + targetI, y: startPointY + targetJ };
+                    center = (vectorUtils_1.distanceVector2(ctr, centerCW) < vectorUtils_1.distanceVector2(ctr, centerCCW)) ? centerCW : centerCCW;
+                }
+                else {
+                    center = centerCCW;
+                }
+                ctx.arc(new point_1.Point(center.x, center.y), radius, new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY), true);
             }
+            //
         }
     }
 }
@@ -776,7 +831,7 @@ class G01Command extends BaseGCodeCommand {
         this.name = "G01";
     }
     execute(ctx) {
-        ctx.interpolationMode = primitives_1.InterpolationMode.LINEAR;
+        ctx.interpolationMode = primitives_1.InterpolationMode.LINEARx1;
     }
 }
 exports.G01Command = G01Command;
@@ -800,6 +855,36 @@ class G03Command extends BaseGCodeCommand {
     }
 }
 exports.G03Command = G03Command;
+class G10Command extends BaseGCodeCommand {
+    constructor(cmd) {
+        super(cmd, 10);
+        this.name = "G10";
+    }
+    execute(ctx) {
+        ctx.interpolationMode = primitives_1.InterpolationMode.LINEARx10;
+    }
+}
+exports.G10Command = G10Command;
+class G11Command extends BaseGCodeCommand {
+    constructor(cmd) {
+        super(cmd, 11);
+        this.name = "G11";
+    }
+    execute(ctx) {
+        ctx.interpolationMode = primitives_1.InterpolationMode.LINEARx01;
+    }
+}
+exports.G11Command = G11Command;
+class G12Command extends BaseGCodeCommand {
+    constructor(cmd) {
+        super(cmd, 12);
+        this.name = "G12";
+    }
+    execute(ctx) {
+        ctx.interpolationMode = primitives_1.InterpolationMode.LINEARx001;
+    }
+}
+exports.G12Command = G12Command;
 class G74Command extends BaseGCodeCommand {
     constructor(cmd) {
         super(cmd, 74);
@@ -820,6 +905,46 @@ class G75Command extends BaseGCodeCommand {
     }
 }
 exports.G75Command = G75Command;
+class G90Command extends BaseGCodeCommand {
+    constructor(cmd) {
+        super(cmd, 90);
+        this.name = "G90";
+    }
+    execute(ctx) {
+        ctx.coordinateMode = primitives_1.CoordinateMode.ABSOLUTE;
+    }
+}
+exports.G90Command = G90Command;
+class G91Command extends BaseGCodeCommand {
+    constructor(cmd) {
+        super(cmd, 91);
+        this.name = "G91";
+    }
+    execute(ctx) {
+        ctx.coordinateMode = primitives_1.CoordinateMode.RELATIVE;
+    }
+}
+exports.G91Command = G91Command;
+class G70Command extends BaseGCodeCommand {
+    constructor(cmd) {
+        super(cmd, 70);
+        this.name = "G70";
+    }
+    execute(ctx) {
+        ctx.coordinateUnits = primitives_1.CoordinateUnits.INCHES;
+    }
+}
+exports.G70Command = G70Command;
+class G71Command extends BaseGCodeCommand {
+    constructor(cmd) {
+        super(cmd, 71);
+        this.name = "G71";
+    }
+    execute(ctx) {
+        ctx.coordinateUnits = primitives_1.CoordinateUnits.MILIMETERS;
+    }
+}
+exports.G71Command = G71Command;
 class LPCommand {
     constructor(cmd) {
         this.name = "LP";

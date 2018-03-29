@@ -305,10 +305,10 @@ class GerberUtils {
             case "smtop":
                 result = { side: BoardSide.Top, layer: BoardLayer.SolderMask };
                 break;
-            case "gb3":// oshstencils bottom outline
+            case "gb3": // oshstencils bottom outline
                 result = { side: BoardSide.Both, layer: BoardLayer.Outline };
                 break;
-            case "gt3":// oshstencils top outline
+            case "gt3": // oshstencils top outline
                 result = { side: BoardSide.Both, layer: BoardLayer.Outline };
                 break;
             case "top":

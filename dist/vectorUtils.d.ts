@@ -41,3 +41,10 @@ export declare function negVector(v: {
     x: number;
     y: number;
 };
+export declare function distanceVector2(a: {
+    x: number;
+    y: number;
+}, b: {
+    x: number;
+    y: number;
+}): number;

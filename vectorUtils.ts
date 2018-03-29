@@ -27,3 +27,10 @@ export function addVector(a:{x:number, y:number}, b:{x:number, y:number})
 export function negVector(v:{x:number, y:number}):{x:number, y:number} {
     return {x:-v.x, y:-v.y};
 }
+
+export function distanceVector2(a:{x:number, y:number}, b:{x:number, y:number})
+    : number {
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    return dx * dx + dy * dy;
+}

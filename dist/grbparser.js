@@ -193,10 +193,17 @@ class GerberParser {
             [/^G[0]*1$/, (cmd) => new cmds.G01Command(cmd)],
             [/^G[0]*2$/, (cmd) => new cmds.G02Command(cmd)],
             [/^G[0]*3$/, (cmd) => new cmds.G03Command(cmd)],
+            [/^G[0]*10$/, (cmd) => new cmds.G10Command(cmd)],
+            [/^G[0]*11$/, (cmd) => new cmds.G11Command(cmd)],
+            [/^G[0]*12$/, (cmd) => new cmds.G12Command(cmd)],
             [/^G[0]*36$/, (cmd) => new cmds.G36Command(cmd)],
             [/^G[0]*37$/, (cmd) => new cmds.G37Command(cmd)],
+            [/^G[0]*70$/, (cmd) => new cmds.G70Command(cmd)],
+            [/^G[0]*71$/, (cmd) => new cmds.G71Command(cmd)],
             [/^G[0]*74$/, (cmd) => new cmds.G74Command(cmd)],
             [/^G[0]*75$/, (cmd) => new cmds.G75Command(cmd)],
+            [/^G[0]*90$/, (cmd) => new cmds.G90Command(cmd)],
+            [/^G[0]*91$/, (cmd) => new cmds.G91Command(cmd)],
             [/^LP/, (cmd) => new cmds.LPCommand(cmd)],
             [/^LM/, (cmd) => new cmds.LMCommand(cmd)],
             [/^LR/, (cmd) => new cmds.LRCommand(cmd)],
@@ -219,11 +226,9 @@ class GerberParser {
             [/^OF(?:.+)/, null],
             [/^RO(?:.+)/, null],
             [/^SF(?:.+)/, null],
-            [/^G54$/, null],
-            [/^G70$/, null],
-            [/^G71$/, null],
-            [/^G90$/, null],
-            [/^G91$/, null]
+            [/^G[0]*0$/, null],
+            [/^G[0]*54$/, null],
+            [/^G[0]*55$/, null] // Prepare to flash
         ];
         this.commands = [];
         this.commandParser.setConsumer((cmd, lineNo) => this.parseCommand(cmd, lineNo));

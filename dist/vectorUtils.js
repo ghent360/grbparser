@@ -28,4 +28,10 @@ function negVector(v) {
     return { x: -v.x, y: -v.y };
 }
 exports.negVector = negVector;
+function distanceVector2(a, b) {
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    return dx * dx + dy * dy;
+}
+exports.distanceVector2 = distanceVector2;
 //# sourceMappingURL=vectorUtils.js.map

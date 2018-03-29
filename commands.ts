@@ -24,7 +24,7 @@ import {
     ApertureDefinition,
     ApertureMacro,
     CoordinateFormatSpec,
-    FileUnits,
+    CoordinateUnits,
     GerberParseException,
     InterpolationMode,
     QuadrantMode,
@@ -41,13 +41,15 @@ import {
     BlockParams,
     CoordinateSkipZeros,
     CoordinateType,
+    CoordinateMode,
 } from './primitives';
 import {Point} from "./point";
 import {
     vectorLength,
     scaleVector,
     unitVector,
-    addVector
+    addVector,
+    distanceVector2
 } from "./vectorUtils";
 import {
     AritmeticOperation,
@@ -123,25 +125,25 @@ export class FSCommand implements GerberCommand {
 export class MOCommand implements GerberCommand {
     readonly name:string = "MO";
     readonly isAdvanced = true;
-    readonly units:FileUnits;
+    readonly units:CoordinateUnits;
 
     constructor(cmd:string) {
         let mode = cmd.substr(2, 2);
         if (mode === "MM") {
-            this.units = FileUnits.MILIMETERS;
+            this.units = CoordinateUnits.MILIMETERS;
         } else if (mode = "IN") {
-            this.units = FileUnits.INCHES;
+            this.units = CoordinateUnits.INCHES;
         } else {
             throw new GerberParseException(`Invalid file units command ${cmd}`);
         }
     }
 
     formatOutput():string {
-        return "MO" + (this.units == FileUnits.MILIMETERS ? "MM" : "IN") + "*";
+        return "MO" + (this.units == CoordinateUnits.MILIMETERS ? "MM" : "IN") + "*";
     }
 
     execute(ctx:GerberState) {
-        ctx.fileUnits = this.units;
+        ctx.coordinateUnits = this.units;
     }
 }
 
@@ -622,7 +624,7 @@ export class D01Command implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        if (ctx.interpolationMode == InterpolationMode.LINEAR) {
+        if (ctx.interpolationMode == InterpolationMode.LINEARx1) {
             let startPointX = ctx.currentPointX;
             let startPointY = ctx.currentPointY;
             let endPointX:number;
@@ -678,13 +680,50 @@ export class D01Command implements GerberCommand {
                 && Math.abs(startPointY - endPointY) < Epsilon) {
                 if (ctx.quadrantMode == QuadrantMode.SINGLE) {
                     ctx.error("D01 zero length arc.");
-                } else {
+                } else if (radius > Epsilon) {
                     let centerX = startPointX + targetI;
                     let centerY = startPointY + targetJ;
                     ctx.circle(new Point(centerX, centerY), radius);
+                } else {
+                    ctx.warning("D01 arc radius too small.");
                 }
                 return;
             }
+/*            
+            let centerX:number;
+            let centerY:number;
+            if (ctx.quadrantMode == QuadrantMode.MULTI) {
+                centerX = startPointX + targetI;
+                centerY = startPointY + targetJ;
+            } else {
+                centerX = targetI;
+                centerY = targetJ;
+                let dx = endPointX - startPointX;
+                let dy = endPointY - startPointY;
+                if (dx >= 0 && dy >= 0) {
+                    centerX = -centerX;
+                } else if (dx >= 0 && dy < 0) {
+                    // nothing
+                } else if (dx < 0 && dy >= 0) {
+                    centerX = -centerX;
+                    centerY = -centerY;
+                } else {
+                    centerY = -centerY;
+                }
+                if (ctx.interpolationMode == InterpolationMode.CLOCKWISE) {
+                    centerX = -centerX;
+                    centerY = -centerY;
+                }
+                centerX += startPointX;
+                centerY += startPointY;
+            }
+            ctx.arc(
+                new Point(centerX, centerY),
+                radius,
+                new Point(startPointX, startPointY),
+                new Point(endPointX, endPointY),
+                ctx.interpolationMode == InterpolationMode.COUNTER_CLOCKWISE);
+*/
             let mid = {x:(startPointX + endPointX) / 2, y:(startPointY + endPointY) / 2};
             let v = {x:(startPointX - endPointX), y:(startPointY - endPointY)};
             let v2 = {x:v.x / 2, y:v.y / 2};
@@ -699,24 +738,41 @@ export class D01Command implements GerberCommand {
                 d2 = 0;
             }
             let d = Math.sqrt(d2);
-            let center: {x:number, y:number};
+            let pvCW = unitVector({ x:-v.y, y:v.x });
             if (ctx.interpolationMode == InterpolationMode.CLOCKWISE) {
-                let pvCW = unitVector({ x:-v.y, y:v.x });
-                center = addVector(mid, scaleVector(pvCW, d));
-                ctx.arc(
-                    new Point(center.x, center.y),
-                    radius,
-                    new Point(endPointX, endPointY),
-                    new Point(startPointX, startPointY));
+                let centerCW = addVector(mid, scaleVector(pvCW, d));
+                let centerCCW = addVector(mid, scaleVector(pvCW, -d));
+                let center:{x:number, y:number};
+                if (ctx.quadrantMode == QuadrantMode.MULTI) {
+                    let ctr = {x:startPointX + targetI, y:startPointY + targetJ};
+                    center = (distanceVector2(ctr, centerCW) < distanceVector2(ctr, centerCCW)) ? centerCW : centerCCW;
                 } else {
-                let pvCCW = unitVector({ x:v.y, y:-v.x });
-                center = addVector(mid, scaleVector(pvCCW, d));
+                    center = centerCW;
+                }
                 ctx.arc(
                     new Point(center.x, center.y),
                     radius,
                     new Point(startPointX, startPointY),
-                    new Point(endPointX, endPointY));
+                    new Point(endPointX, endPointY),
+                    false);
+            } else {
+                let centerCW = addVector(mid, scaleVector(pvCW, d));
+                let centerCCW = addVector(mid, scaleVector(pvCW, -d));
+                let center:{x:number, y:number};
+                if (ctx.quadrantMode == QuadrantMode.MULTI) {
+                    let ctr = {x:startPointX + targetI, y:startPointY + targetJ};
+                    center = (distanceVector2(ctr, centerCW) < distanceVector2(ctr, centerCCW)) ? centerCW : centerCCW;
+                } else {
+                    center = centerCCW;
                 }
+                ctx.arc(
+                    new Point(center.x, center.y),
+                    radius,
+                    new Point(startPointX, startPointY),
+                    new Point(endPointX, endPointY),
+                    true);
+            }
+//
         }
     }
 }
@@ -859,7 +915,7 @@ export class G01Command extends BaseGCodeCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        ctx.interpolationMode = InterpolationMode.LINEAR;
+        ctx.interpolationMode = InterpolationMode.LINEARx1;
     }
 }
 
@@ -885,6 +941,39 @@ export class G03Command extends BaseGCodeCommand implements GerberCommand {
     }
 }
 
+export class G10Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G10";
+    constructor(cmd:string) {
+        super(cmd, 10);
+    }
+
+    execute(ctx:GerberState) {
+        ctx.interpolationMode = InterpolationMode.LINEARx10;
+    }
+}
+
+export class G11Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G11";
+    constructor(cmd:string) {
+        super(cmd, 11);
+    }
+
+    execute(ctx:GerberState) {
+        ctx.interpolationMode = InterpolationMode.LINEARx01;
+    }
+}
+
+export class G12Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G12";
+    constructor(cmd:string) {
+        super(cmd, 12);
+    }
+
+    execute(ctx:GerberState) {
+        ctx.interpolationMode = InterpolationMode.LINEARx001;
+    }
+}
+
 export class G74Command extends BaseGCodeCommand implements GerberCommand {
     readonly name = "G74";
     constructor(cmd:string) {
@@ -904,6 +993,50 @@ export class G75Command extends BaseGCodeCommand implements GerberCommand {
 
     execute(ctx:GerberState) {
         ctx.quadrantMode = QuadrantMode.MULTI;
+    }
+}
+
+export class G90Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G90";
+    constructor(cmd:string) {
+        super(cmd, 90);
+    }
+
+    execute(ctx:GerberState) {
+        ctx.coordinateMode = CoordinateMode.ABSOLUTE;
+    }
+}
+
+export class G91Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G91";
+    constructor(cmd:string) {
+        super(cmd, 91);
+    }
+
+    execute(ctx:GerberState) {
+        ctx.coordinateMode = CoordinateMode.RELATIVE;
+    }
+}
+
+export class G70Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G70";
+    constructor(cmd:string) {
+        super(cmd, 70);
+    }
+
+    execute(ctx:GerberState) {
+        ctx.coordinateUnits = CoordinateUnits.INCHES;
+    }
+}
+
+export class G71Command extends BaseGCodeCommand implements GerberCommand {
+    readonly name = "G71";
+    constructor(cmd:string) {
+        super(cmd, 71);
+    }
+
+    execute(ctx:GerberState) {
+        ctx.coordinateUnits = CoordinateUnits.MILIMETERS;
     }
 }
 
