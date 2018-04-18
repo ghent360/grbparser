@@ -782,7 +782,7 @@ export class D02Command implements GerberCommand {
     readonly isAdvanced = false;
     readonly x?:number;
     readonly y?:number;
-    private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?D[0]*2$/;
+    private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*2)?$/;
 
     constructor(cmd:string, fmt:CoordinateFormatSpec) {
         let match = D02Command.matchExp.exec(cmd);
@@ -829,7 +829,7 @@ export class D03Command implements GerberCommand {
     readonly isAdvanced = false;
     readonly x?:number;
     readonly y?:number;
-    private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?D[0]*3$/;
+    private static matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*3)?$/;
 
     constructor(cmd:string, fmt:CoordinateFormatSpec) {
         let match = D03Command.matchExp.exec(cmd);

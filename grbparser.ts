@@ -184,6 +184,8 @@ class ParserCommand {
 export class GerberParser {
     private commandParser:CommandParser = new CommandParser();
     private fmt:CoordinateFormatSpec;
+    private lastDcmd:number = -1;
+
     // Order in this array is important, because some regex are more broad
     // and would detect previous commands.
     private commandDispatcher:Array<[RegExp, (cmd:string) => GerberCommand]> = [
@@ -194,10 +196,28 @@ export class GerberParser {
         [/^AB/, (cmd) => new cmds.ABCommand(cmd)],
         [/^G[0]*4[^\d]/, (cmd) => new cmds.G04Command(cmd)],
         [/^G[0]*4$/, (cmd) => new cmds.G04Command(cmd)],
-        [/D[0]*1$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
-        [/^(?:[XYIJ][\+\-]?\d+){1,4}$/, (cmd) => new cmds.D01Command(cmd, this.fmt)],
-        [/D[0]*2$/, (cmd) => new cmds.D02Command(cmd, this.fmt)],
-        [/D[0]*3$/, (cmd) => new cmds.D03Command(cmd, this.fmt)],
+        [/D[0]*1$/, (cmd) => {
+            this.lastDcmd = 1;
+            return new cmds.D01Command(cmd, this.fmt);
+        }],
+        [/^(?:[XYIJ][\+\-]?\d+){1,4}$/, (cmd) => {
+            if (this.lastDcmd == 1) {
+                return new cmds.D01Command(cmd, this.fmt);
+            } else if (this.lastDcmd == 2) {
+                return new cmds.D02Command(cmd, this.fmt);
+            } else if (this.lastDcmd == 3) {
+                return new cmds.D03Command(cmd, this.fmt);
+            }
+            return null;
+        }],
+        [/D[0]*2$/, (cmd) => {
+            this.lastDcmd = 2;
+            return new cmds.D02Command(cmd, this.fmt);
+        }],
+        [/D[0]*3$/, (cmd) => {
+            this.lastDcmd = 3;
+            return new cmds.D03Command(cmd, this.fmt);
+        }],
         [/^D(\d+)$/, (cmd) => new cmds.DCommand(cmd)],
         [/^G[0]*1$/, (cmd) => new cmds.G01Command(cmd)],
         [/^G[0]*2$/, (cmd) => new cmds.G02Command(cmd)],
