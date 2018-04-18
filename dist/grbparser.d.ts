@@ -50,6 +50,7 @@ export declare class CommandParser {
 export declare class GerberParser {
     private commandParser;
     private fmt;
+    private lastDcmd;
     private commandDispatcher;
     private commands;
     constructor();

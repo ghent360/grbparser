@@ -746,7 +746,7 @@ class D02Command {
         ctx.closeRegionContour();
     }
 }
-D02Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?D[0]*2$/;
+D02Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*2)?$/;
 exports.D02Command = D02Command;
 class D03Command {
     constructor(cmd, fmt) {
@@ -800,7 +800,7 @@ class D03Command {
         ctx.flash(new point_1.Point(targetX, targetY));
     }
 }
-D03Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?D[0]*3$/;
+D03Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*3)?$/;
 exports.D03Command = D03Command;
 class BaseGCodeCommand {
     constructor(cmd, cmdCode) {
