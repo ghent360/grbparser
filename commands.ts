@@ -625,6 +625,10 @@ export class D01Command implements GerberCommand {
 
     execute(ctx:GerberState) {
         if (ctx.interpolationMode == InterpolationMode.LINEARx1) {
+            if (this.x == undefined && this.y == undefined) {
+                // Empty D01 command
+                return;
+            }
             let startPointX = ctx.currentPointX;
             let startPointY = ctx.currentPointY;
             let endPointX:number;
@@ -644,6 +648,10 @@ export class D01Command implements GerberCommand {
             }
             ctx.line(new Point(startPointX, startPointY),  new Point(endPointX, endPointY));
         } else {
+            if (this.x == undefined && this.y == undefined && this.i == undefined && this.j == undefined) {
+                // Empty D01 command
+                return;
+            }
             let targetI:number;
             let targetJ:number;
             if (this.i != undefined) {

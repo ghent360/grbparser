@@ -551,6 +551,10 @@ class D01Command {
     }
     execute(ctx) {
         if (ctx.interpolationMode == primitives_1.InterpolationMode.LINEARx1) {
+            if (this.x == undefined && this.y == undefined) {
+                // Empty D01 command
+                return;
+            }
             let startPointX = ctx.currentPointX;
             let startPointY = ctx.currentPointY;
             let endPointX;
@@ -572,6 +576,10 @@ class D01Command {
             ctx.line(new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY));
         }
         else {
+            if (this.x == undefined && this.y == undefined && this.i == undefined && this.j == undefined) {
+                // Empty D01 command
+                return;
+            }
             let targetI;
             let targetJ;
             if (this.i != undefined) {
