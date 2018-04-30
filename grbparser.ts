@@ -188,60 +188,60 @@ export class GerberParser {
 
     // Order in this array is important, because some regex are more broad
     // and would detect previous commands.
-    private commandDispatcher:Array<[RegExp, (cmd:string) => GerberCommand]> = [
-        [/^FS/, (cmd) => new cmds.FSCommand(cmd)],
-        [/^MO/, (cmd) => new cmds.MOCommand(cmd)],
-        [/^ADD/, (cmd) => new cmds.ADCommand(cmd)],
-        [/^AM/, (cmd) => new cmds.AMCommand(cmd)],
-        [/^AB/, (cmd) => new cmds.ABCommand(cmd)],
-        [/^G[0]*4[^\d]/, (cmd) => new cmds.G04Command(cmd)],
-        [/^G[0]*4$/, (cmd) => new cmds.G04Command(cmd)],
-        [/D[0]*1$/, (cmd) => {
+    private commandDispatcher:Array<[RegExp, (cmd:string, lineNo:number) => GerberCommand]> = [
+        [/^FS/, (cmd, lineNo:number) => new cmds.FSCommand(cmd, lineNo)],
+        [/^MO/, (cmd, lineNo:number) => new cmds.MOCommand(cmd, lineNo)],
+        [/^ADD/, (cmd, lineNo:number) => new cmds.ADCommand(cmd, lineNo)],
+        [/^AM/, (cmd, lineNo:number) => new cmds.AMCommand(cmd, lineNo)],
+        [/^AB/, (cmd, lineNo:number) => new cmds.ABCommand(cmd, lineNo)],
+        [/^G[0]*4[^\d]/, (cmd, lineNo:number) => new cmds.G04Command(cmd, lineNo)],
+        [/^G[0]*4$/, (cmd, lineNo:number) => new cmds.G04Command(cmd, lineNo)],
+        [/D[0]*1$/, (cmd, lineNo:number) => {
             this.lastDcmd = 1;
-            return new cmds.D01Command(cmd, this.fmt);
+            return new cmds.D01Command(cmd, this.fmt, lineNo);
         }],
-        [/^(?:[XYIJ][\+\-]?\d+){1,4}$/, (cmd) => {
+        [/^(?:[XYIJ][\+\-]?\d+){1,4}$/, (cmd, lineNo:number) => {
             if (this.lastDcmd == 1) {
-                return new cmds.D01Command(cmd, this.fmt);
+                return new cmds.D01Command(cmd, this.fmt, lineNo);
             } else if (this.lastDcmd == 2) {
-                return new cmds.D02Command(cmd, this.fmt);
+                return new cmds.D02Command(cmd, this.fmt, lineNo);
             } else if (this.lastDcmd == 3) {
-                return new cmds.D03Command(cmd, this.fmt);
+                return new cmds.D03Command(cmd, this.fmt, lineNo);
             }
             return null;
         }],
-        [/D[0]*2$/, (cmd) => {
+        [/D[0]*2$/, (cmd, lineNo:number) => {
             this.lastDcmd = 2;
-            return new cmds.D02Command(cmd, this.fmt);
+            return new cmds.D02Command(cmd, this.fmt, lineNo);
         }],
-        [/D[0]*3$/, (cmd) => {
+        [/D[0]*3$/, (cmd, lineNo:number) => {
             this.lastDcmd = 3;
-            return new cmds.D03Command(cmd, this.fmt);
+            return new cmds.D03Command(cmd, this.fmt, lineNo);
         }],
-        [/^D(\d+)$/, (cmd) => new cmds.DCommand(cmd)],
-        [/^G[0]*1$/, (cmd) => new cmds.G01Command(cmd)],
-        [/^G[0]*2$/, (cmd) => new cmds.G02Command(cmd)],
-        [/^G[0]*3$/, (cmd) => new cmds.G03Command(cmd)],
-        [/^G[0]*10$/, (cmd) => new cmds.G10Command(cmd)],
-        [/^G[0]*11$/, (cmd) => new cmds.G11Command(cmd)],
-        [/^G[0]*12$/, (cmd) => new cmds.G12Command(cmd)],
-        [/^G[0]*36$/, (cmd) => new cmds.G36Command(cmd)],
-        [/^G[0]*37$/, (cmd) => new cmds.G37Command(cmd)],
-        [/^G[0]*70$/, (cmd) => new cmds.G70Command(cmd)],
-        [/^G[0]*71$/, (cmd) => new cmds.G71Command(cmd)],
-        [/^G[0]*74$/, (cmd) => new cmds.G74Command(cmd)],
-        [/^G[0]*75$/, (cmd) => new cmds.G75Command(cmd)],
-        [/^G[0]*90$/, (cmd) => new cmds.G90Command(cmd)],
-        [/^G[0]*91$/, (cmd) => new cmds.G91Command(cmd)],
-        [/^LP/, (cmd) => new cmds.LPCommand(cmd)],
-        [/^LM/, (cmd) => new cmds.LMCommand(cmd)],
-        [/^LR/, (cmd) => new cmds.LRCommand(cmd)],
-        [/^LS/, (cmd) => new cmds.LSCommand(cmd)],
-        [/^SR/, (cmd) => new cmds.SRCommand(cmd)],
-        [/^M0*[02]/, (cmd) => new cmds.M02Command(cmd)],
+        [/^D(\d+)$/, (cmd, lineNo:number) => new cmds.DCommand(cmd, lineNo)],
+        [/^G[0]*1$/, (cmd, lineNo:number) => new cmds.G01Command(cmd, lineNo)],
+        [/^G[0]*2$/, (cmd, lineNo:number) => new cmds.G02Command(cmd, lineNo)],
+        [/^G[0]*3$/, (cmd, lineNo:number) => new cmds.G03Command(cmd, lineNo)],
+        [/^G[0]*10$/, (cmd, lineNo:number) => new cmds.G10Command(cmd, lineNo)],
+        [/^G[0]*11$/, (cmd, lineNo:number) => new cmds.G11Command(cmd, lineNo)],
+        [/^G[0]*12$/, (cmd, lineNo:number) => new cmds.G12Command(cmd, lineNo)],
+        [/^G[0]*36$/, (cmd, lineNo:number) => new cmds.G36Command(cmd, lineNo)],
+        [/^G[0]*37$/, (cmd, lineNo:number) => new cmds.G37Command(cmd, lineNo)],
+        [/^G[0]*70$/, (cmd, lineNo:number) => new cmds.G70Command(cmd, lineNo)],
+        [/^G[0]*71$/, (cmd, lineNo:number) => new cmds.G71Command(cmd, lineNo)],
+        [/^G[0]*74$/, (cmd, lineNo:number) => new cmds.G74Command(cmd, lineNo)],
+        [/^G[0]*75$/, (cmd, lineNo:number) => new cmds.G75Command(cmd, lineNo)],
+        [/^G[0]*90$/, (cmd, lineNo:number) => new cmds.G90Command(cmd, lineNo)],
+        [/^G[0]*91$/, (cmd, lineNo:number) => new cmds.G91Command(cmd, lineNo)],
+        [/^LP/, (cmd, lineNo:number) => new cmds.LPCommand(cmd, lineNo)],
+        [/^LM/, (cmd, lineNo:number) => new cmds.LMCommand(cmd, lineNo)],
+        [/^LR/, (cmd, lineNo:number) => new cmds.LRCommand(cmd, lineNo)],
+        [/^LS/, (cmd, lineNo:number) => new cmds.LSCommand(cmd, lineNo)],
+        [/^SR/, (cmd, lineNo:number) => new cmds.SRCommand(cmd, lineNo)],
+        [/^M0*[02]/, (cmd, lineNo:number) => new cmds.M02Command(cmd, lineNo)],
         [/^M0*1/, null],
-        [/^T(A|F|O)/, (cmd) => new cmds.TCommand(cmd)],
-        [/^TD/, (cmd) => new cmds.TDCommand(cmd)],
+        [/^T(A|F|O)/, (cmd, lineNo:number) => new cmds.TCommand(cmd, lineNo)],
+        [/^TD/, (cmd, lineNo:number) => new cmds.TDCommand(cmd, lineNo)],
         [/^IP(?:POS|NEG)\*$/, null],
         [/^LN(?:.+)/, null],
         [/^IN.*\*$/, null],
@@ -282,7 +282,7 @@ export class GerberParser {
                 //console.log(`WARNING: ignoring ${cmd}`);
                 return;
             }
-            let command = dispatcher[1](cmd);
+            let command = dispatcher[1](cmd, lineNo);
             this.commands.push(new ParserCommand(command, lineNo));
             if (command.name === "FS") {
                 let fsCmd = command as cmds.FSCommand;

@@ -37,6 +37,7 @@ import {PolygonSet, waitClipperLoad, connectWires, polySetBounds} from "./polygo
 import {formatFloat} from "./utils";
 import {GerberParser} from "./grbparser";
 import {Build} from "./build";
+import { M02Command } from "./commands";
 
 export abstract class ConverterBase<T> {
     convert(primitives:Array<GraphicsPrimitive>):Array<T> {
@@ -241,7 +242,7 @@ export class SVGConverter extends ConverterBase<string> {
         let ctx = new GerberState();
         parser.execute(ctx);
         if (!ctx.isDone) {
-            ctx.endFile();
+            ctx.endFile(new M02Command("M02"));
         }
         let primitives = ctx.primitives;
         let cvt = new SVGConverter();
@@ -267,7 +268,7 @@ export function GerberToPolygons(content:string, union:boolean = false):PolygonC
     let ctx = new GerberState();
     parser.execute(ctx);
     if (!ctx.isDone) {
-        ctx.endFile();
+        ctx.endFile(new M02Command("M02"));
     }
     //let executeEnd = performance.now();
     let primitives = ctx.primitives;

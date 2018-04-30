@@ -936,12 +936,22 @@ export class Block {
 }
 
 export interface GraphicsOperations {
-    line(from:Point, to:Point, ctx:GerberState):void;
-    circle(center:Point, radius:number, ctx:GerberState):void;
-    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, ctx:GerberState):void;
-    flash(center:Point, ctx:GerberState):void;
-    region(contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>, ctx:GerberState):void;
-    block(block:Block, ctx:GerberState):void;
+    line(from:Point, to:Point, cmd:GerberCommand, ctx:GerberState):void;
+    circle(center:Point, radius:number, cmd:GerberCommand, ctx:GerberState):void;
+    arc(
+        center:Point,
+        radius:number,
+        start:Point,
+        end:Point,
+        isCCW:boolean,
+        cmd:GerberCommand,
+        ctx:GerberState):void;
+    flash(center:Point, cmd:GerberCommand, ctx:GerberState):void;
+    region(
+        contours:Array<Array<LineSegment|CircleSegment|ArcSegment>>,
+        cmd:GerberCommand,
+        ctx:GerberState):void;
+    block(block:Block, cmd:GerberCommand, ctx:GerberState):void;
 }
 
 export class GerberState {
@@ -1123,32 +1133,32 @@ export class GerberState {
         console.log(`Warning: ${message}`);
     }
 
-    line(from:Point, to:Point) {
+    line(from:Point, to:Point, cmd:GerberCommand) {
         if (!from.isValid() || !to.isValid()) {
             this.error(`Invalid line ${from} ${to}`);
         }
-        this.graphisOperationsConsumer_.line(from, to, this);
+        this.graphisOperationsConsumer_.line(from, to, cmd, this);
     }
 
-    circle(center:Point, radius:number) {
+    circle(center:Point, radius:number, cmd:GerberCommand) {
         if (!center.isValid() || radius <= Epsilon) {
             this.error(`Invalid circle ${center} R${radius}`);
         }
-        this.graphisOperationsConsumer_.circle(center, radius, this);
+        this.graphisOperationsConsumer_.circle(center, radius, cmd, this);
     }
 
-    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean) {
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, cmd:GerberCommand) {
         if (!center.isValid() || radius <= Epsilon || !start.isValid() || !end.isValid()) {
             this.error(`Invalid arc ${center} R${radius} from ${start} to ${end}`);
         }
-        this.graphisOperationsConsumer_.arc(center, radius, start, end, isCCW, this);
+        this.graphisOperationsConsumer_.arc(center, radius, start, end, isCCW, cmd, this);
     }
 
-    flash(center:Point) {
+    flash(center:Point, cmd:GerberCommand) {
         if (!center.isValid()) {
             this.error(`Invalid flash location ${center}`);
         }
-        this.graphisOperationsConsumer_.flash(center, this);
+        this.graphisOperationsConsumer_.flash(center, cmd, this);
     }
 
     closeRegionContour() {
@@ -1163,12 +1173,12 @@ export class GerberState {
         this.graphisOperationsConsumer_ = new RegionGraphicsOperationsConsumer();
     }
 
-    endRegion() {
+    endRegion(cmd:GerberCommand) {
         let region = this.graphisOperationsConsumer_ as RegionGraphicsOperationsConsumer;
         region.closeRegionContour(this);
 
         this.restoreGraphicsConsumer();
-        this.graphisOperationsConsumer_.region(region.regionContours, this);
+        this.graphisOperationsConsumer_.region(region.regionContours, cmd, this);
     }
 
     saveGraphicsConsumer() {
@@ -1209,13 +1219,13 @@ export class GerberState {
         this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
     }
 
-    tryEndRepeat() {
+    tryEndRepeat(cmd:GerberCommand) {
         if (this.blockParams_.length > 0) {
-            this.endRepeat();
+            this.endRepeat(cmd);
         }
     }
 
-    endRepeat() {
+    endRepeat(cmd:GerberCommand) {
         if (this.blockParams_.length == 0) {
             throw new GerberParseException('Closing repeat block without mathing opening.');
         }
@@ -1229,12 +1239,12 @@ export class GerberState {
             blockConsumer.primitives,
             blockConsumer.objects);
         this.restoreGraphicsConsumer();
-        this.graphisOperationsConsumer_.block(block, this);
+        this.graphisOperationsConsumer_.block(block, cmd, this);
     }
 
-    endFile() {
+    endFile(cmd:GerberCommand) {
         while (this.blockParams_.length > 0) {
-            this.endRepeat();
+            this.endRepeat(cmd);
         }
         let topConsumer = this.graphisOperationsConsumer_ as BaseGraphicsOperationsConsumer;
         this.primitives_ = topConsumer.primitives;
@@ -1332,7 +1342,8 @@ export class Bounds {
 export class LineSegment {
     constructor(
         readonly from:Point,
-        readonly to:Point){
+        readonly to:Point,
+        readonly cmd:GerberCommand){
     }
 
     toString():string {
@@ -1348,14 +1359,16 @@ export class LineSegment {
     public translate(vector:Point):LineSegment {
         return new LineSegment(
             this.from.add(vector),
-            this.to.add(vector));
+            this.to.add(vector),
+            this.cmd);
     }
 }
 
 export class CircleSegment {
     constructor(
         readonly center:Point,
-        readonly radius:number) {
+        readonly radius:number,
+        readonly cmd:GerberCommand) {
     }
 
     toString():string {
@@ -1371,7 +1384,8 @@ export class CircleSegment {
     public translate(vector:Point):CircleSegment {
         return new CircleSegment(
             this.center.add(vector),
-            this.radius);
+            this.radius,
+            this.cmd);
     }
 }
 
@@ -1381,7 +1395,8 @@ export class ArcSegment {
         readonly radius:number,
         readonly start:Point,
         readonly end:Point,
-        readonly isCCW:boolean) {
+        readonly isCCW:boolean,
+        readonly cmd:GerberCommand) {
     }
 
     toString():string {
@@ -1400,7 +1415,8 @@ export class ArcSegment {
             this.radius,
             this.start.add(vector),
             this.end.add(vector),
-            this.isCCW);
+            this.isCCW,
+            this.cmd);
     }
 }
 
@@ -1444,19 +1460,19 @@ class RegionGraphicsOperationsConsumer implements GraphicsOperations {
         return this.regionContours_;
     }
 
-    line(from:Point, to:Point) {
-        this.contour_.push(new LineSegment(from, to));
+    line(from:Point, to:Point, cmd:GerberCommand) {
+        this.contour_.push(new LineSegment(from, to, cmd));
     }
 
-    circle(center:Point, radius:number) {
-        this.contour_.push(new CircleSegment(center, radius));
+    circle(center:Point, radius:number, cmd:GerberCommand) {
+        this.contour_.push(new CircleSegment(center, radius, cmd));
     }
 
-    arc(center:Point, radius:number, start:Point, end:Point, isCCW, ctx:GerberState) {
-        this.contour_.push(new ArcSegment(center, radius, start, end, isCCW));
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW, cmd:GerberCommand, ctx:GerberState) {
+        this.contour_.push(new ArcSegment(center, radius, start, end, isCCW, cmd));
     }
 
-    flash(center:Point, ctx:GerberState) {
+    flash(center:Point, cmd:GerberCommand, ctx:GerberState) {
         ctx.error("Flashes are not allowed inside a region definition.");
     }
 
@@ -1467,11 +1483,11 @@ class RegionGraphicsOperationsConsumer implements GraphicsOperations {
         }
     }
 
-    region(contours:Array<RegionContour>, ctx:GerberState) {
+    region(contours:Array<RegionContour>, cmd:GerberCommand, ctx:GerberState) {
         ctx.error("Regions are not allowed inside a region definition.");
     }
 
-    block(block:Block, ctx:GerberState) {
+    block(block:Block, cmd:GerberCommand, ctx:GerberState) {
         ctx.error("Blocks are not allowed inside a region definition.");
     }
 }
@@ -1492,7 +1508,8 @@ export class Line {
         readonly from:Point,
         readonly to:Point,
         readonly aperture:ApertureBase,
-        readonly state:ObjectState) {
+        readonly state:ObjectState,
+        readonly cmd:GerberCommand) {
     }
 
     toString():string {
@@ -1529,7 +1546,8 @@ export class Line {
             this.from.add(vector),
             this.to.add(vector),
             this.aperture,
-            this.state);
+            this.state,
+            this.cmd);
     }
 }
 
@@ -1540,7 +1558,8 @@ export class Circle {
         readonly center:Point,
         readonly radius:number,
         readonly aperture:ApertureBase,
-        readonly state:ObjectState) {
+        readonly state:ObjectState,
+        readonly cmd:GerberCommand) {
     }
 
     toString():string {
@@ -1577,7 +1596,8 @@ export class Circle {
             this.center.add(vector),
             this.radius,
             this.aperture,
-            this.state);
+            this.state,
+            this.cmd);
     }
 }
 
@@ -1591,7 +1611,8 @@ export class Arc {
         readonly end:Point,
         readonly isCCW:boolean,
         readonly aperture:ApertureBase,
-        readonly state:ObjectState) {
+        readonly state:ObjectState,
+        readonly cmd:GerberCommand) {
     }
 
     toString():string {
@@ -1632,7 +1653,8 @@ export class Arc {
             this.end.add(vector),
             this.isCCW,
             this.aperture,
-            this.state);
+            this.state,
+            this.cmd);
     }
 }
 
@@ -1642,7 +1664,8 @@ export class Flash {
     constructor(
         readonly center:Point,
         readonly aperture:ApertureBase,
-        readonly state:ObjectState) {
+        readonly state:ObjectState,
+        readonly cmd:GerberCommand) {
     }
 
     toString():string {
@@ -1674,7 +1697,8 @@ export class Flash {
         return new Flash(
             this.center.add(vector),
             this.aperture,
-            this.state);
+            this.state,
+            this.cmd);
     }
 }
 
@@ -1684,7 +1708,8 @@ export class Region {
 
     constructor(
         contours:Array<RegionContour>,
-        readonly state:ObjectState) {
+        readonly state:ObjectState,
+        readonly cmd:GerberCommand) {
         //this.contours = contours.map(c => Region.reOrderCountour(c));
         this.contours = contours;
     }
@@ -1865,7 +1890,8 @@ export class Region {
     public translate(vector:Point):Region {
         return new Region(
             this.contours.map(contour => translateRegionContour(contour, vector)),
-            this.state);
+            this.state,
+            this.cmd);
     }
 }
 
@@ -1873,7 +1899,7 @@ export class Repeat {
     private objects_:GraphicsObjects;
     private primitives_:Array<GraphicsPrimitive>;
 
-    constructor(readonly block:Block, readonly xOffset:number = 0, readonly yOffset = 0) {
+    constructor(readonly block:Block, readonly xOffset:number, readonly yOffset, readonly cmd:GerberCommand) {
     }
 
     toString():string {
@@ -1933,7 +1959,8 @@ export class Repeat {
         return new Repeat(
             this.block,
             this.xOffset + vector.x,
-            this.yOffset + vector.y);
+            this.yOffset + vector.y,
+            this.cmd);
     }
 }
 
@@ -1956,33 +1983,34 @@ export class BaseGraphicsOperationsConsumer implements GraphicsOperations {
         return this.primitives_;
     }
 
-    line(from:Point, to:Point, ctx:GerberState) {
+    line(from:Point, to:Point, cmd:GerberCommand, ctx:GerberState) {
         this.primitives_.push(
             new Line(
                 from,
                 to,
                 ctx.getCurrentAperture(),
-                ctx.getObjectState()));
+                ctx.getObjectState(),
+                cmd));
     }
 
-    circle(center:Point, radius:number, ctx:GerberState) {
-        this.primitives_.push(new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState()));
+    circle(center:Point, radius:number, cmd:GerberCommand, ctx:GerberState) {
+        this.primitives_.push(new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState(), cmd));
     }
 
-    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, ctx:GerberState) {
-        this.primitives_.push(new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState()));
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, cmd:GerberCommand, ctx:GerberState) {
+        this.primitives_.push(new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState(), cmd));
     }
 
-    flash(center:Point, ctx:GerberState) {
-        this.primitives_.push(new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState()));
+    flash(center:Point, cmd:GerberCommand, ctx:GerberState) {
+        this.primitives_.push(new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState(), cmd));
     }
 
-    region(contours:Array<RegionContour>, ctx:GerberState) {
-        this.primitives_.push(new Region(contours, ctx.getObjectState()));
+    region(contours:Array<RegionContour>, cmd:GerberCommand, ctx:GerberState) {
+        this.primitives_.push(new Region(contours, ctx.getObjectState(), cmd));
     }
 
-    block(block:Block, ctx:GerberState) {
-        this.primitives_.push(new Repeat(block));
+    block(block:Block, cmd:GerberCommand, ctx:GerberState) {
+        this.primitives_.push(new Repeat(block, 0, 0, cmd));
     }
 }
 
@@ -1998,42 +2026,43 @@ export class BlockGraphicsOperationsConsumer implements GraphicsOperations {
         return this.objects_;
     }
 
-    line(from:Point, to:Point, ctx:GerberState) {
+    line(from:Point, to:Point, cmd:GerberCommand, ctx:GerberState) {
         let l = new Line(
             from,
             to,
             ctx.getCurrentAperture(),
-            ctx.getObjectState());
+            ctx.getObjectState(),
+            cmd);
         this.primitives_.push(l);
         this.objects_.push(...l.objects);
     }
 
-    circle(center:Point, radius:number, ctx:GerberState) {
-        let c = new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState());
+    circle(center:Point, radius:number, cmd:GerberCommand, ctx:GerberState) {
+        let c = new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState(), cmd);
         this.primitives_.push(c);
         this.objects_.push(...c.objects);
     }
 
-    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, ctx:GerberState) {
-        let a = new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState());
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, cmd:GerberCommand, ctx:GerberState) {
+        let a = new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState(), cmd);
         this.primitives_.push(a);
         this.objects_.push(...a.objects);
     }
 
-    flash(center:Point, ctx:GerberState) {
-        let f = new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState());
+    flash(center:Point, cmd:GerberCommand, ctx:GerberState) {
+        let f = new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState(), cmd);
         this.primitives_.push(f);
         this.objects_.push(...f.objects);
     }
 
-    region(contours:Array<RegionContour>, ctx:GerberState) {
-        let r = new Region(contours, ctx.getObjectState());
+    region(contours:Array<RegionContour>, cmd:GerberCommand, ctx:GerberState) {
+        let r = new Region(contours, ctx.getObjectState(), cmd);
         this.primitives_.push(r);
         this.objects_.push(...r.objects);
     }
 
-    block(block:Block, ctx:GerberState) {
-        let r = new Repeat(block);
+    block(block:Block, cmd:GerberCommand, ctx:GerberState) {
+        let r = new Repeat(block, 0, 0, cmd);
         this.primitives_.push(r);
         this.objects_.push(...r.objects);
     }
@@ -2083,6 +2112,7 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
 export interface GerberCommand {
     readonly name:string;
     readonly isAdvanced:boolean;
+    readonly lineNo?:number;
     formatOutput(fmt:CoordinateFormatSpec):string;
     execute(ctx:GerberState):void;
 }
