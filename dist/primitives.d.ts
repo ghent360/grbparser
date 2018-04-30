@@ -157,12 +157,12 @@ export declare class Block {
     constructor(xRepeat: number, yRepeat: number, xDelta: number, yDelta: number, primitives: Array<GraphicsPrimitive>, objects: GraphicsObjects);
 }
 export interface GraphicsOperations {
-    line(from: Point, to: Point, ctx: GerberState): void;
-    circle(center: Point, radius: number, ctx: GerberState): void;
-    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, ctx: GerberState): void;
-    flash(center: Point, ctx: GerberState): void;
-    region(contours: Array<Array<LineSegment | CircleSegment | ArcSegment>>, ctx: GerberState): void;
-    block(block: Block, ctx: GerberState): void;
+    line(from: Point, to: Point, cmd: GerberCommand, ctx: GerberState): void;
+    circle(center: Point, radius: number, cmd: GerberCommand, ctx: GerberState): void;
+    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, cmd: GerberCommand, ctx: GerberState): void;
+    flash(center: Point, cmd: GerberCommand, ctx: GerberState): void;
+    region(contours: Array<Array<LineSegment | CircleSegment | ArcSegment>>, cmd: GerberCommand, ctx: GerberState): void;
+    block(block: Block, cmd: GerberCommand, ctx: GerberState): void;
 }
 export declare class GerberState {
     private coordinateFormat_;
@@ -203,22 +203,22 @@ export declare class GerberState {
     setApertureMacro(apm: ApertureMacro): void;
     error(message: string): void;
     warning(message: string): void;
-    line(from: Point, to: Point): void;
-    circle(center: Point, radius: number): void;
-    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean): void;
-    flash(center: Point): void;
+    line(from: Point, to: Point, cmd: GerberCommand): void;
+    circle(center: Point, radius: number, cmd: GerberCommand): void;
+    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, cmd: GerberCommand): void;
+    flash(center: Point, cmd: GerberCommand): void;
     closeRegionContour(): void;
     startRegion(): void;
-    endRegion(): void;
+    endRegion(cmd: GerberCommand): void;
     saveGraphicsConsumer(): void;
     restoreGraphicsConsumer(): void;
     readonly graphicsOperations: GraphicsOperations;
     startBlockAperture(blockId: number): void;
     endBlockAperture(): void;
     startRepeat(params: BlockParams): void;
-    tryEndRepeat(): void;
-    endRepeat(): void;
-    endFile(): void;
+    tryEndRepeat(cmd: GerberCommand): void;
+    endRepeat(cmd: GerberCommand): void;
+    endFile(cmd: GerberCommand): void;
 }
 export interface SimpleBounds {
     readonly minx: number;
@@ -239,7 +239,8 @@ export declare class Bounds {
 export declare class LineSegment {
     readonly from: Point;
     readonly to: Point;
-    constructor(from: Point, to: Point);
+    readonly cmd: GerberCommand;
+    constructor(from: Point, to: Point, cmd: GerberCommand);
     toString(): string;
     readonly bounds: Bounds;
     translate(vector: Point): LineSegment;
@@ -247,7 +248,8 @@ export declare class LineSegment {
 export declare class CircleSegment {
     readonly center: Point;
     readonly radius: number;
-    constructor(center: Point, radius: number);
+    readonly cmd: GerberCommand;
+    constructor(center: Point, radius: number, cmd: GerberCommand);
     toString(): string;
     readonly bounds: Bounds;
     translate(vector: Point): CircleSegment;
@@ -258,7 +260,8 @@ export declare class ArcSegment {
     readonly start: Point;
     readonly end: Point;
     readonly isCCW: boolean;
-    constructor(center: Point, radius: number, start: Point, end: Point, isCCW: boolean);
+    readonly cmd: GerberCommand;
+    constructor(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, cmd: GerberCommand);
     toString(): string;
     readonly bounds: Bounds;
     translate(vector: Point): ArcSegment;
@@ -277,8 +280,9 @@ export declare class Line {
     readonly to: Point;
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
+    readonly cmd: GerberCommand;
     private objects_;
-    constructor(from: Point, to: Point, aperture: ApertureBase, state: ObjectState);
+    constructor(from: Point, to: Point, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
     readonly objects: GraphicsObjects;
     readonly bounds: Bounds;
@@ -290,8 +294,9 @@ export declare class Circle {
     readonly radius: number;
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
+    readonly cmd: GerberCommand;
     private objects_;
-    constructor(center: Point, radius: number, aperture: ApertureBase, state: ObjectState);
+    constructor(center: Point, radius: number, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
     readonly objects: GraphicsObjects;
     readonly bounds: Bounds;
@@ -306,8 +311,9 @@ export declare class Arc {
     readonly isCCW: boolean;
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
+    readonly cmd: GerberCommand;
     private objects_;
-    constructor(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, aperture: ApertureBase, state: ObjectState);
+    constructor(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
     readonly objects: GraphicsObjects;
     readonly bounds: Bounds;
@@ -318,8 +324,9 @@ export declare class Flash {
     readonly center: Point;
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
+    readonly cmd: GerberCommand;
     private objects_;
-    constructor(center: Point, aperture: ApertureBase, state: ObjectState);
+    constructor(center: Point, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
     readonly objects: GraphicsObjects;
     readonly bounds: Bounds;
@@ -328,9 +335,10 @@ export declare class Flash {
 }
 export declare class Region {
     readonly state: ObjectState;
+    readonly cmd: GerberCommand;
     private objects_;
     readonly contours: Array<RegionContour>;
-    constructor(contours: Array<RegionContour>, state: ObjectState);
+    constructor(contours: Array<RegionContour>, state: ObjectState, cmd: GerberCommand);
     toString(): string;
     private static startPoint(segment);
     private static endPoint(segment);
@@ -346,10 +354,11 @@ export declare class Region {
 export declare class Repeat {
     readonly block: Block;
     readonly xOffset: number;
-    readonly yOffset: number;
+    readonly yOffset: any;
+    readonly cmd: GerberCommand;
     private objects_;
     private primitives_;
-    constructor(block: Block, xOffset?: number, yOffset?: number);
+    constructor(block: Block, xOffset: number, yOffset: any, cmd: GerberCommand);
     toString(): string;
     readonly objects: GraphicsObjects;
     readonly bounds: Bounds;
@@ -363,29 +372,30 @@ export declare function EmptyBounds(): Bounds;
 export declare class BaseGraphicsOperationsConsumer implements GraphicsOperations {
     private primitives_;
     readonly primitives: Array<GraphicsPrimitive>;
-    line(from: Point, to: Point, ctx: GerberState): void;
-    circle(center: Point, radius: number, ctx: GerberState): void;
-    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, ctx: GerberState): void;
-    flash(center: Point, ctx: GerberState): void;
-    region(contours: Array<RegionContour>, ctx: GerberState): void;
-    block(block: Block, ctx: GerberState): void;
+    line(from: Point, to: Point, cmd: GerberCommand, ctx: GerberState): void;
+    circle(center: Point, radius: number, cmd: GerberCommand, ctx: GerberState): void;
+    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, cmd: GerberCommand, ctx: GerberState): void;
+    flash(center: Point, cmd: GerberCommand, ctx: GerberState): void;
+    region(contours: Array<RegionContour>, cmd: GerberCommand, ctx: GerberState): void;
+    block(block: Block, cmd: GerberCommand, ctx: GerberState): void;
 }
 export declare class BlockGraphicsOperationsConsumer implements GraphicsOperations {
     private objects_;
     private primitives_;
     readonly primitives: Array<GraphicsPrimitive>;
     readonly objects: GraphicsObjects;
-    line(from: Point, to: Point, ctx: GerberState): void;
-    circle(center: Point, radius: number, ctx: GerberState): void;
-    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, ctx: GerberState): void;
-    flash(center: Point, ctx: GerberState): void;
-    region(contours: Array<RegionContour>, ctx: GerberState): void;
-    block(block: Block, ctx: GerberState): void;
+    line(from: Point, to: Point, cmd: GerberCommand, ctx: GerberState): void;
+    circle(center: Point, radius: number, cmd: GerberCommand, ctx: GerberState): void;
+    arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, cmd: GerberCommand, ctx: GerberState): void;
+    flash(center: Point, cmd: GerberCommand, ctx: GerberState): void;
+    region(contours: Array<RegionContour>, cmd: GerberCommand, ctx: GerberState): void;
+    block(block: Block, cmd: GerberCommand, ctx: GerberState): void;
 }
 export declare function composeSolidImage(objects: GraphicsObjects, union?: boolean): PolygonSetWithBounds;
 export interface GerberCommand {
     readonly name: string;
     readonly isAdvanced: boolean;
+    readonly lineNo?: number;
     formatOutput(fmt: CoordinateFormatSpec): string;
     execute(ctx: GerberState): void;
 }

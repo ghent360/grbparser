@@ -17,6 +17,7 @@ const point_1 = require("./point");
 const polygonSet_1 = require("./polygonSet");
 const grbparser_1 = require("./grbparser");
 const build_1 = require("./build");
+const commands_1 = require("./commands");
 class ConverterBase {
     convert(primitives) {
         let result = this.header(primitives);
@@ -196,7 +197,7 @@ class SVGConverter extends ConverterBase {
         let ctx = new primitives_1.GerberState();
         parser.execute(ctx);
         if (!ctx.isDone) {
-            ctx.endFile();
+            ctx.endFile(new commands_1.M02Command("M02"));
         }
         let primitives = ctx.primitives;
         let cvt = new SVGConverter();
@@ -219,7 +220,7 @@ function GerberToPolygons(content, union = false) {
     let ctx = new primitives_1.GerberState();
     parser.execute(ctx);
     if (!ctx.isDone) {
-        ctx.endFile();
+        ctx.endFile(new commands_1.M02Command("M02"));
     }
     //let executeEnd = performance.now();
     let primitives = ctx.primitives;

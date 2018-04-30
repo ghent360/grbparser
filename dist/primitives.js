@@ -968,29 +968,29 @@ class GerberState {
     warning(message) {
         console.log(`Warning: ${message}`);
     }
-    line(from, to) {
+    line(from, to, cmd) {
         if (!from.isValid() || !to.isValid()) {
             this.error(`Invalid line ${from} ${to}`);
         }
-        this.graphisOperationsConsumer_.line(from, to, this);
+        this.graphisOperationsConsumer_.line(from, to, cmd, this);
     }
-    circle(center, radius) {
+    circle(center, radius, cmd) {
         if (!center.isValid() || radius <= exports.Epsilon) {
             this.error(`Invalid circle ${center} R${radius}`);
         }
-        this.graphisOperationsConsumer_.circle(center, radius, this);
+        this.graphisOperationsConsumer_.circle(center, radius, cmd, this);
     }
-    arc(center, radius, start, end, isCCW) {
+    arc(center, radius, start, end, isCCW, cmd) {
         if (!center.isValid() || radius <= exports.Epsilon || !start.isValid() || !end.isValid()) {
             this.error(`Invalid arc ${center} R${radius} from ${start} to ${end}`);
         }
-        this.graphisOperationsConsumer_.arc(center, radius, start, end, isCCW, this);
+        this.graphisOperationsConsumer_.arc(center, radius, start, end, isCCW, cmd, this);
     }
-    flash(center) {
+    flash(center, cmd) {
         if (!center.isValid()) {
             this.error(`Invalid flash location ${center}`);
         }
-        this.graphisOperationsConsumer_.flash(center, this);
+        this.graphisOperationsConsumer_.flash(center, cmd, this);
     }
     closeRegionContour() {
         if (this.graphisOperationsConsumer_ instanceof RegionGraphicsOperationsConsumer) {
@@ -1002,11 +1002,11 @@ class GerberState {
         this.saveGraphicsConsumer();
         this.graphisOperationsConsumer_ = new RegionGraphicsOperationsConsumer();
     }
-    endRegion() {
+    endRegion(cmd) {
         let region = this.graphisOperationsConsumer_;
         region.closeRegionContour(this);
         this.restoreGraphicsConsumer();
-        this.graphisOperationsConsumer_.region(region.regionContours, this);
+        this.graphisOperationsConsumer_.region(region.regionContours, cmd, this);
     }
     saveGraphicsConsumer() {
         this.savedGraphisOperationsConsumer_.push(this.graphisOperationsConsumer_);
@@ -1040,12 +1040,12 @@ class GerberState {
         this.blockParams_.push(params);
         this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
     }
-    tryEndRepeat() {
+    tryEndRepeat(cmd) {
         if (this.blockParams_.length > 0) {
-            this.endRepeat();
+            this.endRepeat(cmd);
         }
     }
-    endRepeat() {
+    endRepeat(cmd) {
         if (this.blockParams_.length == 0) {
             throw new GerberParseException('Closing repeat block without mathing opening.');
         }
@@ -1053,11 +1053,11 @@ class GerberState {
         let blockConsumer = this.graphisOperationsConsumer_;
         let block = new Block(params.xRepeat, params.yRepeat, params.xDelta, params.yDelta, blockConsumer.primitives, blockConsumer.objects);
         this.restoreGraphicsConsumer();
-        this.graphisOperationsConsumer_.block(block, this);
+        this.graphisOperationsConsumer_.block(block, cmd, this);
     }
-    endFile() {
+    endFile(cmd) {
         while (this.blockParams_.length > 0) {
-            this.endRepeat();
+            this.endRepeat(cmd);
         }
         let topConsumer = this.graphisOperationsConsumer_;
         this.primitives_ = topConsumer.primitives;
@@ -1145,9 +1145,10 @@ class Bounds {
 }
 exports.Bounds = Bounds;
 class LineSegment {
-    constructor(from, to) {
+    constructor(from, to, cmd) {
         this.from = from;
         this.to = to;
+        this.cmd = cmd;
     }
     toString() {
         return `l(${this.from}, ${this.to})`;
@@ -1156,14 +1157,15 @@ class LineSegment {
         return new Bounds(new point_1.Point(Math.min(this.from.x, this.to.x), Math.min(this.from.y, this.to.y)), new point_1.Point(Math.max(this.from.x, this.to.x), Math.max(this.from.y, this.to.y)));
     }
     translate(vector) {
-        return new LineSegment(this.from.add(vector), this.to.add(vector));
+        return new LineSegment(this.from.add(vector), this.to.add(vector), this.cmd);
     }
 }
 exports.LineSegment = LineSegment;
 class CircleSegment {
-    constructor(center, radius) {
+    constructor(center, radius, cmd) {
         this.center = center;
         this.radius = radius;
+        this.cmd = cmd;
     }
     toString() {
         return `c(${this.center}R${utils_1.formatFloat(this.radius, 3)})`;
@@ -1172,17 +1174,18 @@ class CircleSegment {
         return new Bounds(new point_1.Point(this.center.x - this.radius, this.center.x - this.radius), new point_1.Point(this.center.x + this.radius, this.center.x + this.radius));
     }
     translate(vector) {
-        return new CircleSegment(this.center.add(vector), this.radius);
+        return new CircleSegment(this.center.add(vector), this.radius, this.cmd);
     }
 }
 exports.CircleSegment = CircleSegment;
 class ArcSegment {
-    constructor(center, radius, start, end, isCCW) {
+    constructor(center, radius, start, end, isCCW, cmd) {
         this.center = center;
         this.radius = radius;
         this.start = start;
         this.end = end;
         this.isCCW = isCCW;
+        this.cmd = cmd;
     }
     toString() {
         return `a(${this.start}, ${this.end}@${this.center}R${utils_1.formatFloat(this.radius, 3)})`;
@@ -1191,7 +1194,7 @@ class ArcSegment {
         return new Bounds(new point_1.Point(Math.min(this.start.x, this.end.x), Math.min(this.start.y, this.end.y)), new point_1.Point(Math.max(this.start.x, this.end.x), Math.max(this.start.y, this.end.y)));
     }
     translate(vector) {
-        return new ArcSegment(this.center.add(vector), this.radius, this.start.add(vector), this.end.add(vector), this.isCCW);
+        return new ArcSegment(this.center.add(vector), this.radius, this.start.add(vector), this.end.add(vector), this.isCCW, this.cmd);
     }
 }
 exports.ArcSegment = ArcSegment;
@@ -1231,16 +1234,16 @@ class RegionGraphicsOperationsConsumer {
     get regionContours() {
         return this.regionContours_;
     }
-    line(from, to) {
-        this.contour_.push(new LineSegment(from, to));
+    line(from, to, cmd) {
+        this.contour_.push(new LineSegment(from, to, cmd));
     }
-    circle(center, radius) {
-        this.contour_.push(new CircleSegment(center, radius));
+    circle(center, radius, cmd) {
+        this.contour_.push(new CircleSegment(center, radius, cmd));
     }
-    arc(center, radius, start, end, isCCW, ctx) {
-        this.contour_.push(new ArcSegment(center, radius, start, end, isCCW));
+    arc(center, radius, start, end, isCCW, cmd, ctx) {
+        this.contour_.push(new ArcSegment(center, radius, start, end, isCCW, cmd));
     }
-    flash(center, ctx) {
+    flash(center, cmd, ctx) {
         ctx.error("Flashes are not allowed inside a region definition.");
     }
     closeRegionContour(ctx) {
@@ -1249,10 +1252,10 @@ class RegionGraphicsOperationsConsumer {
             this.contour_ = [];
         }
     }
-    region(contours, ctx) {
+    region(contours, cmd, ctx) {
         ctx.error("Regions are not allowed inside a region definition.");
     }
-    block(block, ctx) {
+    block(block, cmd, ctx) {
         ctx.error("Blocks are not allowed inside a region definition.");
     }
 }
@@ -1266,11 +1269,12 @@ class ObjectState {
 }
 exports.ObjectState = ObjectState;
 class Line {
-    constructor(from, to, aperture, state) {
+    constructor(from, to, aperture, state, cmd) {
         this.from = from;
         this.to = to;
         this.aperture = aperture;
         this.state = state;
+        this.cmd = cmd;
     }
     toString() {
         return `L(${this.from}, ${this.to})`;
@@ -1295,16 +1299,17 @@ class Line {
         return this;
     }
     translate(vector) {
-        return new Line(this.from.add(vector), this.to.add(vector), this.aperture, this.state);
+        return new Line(this.from.add(vector), this.to.add(vector), this.aperture, this.state, this.cmd);
     }
 }
 exports.Line = Line;
 class Circle {
-    constructor(center, radius, aperture, state) {
+    constructor(center, radius, aperture, state, cmd) {
         this.center = center;
         this.radius = radius;
         this.aperture = aperture;
         this.state = state;
+        this.cmd = cmd;
     }
     toString() {
         return `C(${this.center}R${utils_1.formatFloat(this.radius, 3)})`;
@@ -1329,12 +1334,12 @@ class Circle {
         return this;
     }
     translate(vector) {
-        return new Circle(this.center.add(vector), this.radius, this.aperture, this.state);
+        return new Circle(this.center.add(vector), this.radius, this.aperture, this.state, this.cmd);
     }
 }
 exports.Circle = Circle;
 class Arc {
-    constructor(center, radius, start, end, isCCW, aperture, state) {
+    constructor(center, radius, start, end, isCCW, aperture, state, cmd) {
         this.center = center;
         this.radius = radius;
         this.start = start;
@@ -1342,6 +1347,7 @@ class Arc {
         this.isCCW = isCCW;
         this.aperture = aperture;
         this.state = state;
+        this.cmd = cmd;
     }
     toString() {
         return `A(${this.start}, ${this.end}@${this.center}R${utils_1.formatFloat(this.radius, 3)})`;
@@ -1366,15 +1372,16 @@ class Arc {
         return this;
     }
     translate(vector) {
-        return new Arc(this.center.add(vector), this.radius, this.start.add(vector), this.end.add(vector), this.isCCW, this.aperture, this.state);
+        return new Arc(this.center.add(vector), this.radius, this.start.add(vector), this.end.add(vector), this.isCCW, this.aperture, this.state, this.cmd);
     }
 }
 exports.Arc = Arc;
 class Flash {
-    constructor(center, aperture, state) {
+    constructor(center, aperture, state, cmd) {
         this.center = center;
         this.aperture = aperture;
         this.state = state;
+        this.cmd = cmd;
     }
     toString() {
         return `F(${this.aperture.apertureId}@${this.center})`;
@@ -1398,13 +1405,14 @@ class Flash {
         return this;
     }
     translate(vector) {
-        return new Flash(this.center.add(vector), this.aperture, this.state);
+        return new Flash(this.center.add(vector), this.aperture, this.state, this.cmd);
     }
 }
 exports.Flash = Flash;
 class Region {
-    constructor(contours, state) {
+    constructor(contours, state, cmd) {
         this.state = state;
+        this.cmd = cmd;
         //this.contours = contours.map(c => Region.reOrderCountour(c));
         this.contours = contours;
     }
@@ -1574,15 +1582,16 @@ class Region {
         return this;
     }
     translate(vector) {
-        return new Region(this.contours.map(contour => translateRegionContour(contour, vector)), this.state);
+        return new Region(this.contours.map(contour => translateRegionContour(contour, vector)), this.state, this.cmd);
     }
 }
 exports.Region = Region;
 class Repeat {
-    constructor(block, xOffset = 0, yOffset = 0) {
+    constructor(block, xOffset, yOffset, cmd) {
         this.block = block;
         this.xOffset = xOffset;
         this.yOffset = yOffset;
+        this.cmd = cmd;
     }
     toString() {
         return `B(${this.block.xRepeat}, ${this.block.yRepeat}:${this.block.xDelta}, ${this.block.yDelta})`;
@@ -1631,7 +1640,7 @@ class Repeat {
         return this.primitives_;
     }
     translate(vector) {
-        return new Repeat(this.block, this.xOffset + vector.x, this.yOffset + vector.y);
+        return new Repeat(this.block, this.xOffset + vector.x, this.yOffset + vector.y, this.cmd);
     }
 }
 exports.Repeat = Repeat;
@@ -1649,23 +1658,23 @@ class BaseGraphicsOperationsConsumer {
     get primitives() {
         return this.primitives_;
     }
-    line(from, to, ctx) {
-        this.primitives_.push(new Line(from, to, ctx.getCurrentAperture(), ctx.getObjectState()));
+    line(from, to, cmd, ctx) {
+        this.primitives_.push(new Line(from, to, ctx.getCurrentAperture(), ctx.getObjectState(), cmd));
     }
-    circle(center, radius, ctx) {
-        this.primitives_.push(new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState()));
+    circle(center, radius, cmd, ctx) {
+        this.primitives_.push(new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState(), cmd));
     }
-    arc(center, radius, start, end, isCCW, ctx) {
-        this.primitives_.push(new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState()));
+    arc(center, radius, start, end, isCCW, cmd, ctx) {
+        this.primitives_.push(new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState(), cmd));
     }
-    flash(center, ctx) {
-        this.primitives_.push(new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState()));
+    flash(center, cmd, ctx) {
+        this.primitives_.push(new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState(), cmd));
     }
-    region(contours, ctx) {
-        this.primitives_.push(new Region(contours, ctx.getObjectState()));
+    region(contours, cmd, ctx) {
+        this.primitives_.push(new Region(contours, ctx.getObjectState(), cmd));
     }
-    block(block, ctx) {
-        this.primitives_.push(new Repeat(block));
+    block(block, cmd, ctx) {
+        this.primitives_.push(new Repeat(block, 0, 0, cmd));
     }
 }
 exports.BaseGraphicsOperationsConsumer = BaseGraphicsOperationsConsumer;
@@ -1680,33 +1689,33 @@ class BlockGraphicsOperationsConsumer {
     get objects() {
         return this.objects_;
     }
-    line(from, to, ctx) {
-        let l = new Line(from, to, ctx.getCurrentAperture(), ctx.getObjectState());
+    line(from, to, cmd, ctx) {
+        let l = new Line(from, to, ctx.getCurrentAperture(), ctx.getObjectState(), cmd);
         this.primitives_.push(l);
         this.objects_.push(...l.objects);
     }
-    circle(center, radius, ctx) {
-        let c = new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState());
+    circle(center, radius, cmd, ctx) {
+        let c = new Circle(center, radius, ctx.getCurrentAperture(), ctx.getObjectState(), cmd);
         this.primitives_.push(c);
         this.objects_.push(...c.objects);
     }
-    arc(center, radius, start, end, isCCW, ctx) {
-        let a = new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState());
+    arc(center, radius, start, end, isCCW, cmd, ctx) {
+        let a = new Arc(center, radius, start, end, isCCW, ctx.getCurrentAperture(), ctx.getObjectState(), cmd);
         this.primitives_.push(a);
         this.objects_.push(...a.objects);
     }
-    flash(center, ctx) {
-        let f = new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState());
+    flash(center, cmd, ctx) {
+        let f = new Flash(center, ctx.getCurrentAperture(), ctx.getObjectState(), cmd);
         this.primitives_.push(f);
         this.objects_.push(...f.objects);
     }
-    region(contours, ctx) {
-        let r = new Region(contours, ctx.getObjectState());
+    region(contours, cmd, ctx) {
+        let r = new Region(contours, ctx.getObjectState(), cmd);
         this.primitives_.push(r);
         this.objects_.push(...r.objects);
     }
-    block(block, ctx) {
-        let r = new Repeat(block);
+    block(block, cmd, ctx) {
+        let r = new Repeat(block, 0, 0, cmd);
         this.primitives_.push(r);
         this.objects_.push(...r.objects);
     }

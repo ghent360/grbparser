@@ -25,7 +25,8 @@ const point_1 = require("./point");
 const vectorUtils_1 = require("./vectorUtils");
 const expressions_1 = require("./expressions");
 class FSCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "FS";
         this.isAdvanced = true;
         let match = FSCommand.matchExp.exec(cmd);
@@ -86,7 +87,8 @@ class FSCommand {
 FSCommand.matchExp = /^FS([LTD]?)([IA])(N\d)?(G\d)?X(\d)(\d)Y(\d)(\d)(Z\d+)?(D\d)?(M\d)?\*$/;
 exports.FSCommand = FSCommand;
 class MOCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "MO";
         this.isAdvanced = true;
         let mode = cmd.substr(2, 2);
@@ -109,7 +111,8 @@ class MOCommand {
 }
 exports.MOCommand = MOCommand;
 class ADCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "AD";
         this.isAdvanced = true;
         let match = ADCommand.matchExp.exec(cmd);
@@ -275,7 +278,8 @@ function skipIntCode(cmd, start = 1) {
     return cmd.length;
 }
 class G04Command {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "G04";
         this.isAdvanced = false;
         let match = G04Command.matchExp.exec(cmd);
@@ -293,7 +297,8 @@ class G04Command {
 G04Command.matchExp = /^G[0]*4(.*)$/;
 exports.G04Command = G04Command;
 class AMCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "AM";
         this.isAdvanced = true;
         let content = cmd.split("*");
@@ -356,7 +361,8 @@ class AMCommand {
 }
 exports.AMCommand = AMCommand;
 class ABCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "AB";
         this.isAdvanced = true;
         let match = ABCommand.matchExp.exec(cmd);
@@ -396,7 +402,8 @@ exports.ABCommand = ABCommand;
  * This is the "set current aperture" command, not the D01, D02 or D03 command.
  */
 class DCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "D";
         this.isAdvanced = false;
         let match = DCommand.matchExp.exec(cmd);
@@ -500,7 +507,8 @@ function formatCoordinateY(value, fmt) {
     return formatFixedNumber(value, fmt.yNumDecPos, fmt.yNumIntPos, fmt.coordFormat);
 }
 class D01Command {
-    constructor(cmd, fmt) {
+    constructor(cmd, fmt, lineNo) {
+        this.lineNo = lineNo;
         this.name = "D01";
         this.isAdvanced = false;
         let match = D01Command.matchExp.exec(cmd);
@@ -573,7 +581,7 @@ class D01Command {
             else {
                 endPointY = ctx.currentPointY;
             }
-            ctx.line(new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY));
+            ctx.line(new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY), this);
         }
         else {
             if (this.x == undefined && this.y == undefined && this.i == undefined && this.j == undefined) {
@@ -623,7 +631,7 @@ class D01Command {
                 else if (radius > primitives_1.Epsilon) {
                     let centerX = startPointX + targetI;
                     let centerY = startPointY + targetJ;
-                    ctx.circle(new point_1.Point(centerX, centerY), radius);
+                    ctx.circle(new point_1.Point(centerX, centerY), radius, this);
                 }
                 else {
                     ctx.warning("D01 arc radius too small.");
@@ -691,7 +699,7 @@ class D01Command {
                 else {
                     center = centerCW;
                 }
-                ctx.arc(new point_1.Point(center.x, center.y), radius, new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY), false);
+                ctx.arc(new point_1.Point(center.x, center.y), radius, new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY), false, this);
             }
             else {
                 let centerCW = vectorUtils_1.addVector(mid, vectorUtils_1.scaleVector(pvCW, d));
@@ -704,7 +712,7 @@ class D01Command {
                 else {
                     center = centerCCW;
                 }
-                ctx.arc(new point_1.Point(center.x, center.y), radius, new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY), true);
+                ctx.arc(new point_1.Point(center.x, center.y), radius, new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY), true, this);
             }
             //
         }
@@ -713,7 +721,8 @@ class D01Command {
 D01Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(I([\+\-]?\d+))?(J([\+\-]?\d+))?(?:D[0]*1)?$/;
 exports.D01Command = D01Command;
 class D02Command {
-    constructor(cmd, fmt) {
+    constructor(cmd, fmt, lineNo) {
+        this.lineNo = lineNo;
         this.name = "D02";
         this.isAdvanced = false;
         let match = D02Command.matchExp.exec(cmd);
@@ -757,7 +766,8 @@ class D02Command {
 D02Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*2)?$/;
 exports.D02Command = D02Command;
 class D03Command {
-    constructor(cmd, fmt) {
+    constructor(cmd, fmt, lineNo) {
+        this.lineNo = lineNo;
         this.name = "D03";
         this.isAdvanced = false;
         let match = D03Command.matchExp.exec(cmd);
@@ -805,13 +815,14 @@ class D03Command {
         else {
             targetY = ctx.currentPointY;
         }
-        ctx.flash(new point_1.Point(targetX, targetY));
+        ctx.flash(new point_1.Point(targetX, targetY), this);
     }
 }
 D03Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*3)?$/;
 exports.D03Command = D03Command;
 class BaseGCodeCommand {
-    constructor(cmd, cmdCode) {
+    constructor(cmd, cmdCode, lineNo) {
+        this.lineNo = lineNo;
         this.isAdvanced = false;
         let match = BaseGCodeCommand.matchExp.exec(cmd);
         if (!match) {
@@ -834,8 +845,8 @@ class BaseGCodeCommand {
 BaseGCodeCommand.matchExp = /^G(\d+)$/;
 exports.BaseGCodeCommand = BaseGCodeCommand;
 class G01Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 1);
+    constructor(cmd, lineNo) {
+        super(cmd, 1, lineNo);
         this.name = "G01";
     }
     execute(ctx) {
@@ -844,8 +855,8 @@ class G01Command extends BaseGCodeCommand {
 }
 exports.G01Command = G01Command;
 class G02Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 2);
+    constructor(cmd, lineNo) {
+        super(cmd, 2, lineNo);
         this.name = "G02";
     }
     execute(ctx) {
@@ -854,8 +865,8 @@ class G02Command extends BaseGCodeCommand {
 }
 exports.G02Command = G02Command;
 class G03Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 3);
+    constructor(cmd, lineNo) {
+        super(cmd, 3, lineNo);
         this.name = "G03";
     }
     execute(ctx) {
@@ -864,8 +875,8 @@ class G03Command extends BaseGCodeCommand {
 }
 exports.G03Command = G03Command;
 class G10Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 10);
+    constructor(cmd, lineNo) {
+        super(cmd, 10, lineNo);
         this.name = "G10";
     }
     execute(ctx) {
@@ -874,8 +885,8 @@ class G10Command extends BaseGCodeCommand {
 }
 exports.G10Command = G10Command;
 class G11Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 11);
+    constructor(cmd, lineNo) {
+        super(cmd, 11, lineNo);
         this.name = "G11";
     }
     execute(ctx) {
@@ -884,8 +895,8 @@ class G11Command extends BaseGCodeCommand {
 }
 exports.G11Command = G11Command;
 class G12Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 12);
+    constructor(cmd, lineNo) {
+        super(cmd, 12, lineNo);
         this.name = "G12";
     }
     execute(ctx) {
@@ -894,8 +905,8 @@ class G12Command extends BaseGCodeCommand {
 }
 exports.G12Command = G12Command;
 class G74Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 74);
+    constructor(cmd, lineNo) {
+        super(cmd, 74, lineNo);
         this.name = "G74";
     }
     execute(ctx) {
@@ -904,8 +915,8 @@ class G74Command extends BaseGCodeCommand {
 }
 exports.G74Command = G74Command;
 class G75Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 75);
+    constructor(cmd, lineNo) {
+        super(cmd, 75, lineNo);
         this.name = "G75";
     }
     execute(ctx) {
@@ -914,8 +925,8 @@ class G75Command extends BaseGCodeCommand {
 }
 exports.G75Command = G75Command;
 class G90Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 90);
+    constructor(cmd, lineNo) {
+        super(cmd, 90, lineNo);
         this.name = "G90";
     }
     execute(ctx) {
@@ -924,8 +935,8 @@ class G90Command extends BaseGCodeCommand {
 }
 exports.G90Command = G90Command;
 class G91Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 91);
+    constructor(cmd, lineNo) {
+        super(cmd, 91, lineNo);
         this.name = "G91";
     }
     execute(ctx) {
@@ -934,8 +945,8 @@ class G91Command extends BaseGCodeCommand {
 }
 exports.G91Command = G91Command;
 class G70Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 70);
+    constructor(cmd, lineNo) {
+        super(cmd, 70, lineNo);
         this.name = "G70";
     }
     execute(ctx) {
@@ -944,8 +955,8 @@ class G70Command extends BaseGCodeCommand {
 }
 exports.G70Command = G70Command;
 class G71Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 71);
+    constructor(cmd, lineNo) {
+        super(cmd, 71, lineNo);
         this.name = "G71";
     }
     execute(ctx) {
@@ -954,7 +965,8 @@ class G71Command extends BaseGCodeCommand {
 }
 exports.G71Command = G71Command;
 class LPCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "LP";
         this.isAdvanced = true;
         let match = LPCommand.matchExp.exec(cmd);
@@ -973,7 +985,8 @@ class LPCommand {
 LPCommand.matchExp = /^LP(C|D)\*$/;
 exports.LPCommand = LPCommand;
 class LMCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "LM";
         this.isAdvanced = true;
         let match = LMCommand.matchExp.exec(cmd);
@@ -1020,7 +1033,8 @@ class LMCommand {
 LMCommand.matchExp = /^LM(N|X|Y|XY)\*$/;
 exports.LMCommand = LMCommand;
 class LRCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "LR";
         this.isAdvanced = true;
         let match = LRCommand.matchExp.exec(cmd);
@@ -1039,7 +1053,8 @@ class LRCommand {
 LRCommand.matchExp = /^LR([\+\-]?(?:\d*\.\d+|\d+))\*$/;
 exports.LRCommand = LRCommand;
 class LSCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "LS";
         this.isAdvanced = true;
         let match = LSCommand.matchExp.exec(cmd);
@@ -1058,8 +1073,8 @@ class LSCommand {
 LSCommand.matchExp = /^LS([\+\-]?(?:\d*\.\d+|\d+))\*$/;
 exports.LSCommand = LSCommand;
 class G36Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 36);
+    constructor(cmd, lineNo) {
+        super(cmd, 36, lineNo);
         this.name = "G36";
     }
     execute(ctx) {
@@ -1068,17 +1083,18 @@ class G36Command extends BaseGCodeCommand {
 }
 exports.G36Command = G36Command;
 class G37Command extends BaseGCodeCommand {
-    constructor(cmd) {
-        super(cmd, 37);
+    constructor(cmd, lineNo) {
+        super(cmd, 37, lineNo);
         this.name = "G37";
     }
     execute(ctx) {
-        ctx.endRegion();
+        ctx.endRegion(this);
     }
 }
 exports.G37Command = G37Command;
 class SRCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.name = "SR";
         this.isAdvanced = true;
         let match = SRCommand.matchExp.exec(cmd);
@@ -1108,19 +1124,20 @@ class SRCommand {
     }
     execute(ctx) {
         if (this.x !== undefined) {
-            ctx.tryEndRepeat();
+            ctx.tryEndRepeat(this);
             let params = new primitives_1.BlockParams(this.x, this.y, this.i, this.j);
             ctx.startRepeat(params);
         }
         else {
-            ctx.endRepeat();
+            ctx.endRepeat(this);
         }
     }
 }
 SRCommand.matchExp = /^SR(?:X(\d+)Y(\d+)I(\d*\.\d+|\d+)J(\d*\.\d+|\d+))?\*$/;
 exports.SRCommand = SRCommand;
 class M02Command {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.isAdvanced = false;
         this.name = "M02";
         let match = M02Command.matchExp.exec(cmd);
@@ -1132,13 +1149,14 @@ class M02Command {
         return "M02";
     }
     execute(ctx) {
-        ctx.endFile();
+        ctx.endFile(this);
     }
 }
 M02Command.matchExp = /^M0*[20]$/;
 exports.M02Command = M02Command;
 class TCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.isAdvanced = true;
         let match = TCommand.matchExp.exec(cmd);
         if (!match) {
@@ -1193,7 +1211,8 @@ class TCommand {
 TCommand.matchExp = /^T(A|F|O)([a-zA-Z_.$][a-zA-Z0-9_.$]*)((?:,[^,]+)*)\*$/;
 exports.TCommand = TCommand;
 class TDCommand {
-    constructor(cmd) {
+    constructor(cmd, lineNo) {
+        this.lineNo = lineNo;
         this.isAdvanced = true;
         this.name = "TD";
         let match = TDCommand.matchExp.exec(cmd);
