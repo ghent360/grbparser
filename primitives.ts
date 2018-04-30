@@ -2097,7 +2097,9 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
         .filter(o => o.polarity != ObjectPolarity.THIN)
         .forEach(o => {
             if (o.polarity === ObjectPolarity.DARK) {
+                // Check if there is anything to clean?
                 if (clear.length > 0) {
+                    // Check if we are crearing from something
                     if (image.length > 0) {
                         image = subtractPolygonSet(image, clear).polygonSet;
                     }
@@ -2108,7 +2110,9 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
                 clear.push(...o.polySet);
             }
         });
+    // Check if there is anything left to clean?
     if (clear.length > 0) {
+        // Check if we are crearing from something
         if (image.length > 0) {
             if (!union) {
                 return subtractPolygonSet(image, clear);

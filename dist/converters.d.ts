@@ -56,6 +56,7 @@ export declare class PolygonConverterResult {
     readonly solids: PolygonSet;
     readonly thins: PolygonSet;
     readonly bounds: SimpleBounds;
+    readonly primitives: GraphicsPrimitive[];
 }
 export declare function GerberToPolygons(content: string, union?: boolean): PolygonConverterResult;
 export declare class PrimitiveConverter {

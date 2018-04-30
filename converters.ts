@@ -258,6 +258,7 @@ export class PolygonConverterResult {
     readonly solids:PolygonSet;
     readonly thins:PolygonSet;
     readonly bounds:SimpleBounds;
+    readonly primitives:GraphicsPrimitive[];
 }
 
 export function GerberToPolygons(content:string, union:boolean = false):PolygonConverterResult {
@@ -309,7 +310,8 @@ export function GerberToPolygons(content:string, union:boolean = false):PolygonC
     return {
         solids: image.polygonSet,
         thins: connectWires(thins),
-        bounds: bounds
+        bounds: bounds,
+        primitives: primitives
     };
 }
 
