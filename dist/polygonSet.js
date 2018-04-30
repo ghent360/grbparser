@@ -40,7 +40,8 @@ function copyObjects(objects) {
     return objects.map(object => {
         return {
             polySet: copyPolygonSet(object.polySet),
-            polarity: object.polarity
+            polarity: object.polarity,
+            primitive: object.primitive
         };
     });
 }

@@ -75,7 +75,7 @@ function reversePolarity(polarity) {
 }
 function reverseObjectsPolarity(objects) {
     return objects.map(o => {
-        return { polySet: o.polySet, polarity: reversePolarity(o.polarity) };
+        return { polySet: o.polySet, polarity: reversePolarity(o.polarity), primitive: o.primitive };
     });
 }
 function polygonOrientation(polygon) {
@@ -359,8 +359,8 @@ class ApertureDefinition {
         }
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
-    objects(polarity) {
-        return [{ polySet: this.toPolySet(), polarity: polarity }];
+    objects(polarity, primitive) {
+        return [{ polySet: this.toPolySet(), polarity: polarity, primitive: primitive }];
     }
     toPolySet() {
         if (this.polygonSet_ != undefined) {
@@ -1286,7 +1286,8 @@ class Line {
             this.objects_ = [
                 {
                     polySet: [draw.polygon],
-                    polarity: polarity
+                    polarity: polarity,
+                    primitive: this
                 }
             ];
         }
@@ -1321,7 +1322,8 @@ class Circle {
             this.objects_ = [
                 {
                     polySet: draw.polygonSet,
-                    polarity: polarity
+                    polarity: polarity,
+                    primitive: this
                 }
             ];
         }
@@ -1359,7 +1361,8 @@ class Arc {
             this.objects_ = [
                 {
                     polySet: [draw.polygon],
-                    polarity: polarity
+                    polarity: polarity,
+                    primitive: this
                 }
             ];
         }
@@ -1388,7 +1391,7 @@ class Flash {
     }
     get objects() {
         if (!this.objects_) {
-            this.objects_ = polygonSet_1.copyObjects(this.aperture.objects(this.state.polarity));
+            this.objects_ = polygonSet_1.copyObjects(this.aperture.objects(this.state.polarity, this));
             this.objects_.forEach(o => {
                 polygonSet_1.mirrorPolySet(o.polySet, this.state.mirroring);
                 polygonSet_1.rotatePolySet(o.polySet, this.state.rotation);
@@ -1569,7 +1572,8 @@ class Region {
             this.objects_ = [
                 {
                     polySet: Region.buildPolygonSet(this.contours),
-                    polarity: this.state.polarity
+                    polarity: this.state.polarity,
+                    primitive: this
                 }
             ];
         }

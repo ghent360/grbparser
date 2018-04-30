@@ -48,6 +48,7 @@ export declare type PolyongSetWithThinkness = {
 export declare type PolySetWithPolarity = {
     polySet: PolygonSet;
     polarity: ObjectPolarity;
+    primitive: ExecutivePrimitive;
 };
 export declare type GraphicsObjects = Array<PolySetWithPolarity>;
 export declare enum CoordinateSkipZeros {
@@ -80,7 +81,7 @@ export declare class GerberParseException {
 export interface ApertureBase {
     readonly apertureId: number;
     isDrawable(): boolean;
-    objects(polarity: ObjectPolarity): GraphicsObjects;
+    objects(polarity: ObjectPolarity, primitive: ExecutivePrimitive): GraphicsObjects;
     generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolyongWithThinkness;
     generateCircleDraw(center: Point, radius: number, state: ObjectState): PolyongSetWithThinkness;
     generateLineDraw(start: Point, end: Point, state: ObjectState): PolyongWithThinkness;
@@ -110,7 +111,7 @@ export declare class ApertureDefinition implements ApertureBase {
     generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolyongWithThinkness;
     generateCircleDraw(center: Point, radius: number, state: ObjectState): PolyongSetWithThinkness;
     generateLineDraw(start: Point, end: Point, state: ObjectState): PolyongWithThinkness;
-    objects(polarity: ObjectPolarity): GraphicsObjects;
+    objects(polarity: ObjectPolarity, primitive: ExecutivePrimitive): GraphicsObjects;
     toPolySet(): PolygonSet;
 }
 export declare class VariableDefinition {
@@ -236,7 +237,10 @@ export declare class Bounds {
     readonly height: number;
     toSimpleBounds(): SimpleBounds;
 }
-export declare class LineSegment {
+export interface ExecutivePrimitive {
+    readonly cmd: GerberCommand;
+}
+export declare class LineSegment implements ExecutivePrimitive {
     readonly from: Point;
     readonly to: Point;
     readonly cmd: GerberCommand;
@@ -245,7 +249,7 @@ export declare class LineSegment {
     readonly bounds: Bounds;
     translate(vector: Point): LineSegment;
 }
-export declare class CircleSegment {
+export declare class CircleSegment implements ExecutivePrimitive {
     readonly center: Point;
     readonly radius: number;
     readonly cmd: GerberCommand;
@@ -254,7 +258,7 @@ export declare class CircleSegment {
     readonly bounds: Bounds;
     translate(vector: Point): CircleSegment;
 }
-export declare class ArcSegment {
+export declare class ArcSegment implements ExecutivePrimitive {
     readonly center: Point;
     readonly radius: number;
     readonly start: Point;
@@ -275,7 +279,7 @@ export declare class ObjectState {
     readonly rotation: number;
     constructor(polarity?: ObjectPolarity, mirroring?: ObjectMirroring, scale?: number, rotation?: number);
 }
-export declare class Line {
+export declare class Line implements ExecutivePrimitive {
     readonly from: Point;
     readonly to: Point;
     readonly aperture: ApertureBase;
@@ -289,7 +293,7 @@ export declare class Line {
     readonly primitives: this;
     translate(vector: Point): Line;
 }
-export declare class Circle {
+export declare class Circle implements ExecutivePrimitive {
     readonly center: Point;
     readonly radius: number;
     readonly aperture: ApertureBase;
@@ -303,7 +307,7 @@ export declare class Circle {
     readonly primitives: this;
     translate(vector: Point): Circle;
 }
-export declare class Arc {
+export declare class Arc implements ExecutivePrimitive {
     readonly center: Point;
     readonly radius: number;
     readonly start: Point;
@@ -320,7 +324,7 @@ export declare class Arc {
     readonly primitives: this;
     translate(vector: Point): Arc;
 }
-export declare class Flash {
+export declare class Flash implements ExecutivePrimitive {
     readonly center: Point;
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
@@ -333,7 +337,7 @@ export declare class Flash {
     readonly primitives: this;
     translate(vector: Point): Flash;
 }
-export declare class Region {
+export declare class Region implements ExecutivePrimitive {
     readonly state: ObjectState;
     readonly cmd: GerberCommand;
     private objects_;
@@ -351,7 +355,7 @@ export declare class Region {
     readonly primitives: this;
     translate(vector: Point): Region;
 }
-export declare class Repeat {
+export declare class Repeat implements ExecutivePrimitive {
     readonly block: Block;
     readonly xOffset: number;
     readonly yOffset: any;
