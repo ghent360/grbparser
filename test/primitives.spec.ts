@@ -51,7 +51,7 @@ describe("Primitives tests", () => {
     it('Standard Circle Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "C", [10]);
         assert.equal(aperture.isMacro(), false);
-        let objects = aperture.objects(ObjectPolarity.DARK);
+        let objects = aperture.objects(ObjectPolarity.DARK, undefined);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 1);
         assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 2);
@@ -62,7 +62,7 @@ describe("Primitives tests", () => {
         assert.ok(distanceFirstToLast < pr.Epsilon);
 
         aperture = new pr.ApertureDefinition(10, "C", [10, 5]);
-        objects = aperture.objects(ObjectPolarity.DARK);
+        objects = aperture.objects(ObjectPolarity.DARK, undefined);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 2);
@@ -77,7 +77,7 @@ describe("Primitives tests", () => {
         assert.ok(distanceFirstToLast < pr.Epsilon);
 
         aperture = new pr.ApertureDefinition(10, "C", [10, 3, 5]);
-        objects = aperture.objects(ObjectPolarity.DARK);
+        objects = aperture.objects(ObjectPolarity.DARK, undefined);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 2);
@@ -94,7 +94,7 @@ describe("Primitives tests", () => {
     it('Standard Rectangle Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "R", [10, 5]);
         assert.equal(aperture.isMacro(), false);
-        let objects = aperture.objects(ObjectPolarity.DARK);
+        let objects = aperture.objects(ObjectPolarity.DARK, undefined);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 1);
         assert.equal(objects[0].polySet[0].length, 10);
@@ -104,7 +104,7 @@ describe("Primitives tests", () => {
         assert.ok(distanceFirstToLast < pr.Epsilon);
 
         aperture = new pr.ApertureDefinition(10, "R", [10, 5, 3]);
-        objects = aperture.objects(ObjectPolarity.DARK);
+        objects = aperture.objects(ObjectPolarity.DARK, undefined);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, 10);
@@ -119,7 +119,7 @@ describe("Primitives tests", () => {
         assert.ok(distanceFirstToLast < pr.Epsilon);
         
         aperture = new pr.ApertureDefinition(10, "R", [10, 5, 3, 2]);
-        objects = aperture.objects(ObjectPolarity.DARK);
+        objects = aperture.objects(ObjectPolarity.DARK, undefined);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, 10);
@@ -136,7 +136,7 @@ describe("Primitives tests", () => {
     it('Standard Obround Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "O", [5, 10]);
         assert.equal(aperture.isMacro(), false);
-        let objects = aperture.objects(ObjectPolarity.DARK);
+        let objects = aperture.objects(ObjectPolarity.DARK, undefined);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 1);
         assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 6);
@@ -146,7 +146,7 @@ describe("Primitives tests", () => {
     it('Standard Polygon Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "P", [10, 3, 45, 3]);
         assert.equal(aperture.isMacro(), false);
-        let objects = aperture.objects(ObjectPolarity.DARK);
+        let objects = aperture.objects(ObjectPolarity.DARK, undefined);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, 8);

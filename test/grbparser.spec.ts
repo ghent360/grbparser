@@ -113,7 +113,7 @@ G04 Create aperture*
     });
     it('Parsing error', () => {
         let parser = new gp.GerberParser();
-        assert.throws(() => parser.parseBlock("G77*"), "Invalid command G77");
+        assert.throws(() => parser.parseBlock("G77*"), "Invalid command");
     });
     it('parse and reconstruct gerber files', () => {
         let folder = "test/Gerber_File_Format_Examples";

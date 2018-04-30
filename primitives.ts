@@ -99,7 +99,11 @@ export enum AttributeType {
 
 export type PolyongWithThinkness = {polygon:Polygon, is_solid:boolean};
 export type PolyongSetWithThinkness = {polygonSet:PolygonSet, is_solid:boolean};
-export type PolySetWithPolarity = {polySet:PolygonSet, polarity:ObjectPolarity};
+export type PolySetWithPolarity = {
+    polySet:PolygonSet,
+    polarity:ObjectPolarity,
+    primitive:ExecutivePrimitive
+};
 export type GraphicsObjects = Array<PolySetWithPolarity>;
 
 function reversePolarity(polarity:ObjectPolarity):ObjectPolarity {
@@ -115,7 +119,7 @@ function reversePolarity(polarity:ObjectPolarity):ObjectPolarity {
 
 function reverseObjectsPolarity(objects:GraphicsObjects):GraphicsObjects {
     return objects.map(o => {
-        return {polySet:o.polySet, polarity:reversePolarity(o.polarity)};
+        return {polySet:o.polySet, polarity:reversePolarity(o.polarity), primitive:o.primitive};
     });
 }
 
@@ -184,7 +188,7 @@ export interface ApertureBase {
     readonly apertureId:number;
     
     isDrawable():boolean;
-    objects(polarity:ObjectPolarity):GraphicsObjects;
+    objects(polarity:ObjectPolarity, primitive:ExecutivePrimitive):GraphicsObjects;
     generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolyongWithThinkness;
     generateCircleDraw(center:Point, radius:number, state:ObjectState):PolyongSetWithThinkness;
     generateLineDraw(start:Point, end:Point, state:ObjectState):PolyongWithThinkness;
@@ -463,8 +467,8 @@ export class ApertureDefinition implements ApertureBase {
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
 
-    objects(polarity:ObjectPolarity):GraphicsObjects {
-        return [{polySet:this.toPolySet(), polarity:polarity}];
+    objects(polarity:ObjectPolarity, primitive:ExecutivePrimitive):GraphicsObjects {
+        return [{polySet:this.toPolySet(), polarity:polarity, primitive:primitive}];
     }
 
     toPolySet():PolygonSet {
@@ -1339,7 +1343,11 @@ export class Bounds {
     }
 }
 
-export class LineSegment {
+export interface ExecutivePrimitive {
+    readonly cmd:GerberCommand;
+}
+
+export class LineSegment implements ExecutivePrimitive {
     constructor(
         readonly from:Point,
         readonly to:Point,
@@ -1364,7 +1372,7 @@ export class LineSegment {
     }
 }
 
-export class CircleSegment {
+export class CircleSegment implements ExecutivePrimitive {
     constructor(
         readonly center:Point,
         readonly radius:number,
@@ -1389,7 +1397,7 @@ export class CircleSegment {
     }
 }
 
-export class ArcSegment {
+export class ArcSegment implements ExecutivePrimitive {
     constructor(
         readonly center:Point,
         readonly radius:number,
@@ -1501,7 +1509,7 @@ export class ObjectState {
     }
 }
 
-export class Line {
+export class Line implements ExecutivePrimitive {
     private objects_:GraphicsObjects;
     
     constructor(
@@ -1526,7 +1534,8 @@ export class Line {
             this.objects_ = [
                 {
                     polySet:[draw.polygon],
-                    polarity:polarity
+                    polarity:polarity,
+                    primitive:this
                 }
             ];
         }
@@ -1551,7 +1560,7 @@ export class Line {
     }
 }
 
-export class Circle {
+export class Circle implements ExecutivePrimitive {
     private objects_:GraphicsObjects;
     
     constructor(
@@ -1576,7 +1585,8 @@ export class Circle {
             this.objects_ = [
                 {
                     polySet:draw.polygonSet,
-                    polarity:polarity
+                    polarity:polarity,
+                    primitive:this
                 }
             ];
         }
@@ -1601,7 +1611,7 @@ export class Circle {
     }
 }
 
-export class Arc {
+export class Arc implements ExecutivePrimitive {
     private objects_:GraphicsObjects;
 
     constructor(
@@ -1630,7 +1640,8 @@ export class Arc {
             this.objects_ = [
                 {
                     polySet:[draw.polygon],
-                    polarity:polarity
+                    polarity:polarity,
+                    primitive:this
                 }
             ];
         }
@@ -1658,7 +1669,7 @@ export class Arc {
     }
 }
 
-export class Flash {
+export class Flash implements ExecutivePrimitive {
     private objects_:GraphicsObjects;
 
     constructor(
@@ -1674,7 +1685,7 @@ export class Flash {
 
     get objects():GraphicsObjects {
         if (!this.objects_) {
-            this.objects_ = copyObjects(this.aperture.objects(this.state.polarity));
+            this.objects_ = copyObjects(this.aperture.objects(this.state.polarity, this));
             this.objects_.forEach(o => {
                 mirrorPolySet(o.polySet, this.state.mirroring);
                 rotatePolySet(o.polySet, this.state.rotation);
@@ -1702,7 +1713,7 @@ export class Flash {
     }
 }
 
-export class Region {
+export class Region implements ExecutivePrimitive {
     private objects_:GraphicsObjects;
     readonly contours:Array<RegionContour>;
 
@@ -1872,7 +1883,8 @@ export class Region {
             this.objects_ = [
                 {
                     polySet:Region.buildPolygonSet(this.contours),
-                    polarity:this.state.polarity
+                    polarity:this.state.polarity,
+                    primitive:this
                 }
             ];
         }
@@ -1895,11 +1907,15 @@ export class Region {
     }
 }
 
-export class Repeat {
+export class Repeat implements ExecutivePrimitive {
     private objects_:GraphicsObjects;
     private primitives_:Array<GraphicsPrimitive>;
 
-    constructor(readonly block:Block, readonly xOffset:number, readonly yOffset, readonly cmd:GerberCommand) {
+    constructor(
+        readonly block:Block,
+        readonly xOffset:number,
+        readonly yOffset,
+        readonly cmd:GerberCommand) {
     }
 
     toString():string {

@@ -43,7 +43,8 @@ export function copyPolygonSet(polySet:PolygonSet):PolygonSet {
 export function copyObjects(objects:GraphicsObjects):GraphicsObjects {
     return objects.map(object => { return {
         polySet:copyPolygonSet(object.polySet),
-        polarity:object.polarity
+        polarity:object.polarity,
+        primitive:object.primitive
     }});
 }
 
