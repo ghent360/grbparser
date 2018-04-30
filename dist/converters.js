@@ -261,7 +261,8 @@ function GerberToPolygons(content, union = false) {
     return {
         solids: image.polygonSet,
         thins: polygonSet_1.connectWires(thins),
-        bounds: bounds
+        bounds: bounds,
+        primitives: primitives
     };
 }
 exports.GerberToPolygons = GerberToPolygons;
