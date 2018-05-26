@@ -9,7 +9,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const PI2 = Math.PI * 2;
-exports.NUMSTEPS = 40;
+exports.NUMSTEPS = 30;
 const NUMSTEPS2 = exports.NUMSTEPS / 2;
 function circleToPolygon(radius, nsteps = exports.NUMSTEPS, rotation = 0) {
     let result = new Float64Array(nsteps * 2 + 2);

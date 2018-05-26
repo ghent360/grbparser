@@ -15,7 +15,7 @@ import {Point} from "./point";
 import {Polygon} from "./polygonSet";
 
 const PI2 = Math.PI * 2;
-export const NUMSTEPS = 40;
+export const NUMSTEPS = 30;
 const NUMSTEPS2 = NUMSTEPS / 2;
 
 export function circleToPolygon(

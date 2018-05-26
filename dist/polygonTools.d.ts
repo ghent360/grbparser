@@ -12,7 +12,7 @@
  */
 import { Point } from "./point";
 import { Polygon } from "./polygonSet";
-export declare const NUMSTEPS = 40;
+export declare const NUMSTEPS = 30;
 export declare function circleToPolygon(radius: number, nsteps?: number, rotation?: number): Polygon;
 export declare function rectangleToPolygon(width: number, height: number): Polygon;
 export declare function obroundToPolygon(width: number, height: number): Polygon;
