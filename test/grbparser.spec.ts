@@ -113,7 +113,7 @@ G04 Create aperture*
     });
     it('Parsing error', () => {
         let parser = new gp.GerberParser();
-        assert.throws(() => parser.parseBlock("G77*"), "Invalid command G77");
+        assert.throws(() => parser.parseBlock("G77*"), "Invalid command");
     });
     it('parse and reconstruct gerber files', () => {
         let folder = "test/Gerber_File_Format_Examples";
@@ -134,9 +134,7 @@ G04 Create aperture*
         let folder = "test/Gerber_File_Format_Examples";
         fs.readdirSync(folder)
             .filter(fileName => fileName.endsWith(".gbr"))
-            .filter(filename => !filename.startsWith("4-11-6_Block_with_different_orientations")
-                                && !filename.startsWith("4-6-4_Nested_blocks")
-                                && !filename.startsWith("test-image-offset-2")
+            .filter(filename => !filename.startsWith("test-image-offset-2")
                                 && !filename.startsWith("test-layer-mode-1"))
             //.filter(fn => fn.endsWith("test-aperture-circle-1.gbr"))
             .forEach(fileName => {

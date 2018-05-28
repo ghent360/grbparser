@@ -210,6 +210,7 @@ describe("Commands tests", () => {
         // Arc to 7.071, 7.071 center offset -10, 0
         let cmd = new cm.D01Command("X7071Y7071I-10000J0D01", fmt);
         let ctx = new pr.GerberState();
+        ctx.coordinateUnits = pr.CoordinateUnits.INCHES;
         // Aperture circle 1 unit diameter
         ctx.setAperture(new pr.ApertureDefinition(10, "C", [1]));
         ctx.currentAppretureId = 10;

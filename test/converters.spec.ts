@@ -44,8 +44,8 @@ describe("Conveter tests", () => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 let result:any;
-                result = cv.PrimitiveConverter.GerberToPrimitives(content);
                 //console.log(`Convert ${fileName}`);
+                result = cv.PrimitiveConverter.GerberToPrimitives(content);
                 //console.log(`${result}`);
                 result = cv.SVGConverter.GerberToSvg(
                     content, 0x101010, 1000, 0);

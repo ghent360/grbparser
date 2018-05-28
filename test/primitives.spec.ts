@@ -51,7 +51,7 @@ describe("Primitives tests", () => {
     it('Standard Circle Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "C", [10]);
         assert.equal(aperture.isMacro(), false);
-        let objects = aperture.objects(ObjectPolarity.DARK);
+        let objects = aperture.objects(ObjectPolarity.DARK, defaultState);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 1);
         assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 2);
@@ -62,7 +62,7 @@ describe("Primitives tests", () => {
         assert.ok(distanceFirstToLast < pr.Epsilon);
 
         aperture = new pr.ApertureDefinition(10, "C", [10, 5]);
-        objects = aperture.objects(ObjectPolarity.DARK);
+        objects = aperture.objects(ObjectPolarity.DARK, defaultState);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 2);
@@ -77,7 +77,7 @@ describe("Primitives tests", () => {
         assert.ok(distanceFirstToLast < pr.Epsilon);
 
         aperture = new pr.ApertureDefinition(10, "C", [10, 3, 5]);
-        objects = aperture.objects(ObjectPolarity.DARK);
+        objects = aperture.objects(ObjectPolarity.DARK, defaultState);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 2);
@@ -94,7 +94,7 @@ describe("Primitives tests", () => {
     it('Standard Rectangle Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "R", [10, 5]);
         assert.equal(aperture.isMacro(), false);
-        let objects = aperture.objects(ObjectPolarity.DARK);
+        let objects = aperture.objects(ObjectPolarity.DARK, defaultState);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 1);
         assert.equal(objects[0].polySet[0].length, 10);
@@ -104,7 +104,7 @@ describe("Primitives tests", () => {
         assert.ok(distanceFirstToLast < pr.Epsilon);
 
         aperture = new pr.ApertureDefinition(10, "R", [10, 5, 3]);
-        objects = aperture.objects(ObjectPolarity.DARK);
+        objects = aperture.objects(ObjectPolarity.DARK, defaultState);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, 10);
@@ -119,7 +119,7 @@ describe("Primitives tests", () => {
         assert.ok(distanceFirstToLast < pr.Epsilon);
         
         aperture = new pr.ApertureDefinition(10, "R", [10, 5, 3, 2]);
-        objects = aperture.objects(ObjectPolarity.DARK);
+        objects = aperture.objects(ObjectPolarity.DARK, defaultState);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, 10);
@@ -136,7 +136,7 @@ describe("Primitives tests", () => {
     it('Standard Obround Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "O", [5, 10]);
         assert.equal(aperture.isMacro(), false);
-        let objects = aperture.objects(ObjectPolarity.DARK);
+        let objects = aperture.objects(ObjectPolarity.DARK, defaultState);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 1);
         assert.equal(objects[0].polySet[0].length, NUMSTEPS*2 + 6);
@@ -146,7 +146,7 @@ describe("Primitives tests", () => {
     it('Standard Polygon Aperture Tests', () => {
         let aperture = new pr.ApertureDefinition(10, "P", [10, 3, 45, 3]);
         assert.equal(aperture.isMacro(), false);
-        let objects = aperture.objects(ObjectPolarity.DARK);
+        let objects = aperture.objects(ObjectPolarity.DARK, defaultState);
         assert.equal(objects.length, 1);
         assert.equal(objects[0].polySet.length, 2);
         assert.equal(objects[0].polySet[0].length, 8);
@@ -190,21 +190,21 @@ describe("Primitives tests", () => {
             new pr.Primitive(1, perseExpressions(["1", "1.4", "5", "0", "40"])),
             new pr.Primitive(1, perseExpressions(["1", "1.6", "5", "0", "60"])),
             new pr.Primitive(1, perseExpressions(["1", "1.8", "5", "0", "90"]))]);
-        let result = aperture.toPolygonSet([]);
+        let result = aperture.toPolygonSet([], defaultState);
         saveSVGPolygons(result, "macro_circles.svg");
     });
     it('Aperture macro - outline', () => {
         let aperture = new pr.ApertureMacro("MACRO", [
             new pr.Primitive(4, perseExpressions(["1", "4", "0.1", "0.1", "0.5", "0.1", "0.5", "0.5", "0.1", "0.5", "0.1", "0.1", "30"])),
         ]);
-        let result = aperture.toPolygonSet([]);
+        let result = aperture.toPolygonSet([], defaultState);
         saveSVGPolygons(result, "macro_outline.svg");
     });
     it('Aperture macro - polygon', () => {
         let aperture = new pr.ApertureMacro("MACRO", [
             new pr.Primitive(5, perseExpressions(["1", "5", "50", "0", "10", "30"])),
         ]);
-        let result = aperture.toPolygonSet([]);
+        let result = aperture.toPolygonSet([], defaultState);
         saveSVGPolygons(result, "macro_polygon.svg");
     });
     it('Aperture macro - moire', () => {
@@ -212,7 +212,7 @@ describe("Primitives tests", () => {
             new pr.Primitive(6, perseExpressions(["50", "0", "10", "0.5", "0.2", "3", "1.5", "12", "0"])),
             new pr.Primitive(6, perseExpressions(["0", "50", "10", "0.5", "0.2", "13", "0.5", "12", "0"])),
         ]);
-        let result = aperture.toPolygonSet([]);
+        let result = aperture.toPolygonSet([], defaultState);
         saveSVGPolygons(result, "macro_moire.svg");
     });
     it('Aperture macro - thermal', () => {
@@ -220,14 +220,14 @@ describe("Primitives tests", () => {
             new pr.Primitive(7, perseExpressions(["50", "0", "10", "8.5", "1.1", "0"])),
             new pr.Primitive(7, perseExpressions(["0", "50", "10", "0", "1.1", "30"])),
         ]);
-        let result = aperture.toPolygonSet([]);
+        let result = aperture.toPolygonSet([], defaultState);
         saveSVGPolygons(result, "macro_thermal.svg");
     });
     it('Aperture macro - vectorLine', () => {
         let aperture = new pr.ApertureMacro("MACRO", [
             new pr.Primitive(20, perseExpressions(["1", "2", "10", "10", "30", "15", "90"])),
         ]);
-        let result = aperture.toPolygonSet([]);
+        let result = aperture.toPolygonSet([], defaultState);
         saveSVGPolygons(result, "macro_vectorLine.svg");
     });
     it('Aperture macro - bug', () => {
@@ -239,7 +239,7 @@ describe("Primitives tests", () => {
             new pr.Primitive(1, perseExpressions(["1", "0.0177", "-0.0079" , "0.0000"])),
             //new pr.Primitive(1, perseExpressions(["1", "0.0177", "0.0079" , "0.0000"])),
         ]);
-        let result = aperture.toPolygonSet([]);
+        let result = aperture.toPolygonSet([], defaultState);
         saveSVGPolygons(result, "macro_bug.svg");
     });
 });

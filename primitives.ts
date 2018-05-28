@@ -184,7 +184,7 @@ export interface ApertureBase {
     readonly apertureId:number;
     
     isDrawable():boolean;
-    objects(polarity:ObjectPolarity):GraphicsObjects;
+    objects(polarity:ObjectPolarity, state:ObjectState):GraphicsObjects;
     generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolyongWithThinkness;
     generateCircleDraw(center:Point, radius:number, state:ObjectState):PolyongSetWithThinkness;
     generateLineDraw(start:Point, end:Point, state:ObjectState):PolyongWithThinkness;
@@ -257,7 +257,7 @@ export class ApertureDefinition implements ApertureBase {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {
             if (this.templateName == "C" || this.templateName == "O") {
-                let radius = state.scale * this.modifiers[0] / 2;
+                let radius = state.unitToMM(state.scale * this.modifiers[0] / 2);
                 if (radius < Epsilon) {
                     return {polygon:Float64Array.of(), is_solid:false};
                 }
@@ -266,17 +266,18 @@ export class ApertureDefinition implements ApertureBase {
                 return {polygon:polygon, is_solid:true};
             } else if (this.templateName == "R") {
                 let polygon = rectangleToPolygon(
-                    state.scale * this.modifiers[0],
-                    state.scale * this.modifiers[1]);
-                translatePolygon(polygon, start.midPoint(end))
+                    state.unitToMM(state.scale * this.modifiers[0]),
+                    state.unitToMM(state.scale * this.modifiers[1]));
+                translatePolygon(polygon, start.midPoint(end));
                 return {polygon:polygon, is_solid:true};
             }
             throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
         }
+
         let startVector = {x:start.x - center.x, y:start.y - center.y};
         let endVector = {x:end.x - center.x, y:end.y - center.y};
         // This is the radius of the aperture, not the arc itself
-        let apertureRadius = state.scale * this.modifiers[0] / 2;
+        let apertureRadius = state.unitToMM(state.scale * this.modifiers[0] / 2);
         let rStartVector = scaleVector(unitVector(startVector), apertureRadius);
         let rEndVector = scaleVector(unitVector(endVector), apertureRadius);
         let innerStartVector = addVector(startVector, negVector(rStartVector));
@@ -333,7 +334,7 @@ export class ApertureDefinition implements ApertureBase {
     generateCircleDraw(center:Point, radius:number, state:ObjectState):PolyongSetWithThinkness {
         if (this.templateName == "C" || this.templateName == "O" || this.templateName == "R") {
             let result:PolygonSet = [];
-            let apertureRadius = state.scale * this.modifiers[0] / 2;
+            let apertureRadius = state.unitToMM(state.scale * this.modifiers[0] / 2);
             if (apertureRadius < Epsilon) {
                 let polygon = circleToPolygon(radius);
                 translatePolygon(polygon, center)
@@ -355,7 +356,7 @@ export class ApertureDefinition implements ApertureBase {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {
             if (this.templateName == "C" || this.templateName == "O") {
-                let radius = state.scale * this.modifiers[0] / 2;
+                let radius = state.unitToMM(state.scale * this.modifiers[0] / 2);
                 if (radius < Epsilon) {
                     return {polygon:Float64Array.of(), is_solid:false};
                 }
@@ -364,8 +365,8 @@ export class ApertureDefinition implements ApertureBase {
                 return {polygon: polygon, is_solid:true};
             } else if (this.templateName == "R") {
                 let polygon = rectangleToPolygon(
-                    state.scale * this.modifiers[0],
-                    state.scale * this.modifiers[1]);
+                    state.unitToMM(state.scale * this.modifiers[0]),
+                    state.unitToMM(state.scale * this.modifiers[1]));
                 mirrorPolygon(polygon, state.mirroring);
                 rotatePolygon(polygon, state.rotation);
                 translatePolygon(polygon, start.midPoint(end));
@@ -376,7 +377,7 @@ export class ApertureDefinition implements ApertureBase {
         let angle = start.angleFrom(end);
 
         if (this.templateName == "C" || this.templateName == "O") {
-            let radius = state.scale * this.modifiers[0] / 2;
+            let radius = state.unitToMM(state.scale * this.modifiers[0] / 2);
             if (radius < Epsilon) {
                 return {polygon: Float64Array.of(start.x, start.y, end.x, end.y), is_solid:false};
             }
@@ -408,14 +409,18 @@ export class ApertureDefinition implements ApertureBase {
                 || state.mirroring != ObjectMirroring.NONE) {
                 throw new GerberParseException(`Unimplemented rotation or mirroring with rectangular apertures`)
             }
-            let width2 = state.scale * this.modifiers[0] / 2;
-            let height2 = state.scale * this.modifiers[1] / 2;
+            let width2 = state.unitToMM(state.scale * this.modifiers[0] / 2);
+            let height2 = state.unitToMM(state.scale * this.modifiers[1] / 2);
             if (Math.abs(start.x - end.x) < Epsilon) { // Vertical Line
-                let polygon = rectangleToPolygon(this.modifiers[0], Math.abs(end.y - start.y) + this.modifiers[1]);
+                let polygon = rectangleToPolygon(
+                    state.unitToMM(this.modifiers[0]), 
+                    Math.abs(end.y - start.y) + state.unitToMM(this.modifiers[1]));
                 translatePolygon(polygon, start.midPoint(end));
                 return {polygon:polygon, is_solid:true};
             } else if (Math.abs(start.y - end.y) < Epsilon) { // Horizontal Line
-                let polygon = rectangleToPolygon(Math.abs(end.x - start.x) + this.modifiers[0], this.modifiers[1]);
+                let polygon = rectangleToPolygon(
+                    Math.abs(end.x - start.x) + state.unitToMM(this.modifiers[0]),
+                    state.unitToMM(this.modifiers[1]));
                 translatePolygon(polygon, start.midPoint(end));
                 return {polygon:polygon, is_solid:true};
             } else {
@@ -463,11 +468,11 @@ export class ApertureDefinition implements ApertureBase {
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
 
-    objects(polarity:ObjectPolarity):GraphicsObjects {
-        return [{polySet:this.toPolySet(), polarity:polarity}];
+    objects(polarity:ObjectPolarity, state:ObjectState):GraphicsObjects {
+        return [{polySet:this.toPolySet(state), polarity:polarity}];
     }
 
-    toPolySet():PolygonSet {
+    private toPolySet(state:ObjectState):PolygonSet {
         if (this.polygonSet_ != undefined) {
             return this.polygonSet_;
         }
@@ -475,59 +480,78 @@ export class ApertureDefinition implements ApertureBase {
         let result:PolygonSet = [];
 
         if (this.templateName === "C") {
-            let radius = this.modifiers[0] / 2;
+            let radius = state.unitToMM(this.modifiers[0] / 2);
             if (radius < Epsilon) {
                 throw new GerberParseException('Can not convert zero size aperture to polyset');
             }
             result.push(circleToPolygon(radius));
             if (this.modifiers.length == 2 && this.modifiers[1] > Epsilon) {
-                let hole = circleToPolygon(this.modifiers[1] / 2);
+                let hole = circleToPolygon(state.unitToMM(this.modifiers[1] / 2));
                 reversePolygon(hole);
                 result.push(hole);
             } else if (this.modifiers.length == 3 && this.modifiers[1] > Epsilon && this.modifiers[2] > Epsilon) {
-                let hole = rectangleToPolygon(this.modifiers[1], this.modifiers[2]);
+                let hole = rectangleToPolygon(
+                    state.unitToMM(this.modifiers[1]),
+                    state.unitToMM(this.modifiers[2]));
                 reversePolygon(hole);
                 result.push(hole);
             }
         } else if (this.templateName === "R") {
-            result.push(rectangleToPolygon(this.modifiers[0], this.modifiers[1]));
+            result.push(rectangleToPolygon(
+                state.unitToMM(this.modifiers[0]),
+                state.unitToMM(this.modifiers[1])));
             if (this.modifiers.length == 3 && this.modifiers[2] > Epsilon) {
-                let hole = circleToPolygon(this.modifiers[2] / 2);
+                let hole = circleToPolygon(state.unitToMM(this.modifiers[2] / 2));
                 reversePolygon(hole);
                 result.push(hole);
             } else if (this.modifiers.length == 4 && this.modifiers[2] > Epsilon && this.modifiers[3] > Epsilon) {
-                let hole = rectangleToPolygon(this.modifiers[2], this.modifiers[3]);
+                let hole = rectangleToPolygon(
+                    state.unitToMM(this.modifiers[2]),
+                    state.unitToMM(this.modifiers[3]));
                 reversePolygon(hole);
                 result.push(hole);
             }
         } else if (this.templateName === "O") {
-            result.push(obroundToPolygon(this.modifiers[0], this.modifiers[1]));
+            result.push(obroundToPolygon(
+                state.unitToMM(this.modifiers[0]),
+                state.unitToMM(this.modifiers[1])));
             if (this.modifiers.length == 3 && this.modifiers[2] > Epsilon) {
-                let hole = circleToPolygon(this.modifiers[2] / 2);
+                let hole = circleToPolygon(state.unitToMM(this.modifiers[2] / 2));
                 reversePolygon(hole);
                 result.push(hole);
             } else if (this.modifiers.length == 4 && this.modifiers[3] > Epsilon && this.modifiers[4] > Epsilon) {
-                let hole = rectangleToPolygon(this.modifiers[2], this.modifiers[3]);
+                let hole = rectangleToPolygon(
+                    state.unitToMM(this.modifiers[2]),
+                    state.unitToMM(this.modifiers[3]));
                 reversePolygon(hole);
                 result.push(hole);
             }
         } else if (this.templateName === "P") {
             if (this.modifiers.length == 2) {
-                result.push(circleToPolygon(this.modifiers[0] / 2, this.modifiers[1]));
+                result.push(
+                    circleToPolygon(
+                        state.unitToMM(this.modifiers[0] / 2),
+                        this.modifiers[1]));
             } else if (this.modifiers.length > 2) {
-                result.push(circleToPolygon(this.modifiers[0] / 2, this.modifiers[1], this.modifiers[2]));
+                result.push(
+                    circleToPolygon(
+                        state.unitToMM(this.modifiers[0] / 2),
+                        this.modifiers[1],
+                        this.modifiers[2]));
             }
             if (this.modifiers.length == 4 && this.modifiers[3] > Epsilon) {
-                let hole = circleToPolygon(this.modifiers[3] / 2);
+                let hole = circleToPolygon(state.unitToMM(this.modifiers[3] / 2));
                 reversePolygon(hole);
                 result.push(hole);
             } else if (this.modifiers.length == 5 && this.modifiers[3] > Epsilon && this.modifiers[4] > Epsilon) {
-                let hole = rectangleToPolygon(this.modifiers[3], this.modifiers[4]);
+                let hole = rectangleToPolygon(
+                    state.unitToMM(this.modifiers[3]),
+                    state.unitToMM(this.modifiers[4]));
                 reversePolygon(hole);
                 result.push(hole);
             }
         } else {
-            return this.macro.toPolygonSet(this.modifiers);
+            return this.macro.toPolygonSet(this.modifiers, state);
         }
         this.polygonSet_ = result;
         return result;
@@ -558,7 +582,7 @@ export class ApertureMacro {
         readonly content:Array<VariableDefinition|Primitive|PrimitiveComment>) {
     }
 
-    toPolygonSet(modifiers:Array<number>):PolygonSet {
+    toPolygonSet(modifiers:Array<number>, state:ObjectState):PolygonSet {
         let positives:PolygonSet = [];
         let negatives:PolygonSet = [];
 
@@ -586,8 +610,11 @@ export class ApertureMacro {
                 switch (primitive.code) {
                     case 1: // Circle (exposure, diameter, center x, center y, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
-                        diameter = ApertureMacro.getValue(modifiers, 1);
-                        center = new Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
+                        diameter = state.unitToMM(ApertureMacro.getValue(modifiers, 1));
+                        center = state.pointToMM(
+                            new Point(
+                                ApertureMacro.getValue(modifiers, 2),
+                                ApertureMacro.getValue(modifiers, 3)));
                         if (diameter > Epsilon) {
                             let polygon = circleToPolygon(diameter / 2);
                             translatePolygon(polygon, center);
@@ -607,8 +634,8 @@ export class ApertureMacro {
                         }
                         let outline = new Float64Array(numPoints * 2 + 2);
                         for (let idx = 0; idx <= numPoints; idx++) {
-                            outline[idx * 2] = ApertureMacro.getValue(modifiers, 2 * idx + 2);
-                            outline[idx * 2 + 1] = ApertureMacro.getValue(modifiers, 2 * idx + 3);
+                            outline[idx * 2] = state.unitToMM(ApertureMacro.getValue(modifiers, 2 * idx + 2));
+                            outline[idx * 2 + 1] = state.unitToMM(ApertureMacro.getValue(modifiers, 2 * idx + 3));
                         }
                         // If the contour is clockwise, reverse the polygon.
                         if (polygonOrientation(outline) > 0) {
@@ -622,8 +649,11 @@ export class ApertureMacro {
                     case 5: // Polygon (exposure, num vertices, center x, center y, diameter, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
                         let numSteps = ApertureMacro.getValue(modifiers, 1);
-                        center = new Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
-                        diameter = ApertureMacro.getValue(modifiers, 4);
+                        center = state.pointToMM(
+                            new Point(
+                                ApertureMacro.getValue(modifiers, 2),
+                                ApertureMacro.getValue(modifiers, 3)));
+                        diameter = state.unitToMM(ApertureMacro.getValue(modifiers, 4));
                         if (numSteps < 3) {
                             throw new GerberParseException(`Invalid number of steps in a macro polygon ${numSteps}`);
                         }
@@ -642,13 +672,16 @@ export class ApertureMacro {
                             // exposure is always on
                         isPositive = true;
                         shape = [];
-                        center = new Point(ApertureMacro.getValue(modifiers, 0), ApertureMacro.getValue(modifiers, 1));
-                        outerDiameter = ApertureMacro.getValue(modifiers, 2);
-                        let ringThickness = ApertureMacro.getValue(modifiers, 3);
-                        gap = ApertureMacro.getValue(modifiers, 4);
+                        center = state.pointToMM(
+                            new Point(
+                                ApertureMacro.getValue(modifiers, 0),
+                                ApertureMacro.getValue(modifiers, 1)));
+                        outerDiameter = state.unitToMM(ApertureMacro.getValue(modifiers, 2));
+                        let ringThickness = state.unitToMM(ApertureMacro.getValue(modifiers, 3));
+                        gap = state.unitToMM(ApertureMacro.getValue(modifiers, 4));
                         let maxRings = ApertureMacro.getValue(modifiers, 5);
-                        let crossThickness = ApertureMacro.getValue(modifiers, 6);
-                        let crossLen = ApertureMacro.getValue(modifiers, 7);
+                        let crossThickness = state.unitToMM(ApertureMacro.getValue(modifiers, 6));
+                        let crossLen = state.unitToMM(ApertureMacro.getValue(modifiers, 7));
                         rotation = ApertureMacro.getValue(modifiers, 8);
                         if (ringThickness > Epsilon) {
                             for (let ringNo = 0; ringNo < maxRings && outerDiameter > Epsilon; ringNo++) {
@@ -685,10 +718,13 @@ export class ApertureMacro {
 
                     case 7: // Thermal (center x, center y, outer diam, inner diam, gap, rotation)
                         isPositive = true;
-                        center = new Point(ApertureMacro.getValue(modifiers, 0), ApertureMacro.getValue(modifiers, 1));
-                        outerDiameter = ApertureMacro.getValue(modifiers, 2);
-                        let innerDiameter = ApertureMacro.getValue(modifiers, 3);
-                        gap = ApertureMacro.getValue(modifiers, 4);
+                        center = state.pointToMM(
+                            new Point(
+                                ApertureMacro.getValue(modifiers, 0),
+                                ApertureMacro.getValue(modifiers, 1)));
+                        outerDiameter = state.unitToMM(ApertureMacro.getValue(modifiers, 2));
+                        let innerDiameter = state.unitToMM(ApertureMacro.getValue(modifiers, 3));
+                        gap = state.unitToMM(ApertureMacro.getValue(modifiers, 4));
                         let gap2 = gap / 2;
                         let innerRadius = innerDiameter / 2;
                         let outerRadius = outerDiameter / 2;
@@ -837,9 +873,15 @@ export class ApertureMacro {
 
                     case 20: // Vector line (exposure, width, start x, start y, end x, end y, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
-                        width = ApertureMacro.getValue(modifiers, 1);
-                        let centerStart = new Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3));
-                        let centerEnd = new Point(ApertureMacro.getValue(modifiers, 4), ApertureMacro.getValue(modifiers, 5));
+                        width = state.unitToMM(ApertureMacro.getValue(modifiers, 1));
+                        let centerStart = state.pointToMM(
+                            new Point(
+                                ApertureMacro.getValue(modifiers, 2),
+                                ApertureMacro.getValue(modifiers, 3)));
+                        let centerEnd = state.pointToMM(
+                            new Point(
+                                ApertureMacro.getValue(modifiers, 4),
+                                ApertureMacro.getValue(modifiers, 5)));
                         rotation = ApertureMacro.getValue(modifiers, 6);
                         let direction = unitVector(
                             {x:centerEnd.x - centerStart.x, y:centerEnd.y - centerStart.y});
@@ -868,9 +910,12 @@ export class ApertureMacro {
     
                     case 21: // Center line (exposure, width, height, center x, center y, rotation)
                         isPositive =  ApertureMacro.getValue(modifiers, 0) != 0;
-                        width = ApertureMacro.getValue(modifiers, 1);
-                        height = ApertureMacro.getValue(modifiers, 2);
-                        center = new Point(ApertureMacro.getValue(modifiers, 3), ApertureMacro.getValue(modifiers, 4));
+                        width = state.unitToMM(ApertureMacro.getValue(modifiers, 1));
+                        height = state.unitToMM(ApertureMacro.getValue(modifiers, 2));
+                        center = state.pointToMM(
+                            new Point(
+                                ApertureMacro.getValue(modifiers, 3),
+                                ApertureMacro.getValue(modifiers, 4)));
                         rotation = ApertureMacro.getValue(modifiers, 5);
                         if (width > Epsilon && height > Epsilon) {
                             let line = rectangleToPolygon(width, height);
@@ -1001,6 +1046,27 @@ export class GerberState {
         this.coordinateUnits_ = value;        
     }
 
+    unitToMM(v:number):number {
+        if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
+            return v;
+        }
+        return v * 2.54;
+    }
+
+    pointToMM(v:Point):Point {
+        if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
+            return v;
+        }
+        return new Point(v.x * 2.54, v.y * 2.54);
+    }
+
+    mmToUnit(v:number):number {
+        if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
+            return v;
+        }
+        return v / 2.54;
+    }
+
     get currentPointX():number {
         if (this.currentPoint_.x == undefined) {
             this.error("Current point X is not set.");
@@ -1083,7 +1149,8 @@ export class GerberState {
             this.objectPolarity,
             this.objectMirroring,
             this.objectScaling,
-            this.objectRotation);
+            this.objectRotation,
+            this.coordinateUnits);
     }
 
     getAperture(id:number):ApertureBase {
@@ -1137,28 +1204,41 @@ export class GerberState {
         if (!from.isValid() || !to.isValid()) {
             this.error(`Invalid line ${from} ${to}`);
         }
-        this.graphisOperationsConsumer_.line(from, to, cmd, this);
+        this.graphisOperationsConsumer_.line(
+            this.pointToMM(from), 
+            this.pointToMM(to), cmd, this);
     }
 
     circle(center:Point, radius:number, cmd:GerberCommand) {
         if (!center.isValid() || radius <= Epsilon) {
             this.error(`Invalid circle ${center} R${radius}`);
         }
-        this.graphisOperationsConsumer_.circle(center, radius, cmd, this);
+        this.graphisOperationsConsumer_.circle(
+            this.pointToMM(center),
+            this.unitToMM(radius),
+            cmd,
+            this);
     }
 
     arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, cmd:GerberCommand) {
         if (!center.isValid() || radius <= Epsilon || !start.isValid() || !end.isValid()) {
             this.error(`Invalid arc ${center} R${radius} from ${start} to ${end}`);
         }
-        this.graphisOperationsConsumer_.arc(center, radius, start, end, isCCW, cmd, this);
+        this.graphisOperationsConsumer_.arc(
+            this.pointToMM(center),
+            this.unitToMM(radius),
+            this.pointToMM(start),
+            this.pointToMM(end),
+            isCCW,
+            cmd,
+            this);
     }
 
     flash(center:Point, cmd:GerberCommand) {
         if (!center.isValid()) {
             this.error(`Invalid flash location ${center}`);
         }
-        this.graphisOperationsConsumer_.flash(center, cmd, this);
+        this.graphisOperationsConsumer_.flash(this.pointToMM(center), cmd, this);
     }
 
     closeRegionContour() {
@@ -1234,8 +1314,8 @@ export class GerberState {
         let block = new Block(
             params.xRepeat,
             params.yRepeat,
-            params.xDelta,
-            params.yDelta,
+            this.unitToMM(params.xDelta),
+            this.unitToMM(params.yDelta),
             blockConsumer.primitives,
             blockConsumer.objects);
         this.restoreGraphicsConsumer();
@@ -1497,7 +1577,36 @@ export class ObjectState {
         readonly polarity:ObjectPolarity = ObjectPolarity.DARK,
         readonly mirroring:ObjectMirroring = ObjectMirroring.NONE,
         readonly scale:number = 1,
-        readonly rotation:number = 0) {
+        readonly rotation:number = 0,
+        readonly units:CoordinateUnits = CoordinateUnits.MILIMETERS) {
+    }
+
+    unitToMM(v:number):number {
+        if (this.units == CoordinateUnits.MILIMETERS) {
+            return v;
+        }
+        return v * 2.54;
+    }
+
+    pointToMM(v:Point):Point {
+        if (this.units == CoordinateUnits.MILIMETERS) {
+            return v;
+        }
+        return new Point(v.x * 2.54, v.y * 2.54);
+    }
+
+    mmToUnit(v:number):number {
+        if (this.units == CoordinateUnits.MILIMETERS) {
+            return v;
+        }
+        return v / 2.54;
+    }
+
+    mmToPoint(v:Point):Point {
+        if (this.units == CoordinateUnits.MILIMETERS) {
+            return v;
+        }
+        return new Point(v.x / 2.54, v.y / 2.54);
     }
 }
 
@@ -1674,7 +1783,7 @@ export class Flash {
 
     get objects():GraphicsObjects {
         if (!this.objects_) {
-            this.objects_ = copyObjects(this.aperture.objects(this.state.polarity));
+            this.objects_ = copyObjects(this.aperture.objects(this.state.polarity, this.state));
             this.objects_.forEach(o => {
                 mirrorPolySet(o.polySet, this.state.mirroring);
                 rotatePolySet(o.polySet, this.state.rotation);
