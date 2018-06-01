@@ -28,19 +28,19 @@ export declare class CommandParser {
     private static dCmdMatch;
     private static coordinatesOrder;
     parseBlock(buffer: string): void;
-    private append(chr);
-    private static consoleError(lineNumber, buffer, idx);
-    private static emptyConsumer(cmd, line);
+    private append;
+    private static consoleError;
+    private static emptyConsumer;
     setConsumer(consumer: (cmd: string, lineNo: number, isAdvanced: boolean) => void): (cmd: string, lineNo: number, isAdvanced: boolean) => void;
     setErrorHandler(handler: (lineNumber: number, buffer: string, idx: number) => void): (lineNumber: number, buffer: string, idx: number) => void;
-    private commandPreprocessor();
-    private static coordinatePosition(coordinate);
+    private commandPreprocessor;
+    private static coordinatePosition;
     /**
      * Sometimes we receive D operation where the coordinates are out of order
      * for example Y123X567D03. We convert it to X567Y123D03.
      * @param cmd input command
      */
-    private static orderDoperation(cmd);
+    private static orderDoperation;
 }
 /**
  * The main gerber parser class.
@@ -55,7 +55,7 @@ export declare class GerberParser {
     private commands;
     constructor();
     parseBlock(block: string): void;
-    private parseCommand(cmd, lineNo);
+    private parseCommand;
     output(): string;
     execute(ctx: GerberState): void;
 }

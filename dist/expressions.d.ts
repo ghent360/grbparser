@@ -23,13 +23,13 @@ export declare class ExpressionParser {
     private static MatchVariable;
     private static MatchNumber;
     constructor(expression: string);
-    private nextToken();
-    private consume();
-    private accept(id);
-    private expect(id);
-    private operand();
-    private factor();
-    private term();
-    private expression();
+    private nextToken;
+    private consume;
+    private accept;
+    private expect;
+    private operand;
+    private factor;
+    private term;
+    private expression;
     parse(): AritmeticOperation;
 }

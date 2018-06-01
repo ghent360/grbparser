@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --require ts-node/register 'test/**/*.spec.ts'",
-    "prepublish": "date -u +\"export const Build='%g%m%d.%H%M';\" >build.ts && tsc -p ./tsconfig.release.json --outDir dist/"
+    "dist": "date -u +\"export const Build='%g%m%d.%H%M';\" >build.ts && tsc -p ./tsconfig.release.json --outDir dist/"
   },
   "repository": {
     "type": "git",
@@ -35,7 +35,7 @@
     "@types/mocha": "^5.2.0",
     "assert": "^1.4.1",
     "babel-core": "^6.26.3",
-    "babel-preset-env": "^1.6.1",
+    "babel-preset-env": "^1.7.0",
     "fs-extra-promise": "^1.0.1",
     "mocha": "^5.1.1"
   }
