@@ -180,6 +180,18 @@ export class GerberParseException {
     }
 }
 
+export class ExcellonParseException {
+    constructor(readonly message:string, readonly line?:number) {
+    }
+
+    toString():string {
+        if (this.line != undefined) {
+            return `Error parsing excellon file at line ${this.line}: ${this.message}`;
+        }
+        return `Error parsing excellon file: ${this.message}`;
+    }
+}
+
 export interface ApertureBase {
     readonly apertureId:number;
     
@@ -2222,11 +2234,14 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
     }
 }
 
-export interface GerberCommand {
+export interface CommonCommand {
     readonly name:string;
-    readonly isAdvanced:boolean;
     readonly lineNo?:number;
     formatOutput(fmt:CoordinateFormatSpec):string;
+}
+
+export interface GerberCommand extends CommonCommand {
+    readonly isAdvanced:boolean;
     execute(ctx:GerberState):void;
 }
 
