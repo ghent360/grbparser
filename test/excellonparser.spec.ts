@@ -10,9 +10,11 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as xp from '../excellonparser';
+import { CoordinateSkipZeros } from '../primitives';
+import { ToolDefinitionCommand } from '../excelloncommands';
 
 describe("ExcellonParser tests", () => {
-    it('G01', () => {
+    it('Command tokenizer', () => {
         let commands:string[] = [];
         let cmdParser = new xp.CommandParser();
         cmdParser.setConsumer((cmd) => commands.push(cmd));
@@ -26,6 +28,11 @@ describe("ExcellonParser tests", () => {
         assert.equal(commands.length, 2);
         assert.equal(commands[0], "G01");
         assert.equal(commands[1], "X1234Y5678D02");
+    });
+    it('Mods parser', () => {
+        let fmt = new xp.CoordinateFormatSpec(2, 4, CoordinateSkipZeros.LEADING);
+        let cmd = new ToolDefinitionCommand("T1C.1355H", fmt, 1);
+        assert.equal(cmd.formatOutput(fmt), "T1C.1355H");
     });
     it('parse and reconstruct excellon files', () => {
         let folder = "test/excellon";

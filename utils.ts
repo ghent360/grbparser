@@ -1,3 +1,5 @@
+import { CoordinateSkipZeros } from "./primitives";
+
 /**
  * Gerber Parsing Library
  * 
@@ -20,4 +22,85 @@ export function formatFloat(n:number, precision:number):string {
         s = s.substring(0, idx + 1);
     }
     return s;
+}
+
+export class FormatException {
+    constructor(readonly message:string) {
+    }
+
+    toString():string {
+        return `FormatException: ${this.message}`;
+    }
+}
+
+export function formatFixedNumber(value:number, precision:number, intPos:number, skip:CoordinateSkipZeros):string {
+    let totalLen = intPos + precision;
+    let sign = "";
+    if (value < 0) {
+        value = -value;
+        sign = "-";
+    }
+    let intValue = Math.round(value * Math.pow(10, precision));
+    let strValue = intValue.toString();
+    switch (skip) {
+        case CoordinateSkipZeros.NONE:
+            if (strValue.length < totalLen) {
+                strValue = "0".repeat(totalLen - strValue.length) + strValue;
+            }
+            if (strValue.length > totalLen) {
+                throw new FormatException(`Value ${value} does note fit format ${intPos}${precision}.`);
+            }
+            return sign + strValue;
+        case CoordinateSkipZeros.LEADING:
+            if (strValue.length > totalLen) {
+                throw new FormatException(`Value ${value} does note fit format ${intPos}${precision}.`);
+            }
+            return sign + strValue;
+        case CoordinateSkipZeros.TRAILING:
+            if (strValue.length < totalLen) {
+                strValue = "0".repeat(totalLen - strValue.length) + strValue;
+            }
+            if (strValue.length > totalLen) {
+                throw new FormatException(`Value ${value} does note fit format ${intPos}${precision}.`);
+            }
+            let endTrim = strValue.length - 1;
+            while (endTrim >= 0 && strValue[endTrim] == '0') {
+                endTrim--;
+            }
+            strValue = strValue.substr(0, endTrim + 1);
+            return sign + strValue;
+    }
+}
+
+export function parseCoordinate(
+    coordinate:string,
+    numIntPos:number,
+    numDecPos:number,
+    zeroSkip:CoordinateSkipZeros):number {
+    if (coordinate.indexOf('.') >= 0) {
+        return Number.parseFloat(coordinate);
+    }
+    let pow = Math.pow(10, -numDecPos);
+    let len = numIntPos + numDecPos;
+    let sign = 1;
+    let numDigits = 0;
+    // Count how many digits are in the string:
+    for (let idx = 0; idx < coordinate.length; idx++) {
+        if (coordinate[idx] >= '0' && coordinate[idx] <= '9') {
+            numDigits++;
+        }
+    }
+    if (coordinate[0] == '-') {
+        sign = -1;
+        coordinate = coordinate.substring(1);
+    }
+    //if (numDigits > len) {
+    //    throw new FormatException(`Coordinate ${coordinate} longer than the format allows ${numIntPos}.${numDecPos}`);
+    //}
+    let zeroMult = 1;
+    if (zeroSkip == CoordinateSkipZeros.TRAILING && numDigits < len) {
+        zeroMult = Math.pow(10, len - numDigits);
+    }
+    let num = Number.parseFloat(coordinate);
+    return sign * num * pow * zeroMult;
 }

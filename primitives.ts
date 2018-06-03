@@ -180,18 +180,6 @@ export class GerberParseException {
     }
 }
 
-export class ExcellonParseException {
-    constructor(readonly message:string, readonly line?:number) {
-    }
-
-    toString():string {
-        if (this.line != undefined) {
-            return `Error parsing excellon file at line ${this.line}: ${this.message}`;
-        }
-        return `Error parsing excellon file: ${this.message}`;
-    }
-}
-
 export interface ApertureBase {
     readonly apertureId:number;
     
@@ -1044,7 +1032,9 @@ export class GerberState {
         if (this.coordinateFormat_ != undefined) {
             this.warning("File coordinate format already set.");
         }
-        this.coordinateFormat_ = value;        
+        this.coordinateFormat_ = value;
+        this.coordinateMode = 
+            value.coordType == CoordinateType.ABSOLUTE ? CoordinateMode.ABSOLUTE : CoordinateMode.RELATIVE;
     }
 
     get coordinateUnits():CoordinateUnits {
@@ -2232,12 +2222,6 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
         polygonSet: image,
         bounds: polySetBounds(image).toSimpleBounds()
     }
-}
-
-export interface ExcellonCommand {
-    readonly name:string;
-    readonly lineNo?:number;
-    formatOutput(fmt:CoordinateFormatSpec):string;
 }
 
 export interface GerberCommand {

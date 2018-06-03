@@ -1,4 +1,6 @@
-import { ExcellonParseException, ExcellonCommand } from "./primitives";
+import { CoordinateSkipZeros, CoordinateUnits, Epsilon } from "./primitives";
+import { CoordinateFormatSpec, ExcellonCommand, ExcellonParseException } from "./excellonparser";
+import { parseCoordinate, formatFixedNumber } from "./utils";
 
 /**
  * Gerber Parsing Library
@@ -39,20 +41,18 @@ export class CommentCommand implements ExcellonCommand {
     }
 }
 
-export class BaseGCodeCommand {
+export class GCodeCommand implements ExcellonCommand {
     readonly codeId:number;
+    readonly name:string;
     private static matchExp = /^G(\d+)$/;
 
-    constructor(cmd:string, cmdCode?:number, readonly lineNo?:number) {
-        let match = BaseGCodeCommand.matchExp.exec(cmd);
+    constructor(cmd:string, readonly lineNo?:number) {
+        let match = GCodeCommand.matchExp.exec(cmd);
         if (!match) {
             throw new ExcellonParseException(`Invalid G command format ${cmd}`);
         }
         this.codeId = Number.parseInt(match[1]);
-        if (cmdCode != undefined && this.codeId != cmdCode) {
-            throw new ExcellonParseException(
-                `G code mismatch expected ${cmdCode} got ${this.codeId}`);
-        }
+        this.name = 'G' + this.codeId;
     }
 
     formatOutput():string {
@@ -65,27 +65,18 @@ export class BaseGCodeCommand {
     }
 }
 
-export class G05Command extends BaseGCodeCommand implements ExcellonCommand {
-    readonly name = "G05";
-    constructor(cmd:string, lineNo?:number) {
-        super(cmd, 5, lineNo);
-    }
-}
-
-export class BaseMCodeCommand {
+export class MCodeCommand implements ExcellonCommand {
     readonly codeId:number;
+    readonly name:string;
     private static matchExp = /^M(\d+)$/;
 
-    constructor(cmd:string, cmdCode?:number, readonly lineNo?:number) {
-        let match = BaseMCodeCommand.matchExp.exec(cmd);
+    constructor(cmd:string, readonly lineNo?:number) {
+        let match = MCodeCommand.matchExp.exec(cmd);
         if (!match) {
             throw new ExcellonParseException(`Invalid M command format ${cmd}`);
         }
         this.codeId = Number.parseInt(match[1]);
-        if (cmdCode != undefined && this.codeId != cmdCode) {
-            throw new ExcellonParseException(
-                `M code mismatch expected ${cmdCode} got ${this.codeId}`);
-        }
+        this.name = 'M' + this.codeId;
     }
 
     formatOutput():string {
@@ -95,27 +86,6 @@ export class BaseMCodeCommand {
         }
         result += this.codeId;
         return result;
-    }
-}
-
-export class M48Command extends BaseMCodeCommand implements ExcellonCommand {
-    readonly name = "M48";
-    constructor(cmd:string, lineNo?:number) {
-        super(cmd, 48, lineNo);
-    }
-}
-
-export class M72Command extends BaseMCodeCommand implements ExcellonCommand {
-    readonly name = "M72";
-    constructor(cmd:string, lineNo?:number) {
-        super(cmd, 72, lineNo);
-    }
-}
-
-export class M71Command extends BaseMCodeCommand implements ExcellonCommand {
-    readonly name = "M71";
-    constructor(cmd:string, lineNo?:number) {
-        super(cmd, 71, lineNo);
     }
 }
 
@@ -175,7 +145,7 @@ export class UnitsCommand extends CommaCommandBase {
 
 interface Modifier {
     readonly code:string;
-    readonly value:number;
+    readonly value?:number;
 }
 
 class ToolPost {
@@ -195,8 +165,9 @@ class ToolPost {
 }
 
 const numChars = '+-.0123456789';
+const emptyModsAllowed = 'H';
 
-function parseMods(mods:string):Array<Modifier> {
+function parseMods(mods:string, fmt:CoordinateFormatSpec):Array<Modifier> {
     let result = [];
     while (mods.length > 0) {
         let code = mods[0];
@@ -207,13 +178,93 @@ function parseMods(mods:string):Array<Modifier> {
             }
         }
         if (idx == 1) {
+            if (emptyModsAllowed.indexOf(code) >= 0) {
+                // Mod with no value, for example T1H
+                result.push({code:code});
+                mods = mods.substr(1);
+                continue;
+            }
             throw new ExcellonParseException(`Invalid modifier ${mods}`);
         }
         let valueStr = mods.substr(1, idx - 1);
-        result.push({code:code, value:Number.parseFloat(valueStr)});
+        let value:number;
+        switch (code) {
+            case 'X':
+            case 'Y':
+            case 'Z':
+                value = parseCoordinate(valueStr, fmt.numIntPos, fmt.numDecimalPos, fmt.zeroSkip);
+                break;
+            case 'S':
+                value = parseCoordinate(valueStr, 5, 0, CoordinateSkipZeros.TRAILING);
+                break;
+            case 'B':
+                value = parseCoordinate(valueStr, 4, 0, CoordinateSkipZeros.TRAILING);
+                break;
+            case 'C':
+                value = parseCoordinate(valueStr, 0, 3, CoordinateSkipZeros.TRAILING);
+                break;
+            case 'H':
+                value = parseCoordinate(valueStr, 4, 0, CoordinateSkipZeros.LEADING);
+                break;
+            default:
+                value = parseCoordinate(valueStr, 3, 0, CoordinateSkipZeros.TRAILING);
+                break;
+        }
+        result.push({code:code, value:value});
         mods = mods.substr(idx);
     }
     return result;
+}
+
+function fomratModNumber(
+    value:number,
+    numIntPos:number,
+    numDecPos:number,
+    zeroSkip:CoordinateSkipZeros):string {
+    let intValue = Math.round(value * Math.pow(10, numDecPos));
+    let roundValue = intValue * Math.pow(10, -numDecPos);
+    if (Math.abs(value - roundValue) > Epsilon) {
+        let sign = value < 0 ? '-' : '';
+        if (value < 0) {
+            value = -value;
+        }
+        let valueStr = value.toString();
+        while (valueStr.startsWith('0')) {
+            valueStr = valueStr.substr(1);
+        }
+        return sign + valueStr;
+    }
+    return formatFixedNumber(value, numDecPos, numIntPos, zeroSkip);
+}
+
+function formatMod(mod:Modifier, fmt:CoordinateFormatSpec):string {
+    if (mod.value == undefined) {
+        return mod.code;
+    }
+    let value:string;
+    switch (mod.code) {
+        case 'X':
+        case 'Y':
+        case 'Z':
+            value = fomratModNumber(mod.value, fmt.numDecimalPos, fmt.numIntPos, fmt.zeroSkip);
+            break;
+        case 'S':
+            value = fomratModNumber(mod.value, 5, 0, CoordinateSkipZeros.TRAILING);
+            break;
+        case 'B':
+            value = fomratModNumber(mod.value, 4, 0, CoordinateSkipZeros.TRAILING);
+            break;
+        case 'C':
+            value = fomratModNumber(mod.value, 0, 3, CoordinateSkipZeros.TRAILING);
+            break;
+        case 'H':
+            value = fomratModNumber(mod.value, 4, 0, CoordinateSkipZeros.LEADING);
+            break;
+        default:
+            value = fomratModNumber(mod.value, 3, 0, CoordinateSkipZeros.TRAILING);
+            break;
+    }
+    return mod.code + value;
 }
 
 export class ToolDefinitionCommand implements ExcellonCommand {
@@ -224,7 +275,7 @@ export class ToolDefinitionCommand implements ExcellonCommand {
     private static match = /^T(\d+(?:,\d+)?)((?:[BSFCDHZUNI](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/;
     private static toolMatch = /^(\d+)(?:,(\d+))?$/;
 
-    constructor(cmd:string, readonly lineNo?:number) {
+    constructor(cmd:string, fmt:CoordinateFormatSpec, readonly lineNo?:number) {
         let match = ToolDefinitionCommand.match.exec(cmd);
         if (!match) {
             throw new ExcellonParseException(`Invalid tool definition command ${cmd}`);
@@ -237,13 +288,13 @@ export class ToolDefinitionCommand implements ExcellonCommand {
         let toolEnd = tool.length > 2 ? Number.parseInt(tool[2]) : undefined;
         this.tool = new ToolPost(toolStart, toolEnd);
         if (match.length > 2) {
-            this.modifiers = parseMods(match[2]);
+            this.modifiers = parseMods(match[2], fmt);
         }
     }
 
-    formatOutput():string {
+    formatOutput(fmt:CoordinateFormatSpec):string {
         let result = "T" + this.tool.toString();
-        this.modifiers.forEach(m => result += m.code + m.value);
+        this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }
 }

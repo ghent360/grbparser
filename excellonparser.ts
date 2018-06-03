@@ -7,11 +7,20 @@
  * License: MIT License, see LICENSE.txt
  */
 
- import {
-    CoordinateFormatSpec,
-    ExcellonCommand,
-    ExcellonParseException} from "./primitives";
+ import {CoordinateSkipZeros} from "./primitives";
 import * as cmds from "./excelloncommands";
+
+export class ExcellonParseException {
+    constructor(readonly message:string, readonly line?:number) {
+    }
+
+    toString():string {
+        if (this.line != undefined) {
+            return `Error parsing excellon file at line ${this.line}: ${this.message}`;
+        }
+        return `Error parsing excellon file: ${this.message}`;
+    }
+}
 
 /**
  * This is an internal class to "tokenize" the excellon commands from the stream.
@@ -92,6 +101,19 @@ export class CommandParser {
 
 }
 
+export class CoordinateFormatSpec {
+    constructor(
+        public numIntPos:number,
+        public numDecimalPos:number,
+        public zeroSkip:CoordinateSkipZeros) {}
+}
+
+export interface ExcellonCommand {
+    readonly name:string;
+    readonly lineNo?:number;
+    formatOutput(fmt:CoordinateFormatSpec):string;
+}
+
 class ParserCommand {
     constructor(readonly cmd:ExcellonCommand, readonly lineNo:number) {
     }
@@ -114,7 +136,6 @@ export class ExcellonParser {
     // Order in this array is important, because some regex are more broad
     // and would detect previous commands.
     private commandDispatcher:Array<Parslet> = [
-        {exp:/^M48$/, cb: (cmd, lineNo) => new cmds.M48Command(cmd, lineNo)},
         {exp:/^;.*/, cb: (cmd, lineNo) => new cmds.CommentCommand(cmd, lineNo)},
         {exp:/^R,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^VER,.*/, cb: (cmd, lineNo) => new cmds.AxisVersionCommand(cmd, lineNo)},
@@ -132,17 +153,17 @@ export class ExcellonParser {
         {exp:/^FSB,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {
             exp:/^T(\d+(?:,\d+)?)((?:[BSFCDHZUNI](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/, 
-            cb: (cmd, lineNo) => new cmds.ToolDefinitionCommand(cmd, lineNo)
+            cb: (cmd, lineNo) => new cmds.ToolDefinitionCommand(cmd, this.fmt, lineNo)
         },
         {exp:/^%$/, cb: (cmd, lineNo) => new cmds.EndOfHeaderCommand(cmd, lineNo)},
         {exp:/^M47,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
-        {exp:/^G0*5$/, cb: (cmd, lineNo) => new cmds.G05Command(cmd, lineNo)},
-        {exp:/^M71$/, cb: (cmd, lineNo) => new cmds.M71Command(cmd, lineNo)},
-        {exp:/^M72$/, cb: (cmd, lineNo) => new cmds.M72Command(cmd, lineNo)},
+        {exp:/^G(?:\d+)$/, cb: (cmd, lineNo) => new cmds.GCodeCommand(cmd, lineNo)},
+        {exp:/^M(?:\d+)$/, cb: (cmd, lineNo) => new cmds.MCodeCommand(cmd, lineNo)},
     ];
     private commands:Array<ParserCommand> = [];
 
     constructor() {
+        this.fmt = new CoordinateFormatSpec(2, 4, CoordinateSkipZeros.LEADING);
         this.commandParser.setConsumer((cmd:string, lineNo:number) => this.parseCommand(cmd, lineNo));
     }
 
@@ -165,7 +186,7 @@ export class ExcellonParser {
             }
             let command = dispatcher.cb(cmd, lineNo);
             this.commands.push(new ParserCommand(command, lineNo));
-            console.log(`Cmd: '${cmd}', '${command.formatOutput(null)}'`);
+            console.log(`Cmd: '${cmd}', '${command.formatOutput(this.fmt)}'`);
         } catch (e) {
             console.log(`Error parsing excellon file at line ${lineNo}.`);
             console.log(`Offending command: ${cmd.substr(0, 100)}`);
