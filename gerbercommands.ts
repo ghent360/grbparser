@@ -55,7 +55,6 @@ import {
     AritmeticOperation,
     ExpressionParser
 } from "./expressions";
-import { toASCII } from 'punycode';
 
 export class FSCommand implements GerberCommand {
     readonly name:string = "FS";

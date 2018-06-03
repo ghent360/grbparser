@@ -9,9 +9,9 @@
 
  import {
     CoordinateFormatSpec,
-    CommonCommand,
+    ExcellonCommand,
     ExcellonParseException} from "./primitives";
-import * as cmds from "./commands";
+import * as cmds from "./excelloncommands";
 
 /**
  * This is an internal class to "tokenize" the excellon commands from the stream.
@@ -93,8 +93,13 @@ export class CommandParser {
 }
 
 class ParserCommand {
-    constructor(readonly cmd:CommonCommand, readonly lineNo:number) {
+    constructor(readonly cmd:ExcellonCommand, readonly lineNo:number) {
     }
+}
+
+interface Parslet {
+    exp:RegExp;
+    cb:(cmd:string, lineNo:number) => ExcellonCommand;
 }
 
 /**
@@ -108,7 +113,32 @@ export class ExcellonParser {
 
     // Order in this array is important, because some regex are more broad
     // and would detect previous commands.
-    private commandDispatcher:Array<[RegExp, (cmd:string, lineNo:number) => CommonCommand]> = [
+    private commandDispatcher:Array<Parslet> = [
+        {exp:/^M48$/, cb: (cmd, lineNo) => new cmds.M48Command(cmd, lineNo)},
+        {exp:/^;.*/, cb: (cmd, lineNo) => new cmds.CommentCommand(cmd, lineNo)},
+        {exp:/^R,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^VER,.*/, cb: (cmd, lineNo) => new cmds.AxisVersionCommand(cmd, lineNo)},
+        {exp:/^FMAT,.*/, cb: (cmd, lineNo) => new cmds.FileFormatCommand(cmd, lineNo)},
+        {exp:/^INCH,.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo)},
+        {exp:/^METRIC,.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo)},
+        {exp:/^BLKD,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^SBK,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^SG,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^TCST,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^ICI,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^OSTOP,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^RSB,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^ATC,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^FSB,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {
+            exp:/^T(\d+(?:,\d+)?)((?:[BSFCDHZUNI](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/, 
+            cb: (cmd, lineNo) => new cmds.ToolDefinitionCommand(cmd, lineNo)
+        },
+        {exp:/^%$/, cb: (cmd, lineNo) => new cmds.EndOfHeaderCommand(cmd, lineNo)},
+        {exp:/^M47,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^G0*5$/, cb: (cmd, lineNo) => new cmds.G05Command(cmd, lineNo)},
+        {exp:/^M71$/, cb: (cmd, lineNo) => new cmds.M71Command(cmd, lineNo)},
+        {exp:/^M72$/, cb: (cmd, lineNo) => new cmds.M72Command(cmd, lineNo)},
     ];
     private commands:Array<ParserCommand> = [];
 
@@ -125,19 +155,17 @@ export class ExcellonParser {
             return;
         }
         try {
-            console.log(`Cmd: '${cmd}'`);
-            /*
-            let dispatcher = this.commandDispatcher.find(d => d[0].test(cmd));
+            let dispatcher = this.commandDispatcher.find(d => d.exp.test(cmd));
             if (dispatcher == undefined) {
                 throw new ExcellonParseException(`Invalid command ${cmd.substr(0, 100)}`);
             }
-            if (dispatcher[1] == null) {
+            if (dispatcher.cb == null) {
                 //console.log(`WARNING: ignoring ${cmd}`);
                 return;
             }
-            let command = dispatcher[1](cmd, lineNo);
+            let command = dispatcher.cb(cmd, lineNo);
             this.commands.push(new ParserCommand(command, lineNo));
-            */
+            console.log(`Cmd: '${cmd}', '${command.formatOutput(null)}'`);
         } catch (e) {
             console.log(`Error parsing excellon file at line ${lineNo}.`);
             console.log(`Offending command: ${cmd.substr(0, 100)}`);

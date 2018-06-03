@@ -2234,14 +2234,17 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
     }
 }
 
-export interface CommonCommand {
+export interface ExcellonCommand {
     readonly name:string;
     readonly lineNo?:number;
     formatOutput(fmt:CoordinateFormatSpec):string;
 }
 
-export interface GerberCommand extends CommonCommand {
+export interface GerberCommand {
+    readonly name:string;
+    readonly lineNo?:number;
     readonly isAdvanced:boolean;
+    formatOutput(fmt:CoordinateFormatSpec):string;
     execute(ctx:GerberState):void;
 }
 
