@@ -1,4 +1,4 @@
-import { CoordinateSkipZeros, CoordinateUnits, Epsilon } from "./primitives";
+import { CoordinateZeroFormat, CoordinateUnits, Epsilon } from "./primitives";
 import { CoordinateFormatSpec, ExcellonCommand, ExcellonParseException } from "./excellonparser";
 import { parseCoordinate, formatFixedNumber } from "./utils";
 
@@ -44,7 +44,7 @@ export class CommentCommand implements ExcellonCommand {
 export class GCodeCommand implements ExcellonCommand {
     readonly codeId:number;
     readonly name:string;
-    private static matchExp = /^G(\d+)$/;
+    private static matchExp = /^G(\d+)/;
 
     constructor(cmd:string, readonly lineNo?:number) {
         let match = GCodeCommand.matchExp.exec(cmd);
@@ -68,7 +68,7 @@ export class GCodeCommand implements ExcellonCommand {
 export class MCodeCommand implements ExcellonCommand {
     readonly codeId:number;
     readonly name:string;
-    private static matchExp = /^M(\d+)$/;
+    private static matchExp = /^M(\d+)/;
 
     constructor(cmd:string, readonly lineNo?:number) {
         let match = MCodeCommand.matchExp.exec(cmd);
@@ -167,11 +167,14 @@ class ToolPost {
 const numChars = '+-.0123456789';
 const emptyModsAllowed = 'H';
 
-function parseMods(mods:string, fmt:CoordinateFormatSpec):Array<Modifier> {
+function parseMods(mods:string, fmt:CoordinateFormatSpec, allowedMods?:string):Array<Modifier> {
     let result = [];
     while (mods.length > 0) {
         let code = mods[0];
         let idx:number;
+        if (allowedMods && allowedMods.indexOf(code) < 0) {
+            throw new ExcellonParseException(`Modifier ${code} not allowed: ${mods}`);
+        }
         for (idx = 1; idx < mods.length; idx++) {
             if (numChars.indexOf(mods[idx]) < 0) {
                 break;
@@ -195,19 +198,19 @@ function parseMods(mods:string, fmt:CoordinateFormatSpec):Array<Modifier> {
                 value = parseCoordinate(valueStr, fmt.numIntPos, fmt.numDecimalPos, fmt.zeroSkip);
                 break;
             case 'S':
-                value = parseCoordinate(valueStr, 5, 0, CoordinateSkipZeros.TRAILING);
+                value = parseCoordinate(valueStr, 5, 0, CoordinateZeroFormat.LEADING);
                 break;
             case 'B':
-                value = parseCoordinate(valueStr, 4, 0, CoordinateSkipZeros.TRAILING);
+                value = parseCoordinate(valueStr, 4, 0, CoordinateZeroFormat.LEADING);
                 break;
             case 'C':
-                value = parseCoordinate(valueStr, 0, 3, CoordinateSkipZeros.TRAILING);
+                value = parseCoordinate(valueStr, 0, 3, CoordinateZeroFormat.LEADING);
                 break;
             case 'H':
-                value = parseCoordinate(valueStr, 4, 0, CoordinateSkipZeros.LEADING);
+                value = parseCoordinate(valueStr, 4, 0, CoordinateZeroFormat.TRAILING);
                 break;
             default:
-                value = parseCoordinate(valueStr, 3, 0, CoordinateSkipZeros.TRAILING);
+                value = parseCoordinate(valueStr, 3, 0, CoordinateZeroFormat.LEADING);
                 break;
         }
         result.push({code:code, value:value});
@@ -220,7 +223,7 @@ function fomratModNumber(
     value:number,
     numIntPos:number,
     numDecPos:number,
-    zeroSkip:CoordinateSkipZeros):string {
+    zeroSkip:CoordinateZeroFormat):string {
     let intValue = Math.round(value * Math.pow(10, numDecPos));
     let roundValue = intValue * Math.pow(10, -numDecPos);
     if (Math.abs(value - roundValue) > Epsilon) {
@@ -246,22 +249,22 @@ function formatMod(mod:Modifier, fmt:CoordinateFormatSpec):string {
         case 'X':
         case 'Y':
         case 'Z':
-            value = fomratModNumber(mod.value, fmt.numDecimalPos, fmt.numIntPos, fmt.zeroSkip);
+            value = fomratModNumber(mod.value, fmt.numIntPos, fmt.numDecimalPos, fmt.zeroSkip);
             break;
         case 'S':
-            value = fomratModNumber(mod.value, 5, 0, CoordinateSkipZeros.TRAILING);
+            value = fomratModNumber(mod.value, 5, 0, CoordinateZeroFormat.LEADING);
             break;
         case 'B':
-            value = fomratModNumber(mod.value, 4, 0, CoordinateSkipZeros.TRAILING);
+            value = fomratModNumber(mod.value, 4, 0, CoordinateZeroFormat.LEADING);
             break;
         case 'C':
-            value = fomratModNumber(mod.value, 0, 3, CoordinateSkipZeros.TRAILING);
+            value = fomratModNumber(mod.value, 0, 3, CoordinateZeroFormat.LEADING);
             break;
         case 'H':
-            value = fomratModNumber(mod.value, 4, 0, CoordinateSkipZeros.LEADING);
+            value = fomratModNumber(mod.value, 4, 0, CoordinateZeroFormat.TRAILING);
             break;
         default:
-            value = fomratModNumber(mod.value, 3, 0, CoordinateSkipZeros.TRAILING);
+            value = fomratModNumber(mod.value, 3, 0, CoordinateZeroFormat.LEADING);
             break;
     }
     return mod.code + value;
@@ -272,7 +275,7 @@ export class ToolDefinitionCommand implements ExcellonCommand {
     readonly tool:ToolPost;
     readonly modifiers:Array<Modifier>;
 
-    private static match = /^T(\d+(?:,\d+)?)((?:[BSFCDHZUNI](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/;
+    private static match = /^T(\d+(?:,\d+)?)((?:[CFSHBZ](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/;
     private static toolMatch = /^(\d+)(?:,(\d+))?$/;
 
     constructor(cmd:string, fmt:CoordinateFormatSpec, readonly lineNo?:number) {
@@ -288,7 +291,7 @@ export class ToolDefinitionCommand implements ExcellonCommand {
         let toolEnd = tool.length > 2 ? Number.parseInt(tool[2]) : undefined;
         this.tool = new ToolPost(toolStart, toolEnd);
         if (match.length > 2) {
-            this.modifiers = parseMods(match[2], fmt);
+            this.modifiers = parseMods(match[2], fmt, "CFSHBZ");
         }
     }
 
@@ -313,3 +316,29 @@ export class EndOfHeaderCommand implements ExcellonCommand {
     }
 }
 
+export class GCodeWithMods implements ExcellonCommand {
+    readonly codeId:number;
+    readonly name:string;
+    readonly modifiers:Array<Modifier>;
+    private static gCodeExpr = /G(\d+)/;
+
+    constructor(
+        cmd:string,
+        fmt:CoordinateFormatSpec,
+        allowedMods:string,
+        readonly lineNo?:number) {
+        let gCodeMatch = cmd.match(GCodeWithMods.gCodeExpr);
+        if (!gCodeMatch) {
+            throw new ExcellonParseException(`Invalid G code command ${cmd}`);
+        }
+        this.codeId = Number.parseInt(gCodeMatch[1]);
+        let mods = cmd.replace(GCodeWithMods.gCodeExpr, '');
+        this.modifiers = parseMods(mods, fmt, allowedMods);
+    }
+
+    formatOutput(fmt:CoordinateFormatSpec):string {
+        let result = "G" + this.codeId;
+        this.modifiers.forEach(m => result += formatMod(m, fmt));
+        return result;
+    }
+}

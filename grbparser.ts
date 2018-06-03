@@ -12,7 +12,7 @@ import {
     GerberCommand,
     CoordinateFormatSpec,
     GerberParseException} from "./primitives";
-import * as cmds from "./commands";
+import * as cmds from "./gerbercommands";
 
 /**
  * This is an internal class to "tokenize" the gerber commands from the stream.

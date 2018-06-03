@@ -1,4 +1,4 @@
-import { CoordinateSkipZeros } from "./primitives";
+import { CoordinateZeroFormat } from "./primitives";
 
 /**
  * Gerber Parsing Library
@@ -33,7 +33,7 @@ export class FormatException {
     }
 }
 
-export function formatFixedNumber(value:number, precision:number, intPos:number, skip:CoordinateSkipZeros):string {
+export function formatFixedNumber(value:number, precision:number, intPos:number, skip:CoordinateZeroFormat):string {
     let totalLen = intPos + precision;
     let sign = "";
     if (value < 0) {
@@ -43,7 +43,7 @@ export function formatFixedNumber(value:number, precision:number, intPos:number,
     let intValue = Math.round(value * Math.pow(10, precision));
     let strValue = intValue.toString();
     switch (skip) {
-        case CoordinateSkipZeros.NONE:
+        case CoordinateZeroFormat.NONE:
             if (strValue.length < totalLen) {
                 strValue = "0".repeat(totalLen - strValue.length) + strValue;
             }
@@ -51,12 +51,12 @@ export function formatFixedNumber(value:number, precision:number, intPos:number,
                 throw new FormatException(`Value ${value} does note fit format ${intPos}${precision}.`);
             }
             return sign + strValue;
-        case CoordinateSkipZeros.LEADING:
+        case CoordinateZeroFormat.TRAILING:
             if (strValue.length > totalLen) {
                 throw new FormatException(`Value ${value} does note fit format ${intPos}${precision}.`);
             }
             return sign + strValue;
-        case CoordinateSkipZeros.TRAILING:
+        case CoordinateZeroFormat.LEADING:
             if (strValue.length < totalLen) {
                 strValue = "0".repeat(totalLen - strValue.length) + strValue;
             }
@@ -64,7 +64,7 @@ export function formatFixedNumber(value:number, precision:number, intPos:number,
                 throw new FormatException(`Value ${value} does note fit format ${intPos}${precision}.`);
             }
             let endTrim = strValue.length - 1;
-            while (endTrim >= 0 && strValue[endTrim] == '0') {
+            while (endTrim > 0 && strValue[endTrim] == '0') {
                 endTrim--;
             }
             strValue = strValue.substr(0, endTrim + 1);
@@ -76,7 +76,7 @@ export function parseCoordinate(
     coordinate:string,
     numIntPos:number,
     numDecPos:number,
-    zeroSkip:CoordinateSkipZeros):number {
+    zeroSkip:CoordinateZeroFormat):number {
     if (coordinate.indexOf('.') >= 0) {
         return Number.parseFloat(coordinate);
     }
@@ -98,7 +98,7 @@ export function parseCoordinate(
     //    throw new FormatException(`Coordinate ${coordinate} longer than the format allows ${numIntPos}.${numDecPos}`);
     //}
     let zeroMult = 1;
-    if (zeroSkip == CoordinateSkipZeros.TRAILING && numDigits < len) {
+    if (zeroSkip == CoordinateZeroFormat.LEADING && numDigits < len) {
         zeroMult = Math.pow(10, len - numDigits);
     }
     let num = Number.parseFloat(coordinate);

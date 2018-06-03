@@ -7,7 +7,7 @@
  * License: MIT License, see LICENSE.txt
  */
 
- import {CoordinateSkipZeros} from "./primitives";
+ import {CoordinateZeroFormat} from "./primitives";
 import * as cmds from "./excelloncommands";
 
 export class ExcellonParseException {
@@ -105,7 +105,7 @@ export class CoordinateFormatSpec {
     constructor(
         public numIntPos:number,
         public numDecimalPos:number,
-        public zeroSkip:CoordinateSkipZeros) {}
+        public zeroSkip:CoordinateZeroFormat) {}
 }
 
 export interface ExcellonCommand {
@@ -152,18 +152,19 @@ export class ExcellonParser {
         {exp:/^ATC,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^FSB,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {
-            exp:/^T(\d+(?:,\d+)?)((?:[BSFCDHZUNI](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/, 
+            exp:/^T(\d+(?:,\d+)?)((?:[CFSHBZ](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/, 
             cb: (cmd, lineNo) => new cmds.ToolDefinitionCommand(cmd, this.fmt, lineNo)
         },
         {exp:/^%$/, cb: (cmd, lineNo) => new cmds.EndOfHeaderCommand(cmd, lineNo)},
         {exp:/^M47,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^G93.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
         {exp:/^G(?:\d+)$/, cb: (cmd, lineNo) => new cmds.GCodeCommand(cmd, lineNo)},
         {exp:/^M(?:\d+)$/, cb: (cmd, lineNo) => new cmds.MCodeCommand(cmd, lineNo)},
     ];
     private commands:Array<ParserCommand> = [];
 
     constructor() {
-        this.fmt = new CoordinateFormatSpec(2, 4, CoordinateSkipZeros.LEADING);
+        this.fmt = new CoordinateFormatSpec(2, 4, CoordinateZeroFormat.LEADING);
         this.commandParser.setConsumer((cmd:string, lineNo:number) => this.parseCommand(cmd, lineNo));
     }
 

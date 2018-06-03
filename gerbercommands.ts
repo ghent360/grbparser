@@ -39,7 +39,7 @@ import {
     GerberState,
     Epsilon,
     BlockParams,
-    CoordinateSkipZeros,
+    CoordinateZeroFormat,
     CoordinateType,
     CoordinateMode,
 } from './primitives';
@@ -68,17 +68,17 @@ export class FSCommand implements GerberCommand {
         if (!match) {
             throw new GerberParseException(`Unsuported FS command ${cmd}`);
         }
-        let coordZeros = CoordinateSkipZeros.NONE;
+        let coordZeros = CoordinateZeroFormat.NONE;
         if (match[1]) {
             switch (match[1]) {
                 case 'L':
-                    coordZeros = CoordinateSkipZeros.LEADING;
+                    coordZeros = CoordinateZeroFormat.LEADING;
                     break;
                 case 'T':
-                    coordZeros = CoordinateSkipZeros.TRAILING;
+                    coordZeros = CoordinateZeroFormat.TRAILING;
                     break;
                 case 'D':
-                    coordZeros = CoordinateSkipZeros.DIRECT;
+                    coordZeros = CoordinateZeroFormat.DIRECT;
                     break;
             }
         }
@@ -93,15 +93,15 @@ export class FSCommand implements GerberCommand {
 
     formatOutput():string {
         let result = "FS";
-        if (this.coordinateFormat.coordFormat != CoordinateSkipZeros.NONE) {
+        if (this.coordinateFormat.coordFormat != CoordinateZeroFormat.NONE) {
             switch (this.coordinateFormat.coordFormat) {
-                case CoordinateSkipZeros.LEADING:
+                case CoordinateZeroFormat.LEADING:
                     result += "L";
                     break;
-                case CoordinateSkipZeros.TRAILING:
+                case CoordinateZeroFormat.TRAILING:
                     result += "T";
                     break;
-                case CoordinateSkipZeros.DIRECT:
+                case CoordinateZeroFormat.DIRECT:
                     result += "D";
                     break;
             }

@@ -140,7 +140,7 @@ function polygonOrientation(polygon:Float64Array):number {
     return sum;
 }
 
-export enum CoordinateSkipZeros {
+export enum CoordinateZeroFormat {
     NONE = 0,
     LEADING = 1,
     TRAILING = 2,
@@ -157,7 +157,7 @@ export class CoordinateFormatSpec {
     readonly yPow:number;  // The power of 1 to multiply the Y coordinate by 10^(-yNumDecPos)
 
     constructor(
-        readonly coordFormat:CoordinateSkipZeros,
+        readonly coordFormat:CoordinateZeroFormat,
         readonly coordType:CoordinateType,
         readonly xNumIntPos:number,
         readonly xNumDecPos:number,

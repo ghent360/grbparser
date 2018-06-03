@@ -37,7 +37,7 @@ import {PolygonSet, waitClipperLoad, connectWires, polySetBounds} from "./polygo
 import {formatFloat} from "./utils";
 import {GerberParser} from "./grbparser";
 import {Build} from "./build";
-import { M02Command } from "./commands";
+import { M02Command } from "./gerbercommands";
 
 export abstract class ConverterBase<T> {
     convert(primitives:Array<GraphicsPrimitive>):Array<T> {

@@ -10,8 +10,8 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as xp from '../excellonparser';
-import { CoordinateSkipZeros } from '../primitives';
-import { ToolDefinitionCommand } from '../excelloncommands';
+import { CoordinateZeroFormat } from '../primitives';
+import { ToolDefinitionCommand, GCodeWithMods } from '../excelloncommands';
 
 describe("ExcellonParser tests", () => {
     it('Command tokenizer', () => {
@@ -30,9 +30,14 @@ describe("ExcellonParser tests", () => {
         assert.equal(commands[1], "X1234Y5678D02");
     });
     it('Mods parser', () => {
-        let fmt = new xp.CoordinateFormatSpec(2, 4, CoordinateSkipZeros.LEADING);
-        let cmd = new ToolDefinitionCommand("T1C.1355H", fmt, 1);
-        assert.equal(cmd.formatOutput(fmt), "T1C.1355H");
+        let fmt = new xp.CoordinateFormatSpec(2, 4, CoordinateZeroFormat.LEADING);
+        let cmd = new ToolDefinitionCommand("T1C.1355B1000H", fmt, 1);
+        assert.equal(cmd.formatOutput(fmt), "T1C.1355B1H");
+        let cmd2 = new GCodeWithMods('G93X0075Y014', fmt, 'XY', 1);
+        assert.equal(cmd2.codeId, 93);
+        assert.ok(Math.abs(cmd2.modifiers[0].value - 0.75) < 1e-10);
+        assert.ok(Math.abs(cmd2.modifiers[1].value - 1.4) < 1e-10);
+        assert.equal(cmd2.formatOutput(fmt), "G93X0075Y014");
     });
     it('parse and reconstruct excellon files', () => {
         let folder = "test/excellon";
