@@ -122,7 +122,7 @@ describe("Commands tests", () => {
         assert.equal(cmd.j, undefined);
 
         out = cmd.formatOutput(fmt);
-        assert.equal(out, "X0005Y1111D01");
+        assert.equal(out, "X5Y1111D01");
         
         cmd = new cm.D02Command("X0Y0D2", fmt);
         assert.equal(cmd.x, 0);

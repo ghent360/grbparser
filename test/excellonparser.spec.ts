@@ -30,9 +30,9 @@ describe("ExcellonParser tests", () => {
         assert.equal(commands[1], "X1234Y5678D02");
     });
     it('Mods parser', () => {
-        let fmt = new xp.CoordinateFormatSpec(2, 4, CoordinateZeroFormat.LEADING);
+        let fmt = new xp.CoordinateFormatSpec(2, 4, CoordinateZeroFormat.TRAILING);
         let cmd = new ToolDefinitionCommand("T1C.1355B1000H", fmt, 1);
-        assert.equal(cmd.formatOutput(fmt), "T1C.1355B1H");
+        assert.equal(cmd.formatOutput(fmt), "T1C.1355B1000H");
         let cmd2 = new GCodeWithMods('G93X0075Y014', fmt, 'XY', 1);
         assert.equal(cmd2.codeId, 93);
         assert.ok(Math.abs(cmd2.modifiers[0].value - 0.75) < 1e-10);

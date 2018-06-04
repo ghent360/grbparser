@@ -51,12 +51,12 @@ export function formatFixedNumber(value:number, precision:number, intPos:number,
                 throw new FormatException(`Value ${value} does note fit format ${intPos}${precision}.`);
             }
             return sign + strValue;
-        case CoordinateZeroFormat.TRAILING:
+        case CoordinateZeroFormat.LEADING:
             if (strValue.length > totalLen) {
                 throw new FormatException(`Value ${value} does note fit format ${intPos}${precision}.`);
             }
             return sign + strValue;
-        case CoordinateZeroFormat.LEADING:
+        case CoordinateZeroFormat.TRAILING:
             if (strValue.length < totalLen) {
                 strValue = "0".repeat(totalLen - strValue.length) + strValue;
             }
@@ -98,7 +98,7 @@ export function parseCoordinate(
     //    throw new FormatException(`Coordinate ${coordinate} longer than the format allows ${numIntPos}.${numDecPos}`);
     //}
     let zeroMult = 1;
-    if (zeroSkip == CoordinateZeroFormat.LEADING && numDigits < len) {
+    if (zeroSkip == CoordinateZeroFormat.TRAILING && numDigits < len) {
         zeroMult = Math.pow(10, len - numDigits);
     }
     let num = Number.parseFloat(coordinate);
