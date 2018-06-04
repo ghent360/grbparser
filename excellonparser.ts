@@ -176,7 +176,7 @@ export class ExcellonParser {
     private commands:Array<ParserCommand> = [];
 
     constructor() {
-        this.fmt = new CoordinateFormatSpec(2, 4, CoordinateZeroFormat.LEADING);
+        this.fmt = new CoordinateFormatSpec(2, 4, CoordinateZeroFormat.TRAILING);
         this.commandParser.setConsumer((cmd:string, lineNo:number) => this.parseCommand(cmd, lineNo));
     }
 

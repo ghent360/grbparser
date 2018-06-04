@@ -263,6 +263,13 @@ function formatMod(mod:Modifier, fmt:CoordinateFormatSpec):string {
         case 'H':
             value = fomratModNumber(mod.value, 4, 0, CoordinateZeroFormat.TRAILING);
             break;
+        case 'G':
+        case 'M':
+            value = mod.value.toString();
+            if (mod.value < 10) {
+                value = '0' + value;
+            }
+            break;
         default:
             value = fomratModNumber(mod.value, 3, 0, CoordinateZeroFormat.LEADING);
             break;
@@ -357,7 +364,11 @@ export class GCodeWithMods implements ExcellonCommand {
     }
 
     formatOutput(fmt:CoordinateFormatSpec):string {
-        let result = "G" + this.codeId;
+        let result = "G";
+        if (this.codeId < 10) {
+            result += '0';
+        }
+        result += this.codeId;
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }
@@ -379,13 +390,17 @@ export class MCodeWithMods implements ExcellonCommand {
             throw new ExcellonParseException(`Invalid G code command ${cmd}`);
         }
         this.codeId = Number.parseInt(gCodeMatch[1]);
-        this.name = 'G' + this.codeId;
+        this.name = 'M' + this.codeId;
         let mods = cmd.replace(MCodeWithMods.mCodeExpr, '');
         this.modifiers = parseMods(mods, fmt, allowedMods);
     }
 
     formatOutput(fmt:CoordinateFormatSpec):string {
-        let result = "M" + this.codeId;
+        let result = "M";
+        if (this.codeId < 10) {
+            result += '0';
+        }
+        result += this.codeId;
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }
