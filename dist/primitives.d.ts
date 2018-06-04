@@ -50,7 +50,7 @@ export declare type PolySetWithPolarity = {
     polarity: ObjectPolarity;
 };
 export declare type GraphicsObjects = Array<PolySetWithPolarity>;
-export declare enum CoordinateSkipZeros {
+export declare enum CoordinateZeroFormat {
     NONE = 0,
     LEADING = 1,
     TRAILING = 2,
@@ -61,7 +61,7 @@ export declare enum CoordinateType {
     INCREMENTAL = 2,
 }
 export declare class CoordinateFormatSpec {
-    readonly coordFormat: CoordinateSkipZeros;
+    readonly coordFormat: CoordinateZeroFormat;
     readonly coordType: CoordinateType;
     readonly xNumIntPos: number;
     readonly xNumDecPos: number;
@@ -69,7 +69,7 @@ export declare class CoordinateFormatSpec {
     readonly yNumDecPos: number;
     readonly xPow: number;
     readonly yPow: number;
-    constructor(coordFormat: CoordinateSkipZeros, coordType: CoordinateType, xNumIntPos: number, xNumDecPos: number, yNumIntPos: number, yNumDecPos: number);
+    constructor(coordFormat: CoordinateZeroFormat, coordType: CoordinateType, xNumIntPos: number, xNumDecPos: number, yNumIntPos: number, yNumDecPos: number);
 }
 export declare class GerberParseException {
     readonly message: string;
@@ -80,7 +80,7 @@ export declare class GerberParseException {
 export interface ApertureBase {
     readonly apertureId: number;
     isDrawable(): boolean;
-    objects(polarity: ObjectPolarity): GraphicsObjects;
+    objects(polarity: ObjectPolarity, state: ObjectState): GraphicsObjects;
     generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolyongWithThinkness;
     generateCircleDraw(center: Point, radius: number, state: ObjectState): PolyongSetWithThinkness;
     generateLineDraw(start: Point, end: Point, state: ObjectState): PolyongWithThinkness;
@@ -110,8 +110,8 @@ export declare class ApertureDefinition implements ApertureBase {
     generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolyongWithThinkness;
     generateCircleDraw(center: Point, radius: number, state: ObjectState): PolyongSetWithThinkness;
     generateLineDraw(start: Point, end: Point, state: ObjectState): PolyongWithThinkness;
-    objects(polarity: ObjectPolarity): GraphicsObjects;
-    toPolySet(): PolygonSet;
+    objects(polarity: ObjectPolarity, state: ObjectState): GraphicsObjects;
+    private toPolySet(state);
 }
 export declare class VariableDefinition {
     readonly id: number;
@@ -131,7 +131,7 @@ export declare class ApertureMacro {
     readonly macroName: string;
     readonly content: Array<VariableDefinition | Primitive | PrimitiveComment>;
     constructor(macroName: string, content: Array<VariableDefinition | Primitive | PrimitiveComment>);
-    toPolygonSet(modifiers: Array<number>): PolygonSet;
+    toPolygonSet(modifiers: Array<number>, state: ObjectState): PolygonSet;
     private static getValue(modifiers, idx);
 }
 export declare class Attribute {
@@ -187,6 +187,9 @@ export declare class GerberState {
     private isDone_;
     coordinateFormatSpec: CoordinateFormatSpec;
     coordinateUnits: CoordinateUnits;
+    unitToMM(v: number): number;
+    pointToMM(v: Point): Point;
+    mmToUnit(v: number): number;
     currentPointX: number;
     currentPointY: number;
     currentI: number;
@@ -273,7 +276,12 @@ export declare class ObjectState {
     readonly mirroring: ObjectMirroring;
     readonly scale: number;
     readonly rotation: number;
-    constructor(polarity?: ObjectPolarity, mirroring?: ObjectMirroring, scale?: number, rotation?: number);
+    readonly units: CoordinateUnits;
+    constructor(polarity?: ObjectPolarity, mirroring?: ObjectMirroring, scale?: number, rotation?: number, units?: CoordinateUnits);
+    unitToMM(v: number): number;
+    pointToMM(v: Point): Point;
+    mmToUnit(v: number): number;
+    mmToPoint(v: Point): Point;
 }
 export declare class Line {
     readonly from: Point;
@@ -394,8 +402,8 @@ export declare class BlockGraphicsOperationsConsumer implements GraphicsOperatio
 export declare function composeSolidImage(objects: GraphicsObjects, union?: boolean): PolygonSetWithBounds;
 export interface GerberCommand {
     readonly name: string;
-    readonly isAdvanced: boolean;
     readonly lineNo?: number;
+    readonly isAdvanced: boolean;
     formatOutput(fmt: CoordinateFormatSpec): string;
     execute(ctx: GerberState): void;
 }

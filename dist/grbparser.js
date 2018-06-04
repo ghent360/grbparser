@@ -9,7 +9,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const primitives_1 = require("./primitives");
-const cmds = require("./commands");
+const cmds = require("./gerbercommands");
 /**
  * This is an internal class to "tokenize" the gerber commands from the stream.
  *

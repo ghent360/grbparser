@@ -143,12 +143,12 @@ export class UnitsCommand extends CommaCommandBase {
     }
 }
 
-interface Modifier {
+export interface Modifier {
     readonly code:string;
     readonly value?:number;
 }
 
-class ToolPost {
+export class ToolPost {
     constructor(readonly start:number, readonly end?:number) {
     }
 
