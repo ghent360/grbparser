@@ -42,7 +42,7 @@ describe("ExcellonParser tests", () => {
     it('parse and reconstruct excellon files', () => {
         let folder = "test/excellon";
         fs.readdirSync(folder)
-            .filter(fileName => fileName.endsWith(".exc"))
+            .filter(fileName => fileName.endsWith(".exc") || fileName.endsWith(".drl"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
