@@ -165,7 +165,7 @@ class ToolPost {
 }
 
 const numChars = '+-.0123456789';
-const emptyModsAllowed = 'H';
+const emptyModsAllowed = 'HXY';
 
 function parseMods(mods:string, fmt:CoordinateFormatSpec, allowedMods?:string):Array<Modifier> {
     let result = [];
@@ -302,6 +302,25 @@ export class ToolDefinitionCommand implements ExcellonCommand {
     }
 }
 
+export class ToolChangeCommand implements ExcellonCommand {
+    readonly name = 'T';
+    readonly toolId:number;
+
+    private static match = /^T(\d+)$/;
+
+    constructor(cmd:string, readonly lineNo?:number) {
+        let match = ToolChangeCommand.match.exec(cmd);
+        if (!match) {
+            throw new ExcellonParseException(`Invalid tool change command ${cmd}`);
+        }
+        this.toolId = Number.parseInt(match[1]);
+    }
+
+    formatOutput(fmt:CoordinateFormatSpec):string {
+        return "T" + this.toolId;
+    }
+}
+
 export class EndOfHeaderCommand implements ExcellonCommand {
     readonly name = "%";
 
@@ -332,12 +351,115 @@ export class GCodeWithMods implements ExcellonCommand {
             throw new ExcellonParseException(`Invalid G code command ${cmd}`);
         }
         this.codeId = Number.parseInt(gCodeMatch[1]);
+        this.name = 'G' + this.codeId;
         let mods = cmd.replace(GCodeWithMods.gCodeExpr, '');
         this.modifiers = parseMods(mods, fmt, allowedMods);
     }
 
     formatOutput(fmt:CoordinateFormatSpec):string {
         let result = "G" + this.codeId;
+        this.modifiers.forEach(m => result += formatMod(m, fmt));
+        return result;
+    }
+}
+
+export class MCodeWithMods implements ExcellonCommand {
+    readonly codeId:number;
+    readonly name:string;
+    readonly modifiers:Array<Modifier>;
+    private static mCodeExpr = /M(\d+)/;
+
+    constructor(
+        cmd:string,
+        fmt:CoordinateFormatSpec,
+        allowedMods:string,
+        readonly lineNo?:number) {
+        let gCodeMatch = cmd.match(MCodeWithMods.mCodeExpr);
+        if (!gCodeMatch) {
+            throw new ExcellonParseException(`Invalid G code command ${cmd}`);
+        }
+        this.codeId = Number.parseInt(gCodeMatch[1]);
+        this.name = 'G' + this.codeId;
+        let mods = cmd.replace(MCodeWithMods.mCodeExpr, '');
+        this.modifiers = parseMods(mods, fmt, allowedMods);
+    }
+
+    formatOutput(fmt:CoordinateFormatSpec):string {
+        let result = "M" + this.codeId;
+        this.modifiers.forEach(m => result += formatMod(m, fmt));
+        return result;
+    }
+}
+
+export class RepeatCommand implements ExcellonCommand {
+    readonly repeat:number;
+    readonly name:string = 'R';
+    readonly modifiers:Array<Modifier>;
+    private static match = /R(\d+)/;
+
+    constructor(
+        cmd:string,
+        fmt:CoordinateFormatSpec,
+        allowedMods:string,
+        readonly lineNo?:number) {
+        let codeMatch = cmd.match(RepeatCommand.match);
+        if (!codeMatch) {
+            throw new ExcellonParseException(`Invalid R code command ${cmd}`);
+        }
+        this.repeat = Number.parseInt(codeMatch[1]);
+        let mods = cmd.replace(RepeatCommand.match, '');
+        this.modifiers = parseMods(mods, fmt, allowedMods);
+    }
+
+    formatOutput(fmt:CoordinateFormatSpec):string {
+        let result = "R" + this.repeat;
+        this.modifiers.forEach(m => result += formatMod(m, fmt));
+        return result;
+    }
+}
+
+export class PatternRepeatCommand implements ExcellonCommand {
+    readonly repeat:number;
+    readonly name:string = 'P';
+    readonly modifiers:Array<Modifier>;
+    private static match = /P(\d+)/;
+
+    constructor(
+        cmd:string,
+        fmt:CoordinateFormatSpec,
+        allowedMods:string,
+        readonly lineNo?:number) {
+        let codeMatch = cmd.match(PatternRepeatCommand.match);
+        if (!codeMatch) {
+            throw new ExcellonParseException(`Invalid P code command ${cmd}`);
+        }
+        this.repeat = Number.parseInt(codeMatch[1]);
+        let mods = cmd.replace(PatternRepeatCommand.match, '');
+        this.modifiers = parseMods(mods, fmt, allowedMods);
+    }
+
+    formatOutput(fmt:CoordinateFormatSpec):string {
+        let result = "P" + this.repeat;
+        this.modifiers.forEach(m => result += formatMod(m, fmt));
+        return result;
+    }
+}
+
+export class CoordinatesCommand implements ExcellonCommand {
+    readonly name:string = 'move';
+    readonly modifiers:Array<Modifier>;
+
+    constructor(
+        cmd:string,
+        fmt:CoordinateFormatSpec,
+        allowedMods:string,
+        readonly lineNo?:number) {
+        this.modifiers = parseMods(cmd, fmt, allowedMods);
+
+    }
+
+    formatOutput(fmt:CoordinateFormatSpec):string {
+        let result = "";
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }

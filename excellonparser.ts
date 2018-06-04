@@ -156,10 +156,22 @@ export class ExcellonParser {
             cb: (cmd, lineNo) => new cmds.ToolDefinitionCommand(cmd, this.fmt, lineNo)
         },
         {exp:/^%$/, cb: (cmd, lineNo) => new cmds.EndOfHeaderCommand(cmd, lineNo)},
-        {exp:/^M47,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
-        {exp:/^G93.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
+        {exp:/^M0*47,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^M0*97,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^M0*98,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^G0*93.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
+        {exp:/^G0*45.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
+        {exp:/^G0*82.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
+        {exp:/^M0*2.*/, cb: (cmd, lineNo) => new cmds.MCodeWithMods(cmd, this.fmt, 'XYM', lineNo)},
+        {exp:/^R\d+.*/, cb: (cmd, lineNo) => new cmds.RepeatCommand(cmd, this.fmt, 'XYM', lineNo)},
+        {exp:/^P\d+.*/, cb: (cmd, lineNo) => new cmds.PatternRepeatCommand(cmd, this.fmt, 'XY', lineNo)},
+        {exp:/^T(?:\d+)$/, cb: (cmd, lineNo) => new cmds.ToolChangeCommand(cmd, lineNo)},
         {exp:/^G(?:\d+)$/, cb: (cmd, lineNo) => new cmds.GCodeCommand(cmd, lineNo)},
         {exp:/^M(?:\d+)$/, cb: (cmd, lineNo) => new cmds.MCodeCommand(cmd, lineNo)},
+        {
+            exp:/^[XY](?:\d*(?:\.\d*)?)/,
+            cb: (cmd, lineNo) => new cmds.CoordinatesCommand(cmd, this.fmt, 'XYZG', lineNo)
+        },
     ];
     private commands:Array<ParserCommand> = [];
 
