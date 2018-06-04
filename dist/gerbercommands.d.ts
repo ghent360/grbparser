@@ -20,7 +20,7 @@
 */
 import { ApertureDefinition, ApertureMacro, CoordinateFormatSpec, CoordinateUnits, ObjectPolarity, ObjectMirroring, Attribute, GerberCommand, GerberState } from './primitives';
 export declare class FSCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly coordinateFormat: CoordinateFormatSpec;
@@ -30,7 +30,7 @@ export declare class FSCommand implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class MOCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly units: CoordinateUnits;
@@ -39,7 +39,7 @@ export declare class MOCommand implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class ADCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly definition: ApertureDefinition;
@@ -47,14 +47,14 @@ export declare class ADCommand implements GerberCommand {
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;
     execute(ctx: GerberState): void;
-    private checkStandardApertures();
-    private checkCircleAperture();
-    private checkRectangleAperture();
-    private checkObroundAperture();
-    private checkPolygonAperture();
+    private checkStandardApertures;
+    private checkCircleAperture;
+    private checkRectangleAperture;
+    private checkObroundAperture;
+    private checkPolygonAperture;
 }
 export declare class G04Command implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly comment: string;
@@ -64,7 +64,7 @@ export declare class G04Command implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class AMCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly macro: ApertureMacro;
@@ -73,7 +73,7 @@ export declare class AMCommand implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class ABCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly blockId: number;
@@ -86,7 +86,7 @@ export declare class ABCommand implements GerberCommand {
  * This is the "set current aperture" command, not the D01, D02 or D03 command.
  */
 export declare class DCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly apertureId: number;
@@ -96,7 +96,7 @@ export declare class DCommand implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class D01Command implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly x?: number;
@@ -109,7 +109,7 @@ export declare class D01Command implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class D02Command implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly x?: number;
@@ -120,7 +120,7 @@ export declare class D02Command implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class D03Command implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly x?: number;
@@ -131,7 +131,7 @@ export declare class D03Command implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class BaseGCodeCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly codeId: number;
     readonly isAdvanced: boolean;
     private static matchExp;
@@ -199,7 +199,7 @@ export declare class G71Command extends BaseGCodeCommand implements GerberComman
     execute(ctx: GerberState): void;
 }
 export declare class LPCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly polarity: ObjectPolarity;
@@ -209,7 +209,7 @@ export declare class LPCommand implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class LMCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly miroring: ObjectMirroring;
@@ -219,7 +219,7 @@ export declare class LMCommand implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class LRCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly rotation: number;
@@ -229,7 +229,7 @@ export declare class LRCommand implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class LSCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly scale: number;
@@ -249,7 +249,7 @@ export declare class G37Command extends BaseGCodeCommand implements GerberComman
     execute(ctx: GerberState): void;
 }
 export declare class SRCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly name: string;
     readonly isAdvanced: boolean;
     readonly x?: number;
@@ -262,7 +262,7 @@ export declare class SRCommand implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class M02Command implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly isAdvanced: boolean;
     readonly name: string;
     private static matchExp;
@@ -271,7 +271,7 @@ export declare class M02Command implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class TCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly attribute: Attribute;
     readonly isAdvanced: boolean;
     private static matchExp;
@@ -281,7 +281,7 @@ export declare class TCommand implements GerberCommand {
     execute(ctx: GerberState): void;
 }
 export declare class TDCommand implements GerberCommand {
-    readonly lineNo: number;
+    readonly lineNo?: number;
     readonly attributeName: string;
     readonly isAdvanced: boolean;
     readonly name: string;

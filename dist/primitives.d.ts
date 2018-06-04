@@ -1,9 +1,17 @@
+/**
+ * Gerber Parsing Library
+ *
+ * Author: Venelin Efremov
+ * Copyright: Copyright (c) Venelin Efremov 2017
+ *
+ * License: MIT License, see LICENSE.txt
+ */
 import { AritmeticOperation } from "./expressions";
 import { Polygon, PolygonSet, PolygonSetWithBounds } from "./polygonSet";
 import { Point } from "./point";
 export declare enum CoordinateUnits {
     INCHES = 0,
-    MILIMETERS = 1,
+    MILIMETERS = 1
 }
 export declare enum InterpolationMode {
     LINEARx1 = 0,
@@ -11,31 +19,31 @@ export declare enum InterpolationMode {
     LINEARx01 = 2,
     LINEARx001 = 3,
     CLOCKWISE = 4,
-    COUNTER_CLOCKWISE = 5,
+    COUNTER_CLOCKWISE = 5
 }
 export declare enum CoordinateMode {
     ABSOLUTE = 0,
-    RELATIVE = 1,
+    RELATIVE = 1
 }
 export declare enum QuadrantMode {
     SINGLE = 0,
-    MULTI = 1,
+    MULTI = 1
 }
 export declare enum ObjectPolarity {
     DARK = 0,
     LIGHT = 1,
-    THIN = 2,
+    THIN = 2
 }
 export declare enum ObjectMirroring {
     NONE = 0,
     X_AXIS = 1,
     Y_AXIS = 2,
-    XY_AXIS = 3,
+    XY_AXIS = 3
 }
 export declare enum AttributeType {
     FILE = 0,
     APERTURE = 1,
-    OBJECT = 2,
+    OBJECT = 2
 }
 export declare type PolyongWithThinkness = {
     polygon: Polygon;
@@ -54,11 +62,11 @@ export declare enum CoordinateZeroFormat {
     NONE = 0,
     LEADING = 1,
     TRAILING = 2,
-    DIRECT = 3,
+    DIRECT = 3
 }
 export declare enum CoordinateType {
     ABSOLUTE = 1,
-    INCREMENTAL = 2,
+    INCREMENTAL = 2
 }
 export declare class CoordinateFormatSpec {
     readonly coordFormat: CoordinateZeroFormat;
@@ -73,7 +81,7 @@ export declare class CoordinateFormatSpec {
 }
 export declare class GerberParseException {
     readonly message: string;
-    readonly line: number;
+    readonly line?: number;
     constructor(message: string, line?: number);
     toString(): string;
 }
@@ -111,7 +119,7 @@ export declare class ApertureDefinition implements ApertureBase {
     generateCircleDraw(center: Point, radius: number, state: ObjectState): PolyongSetWithThinkness;
     generateLineDraw(start: Point, end: Point, state: ObjectState): PolyongWithThinkness;
     objects(polarity: ObjectPolarity, state: ObjectState): GraphicsObjects;
-    private toPolySet(state);
+    private toPolySet;
 }
 export declare class VariableDefinition {
     readonly id: number;
@@ -132,7 +140,7 @@ export declare class ApertureMacro {
     readonly content: Array<VariableDefinition | Primitive | PrimitiveComment>;
     constructor(macroName: string, content: Array<VariableDefinition | Primitive | PrimitiveComment>);
     toPolygonSet(modifiers: Array<number>, state: ObjectState): PolygonSet;
-    private static getValue(modifiers, idx);
+    private static getValue;
 }
 export declare class Attribute {
     readonly type: AttributeType;
@@ -348,12 +356,12 @@ export declare class Region {
     readonly contours: Array<RegionContour>;
     constructor(contours: Array<RegionContour>, state: ObjectState, cmd: GerberCommand);
     toString(): string;
-    private static startPoint(segment);
-    private static endPoint(segment);
-    private static matchPoint(p, segment, matchStart);
-    private static reOrderCountour(contour);
-    private static buildPolygonSet(contours);
-    private static buildPolygon(contour);
+    private static startPoint;
+    private static endPoint;
+    private static matchPoint;
+    private static reOrderCountour;
+    private static buildPolygonSet;
+    private static buildPolygon;
     readonly objects: GraphicsObjects;
     readonly bounds: Bounds;
     readonly primitives: this;
@@ -370,8 +378,8 @@ export declare class Repeat {
     toString(): string;
     readonly objects: GraphicsObjects;
     readonly bounds: Bounds;
-    private buildObjects();
-    private buildPrimitives();
+    private buildObjects;
+    private buildPrimitives;
     readonly primitives: GraphicsPrimitive[];
     translate(vector: Point): Repeat;
 }

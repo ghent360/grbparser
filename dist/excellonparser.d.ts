@@ -9,7 +9,7 @@
 import { CoordinateZeroFormat } from "./primitives";
 export declare class ExcellonParseException {
     readonly message: string;
-    readonly line: number;
+    readonly line?: number;
     constructor(message: string, line?: number);
     toString(): string;
 }
@@ -29,12 +29,12 @@ export declare class CommandParser {
     private errorHandler;
     parseBlock(buffer: string): void;
     flush(): void;
-    private append(chr);
-    private static consoleError(lineNumber, buffer, idx);
-    private static emptyConsumer(cmd, line);
+    private append;
+    private static consoleError;
+    private static emptyConsumer;
     setConsumer(consumer: (cmd: string, lineNo: number) => void): (cmd: string, lineNo: number) => void;
     setErrorHandler(handler: (lineNumber: number, buffer: string, idx: number) => void): (lineNumber: number, buffer: string, idx: number) => void;
-    private commandPreprocessor();
+    private commandPreprocessor;
 }
 export declare class CoordinateFormatSpec {
     numIntPos: number;
@@ -59,6 +59,6 @@ export declare class ExcellonParser {
     private commands;
     constructor();
     parseBlock(block: string): void;
-    private parseCommand(cmd, lineNo);
+    private parseCommand;
     output(): string;
 }

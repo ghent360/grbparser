@@ -46,10 +46,10 @@ export declare class SVGConverter extends ConverterBase<string> {
     convertRepeat(r: Repeat): string;
     header(primitives: Array<GraphicsPrimitive>): Array<string>;
     footer(): Array<string>;
-    private polySetToSolidPath(polySet);
-    private polySetToWirePath(polySet);
-    private static toString2(n);
-    private static colorToHtml(clr);
+    private polySetToSolidPath;
+    private polySetToWirePath;
+    private static toString2;
+    private static colorToHtml;
     static GerberToSvg(content: string, layerColor?: number, scale?: number, margin?: number): string;
 }
 export declare class PolygonConverterResult {
