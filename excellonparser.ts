@@ -140,8 +140,9 @@ export class ExcellonParser {
         {exp:/^R,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^VER,.*/, cb: (cmd, lineNo) => new cmds.AxisVersionCommand(cmd, lineNo)},
         {exp:/^FMAT,.*/, cb: (cmd, lineNo) => new cmds.FileFormatCommand(cmd, lineNo)},
-        {exp:/^INCH,.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo)},
-        {exp:/^METRIC,.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo)},
+        {exp:/^INCH.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo)},
+        {exp:/^METRIC.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo)},
+        {exp:/^DETECT,.*/, cb: null},
         {exp:/^BLKD,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^SBK,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^SG,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
@@ -159,6 +160,8 @@ export class ExcellonParser {
         {exp:/^M0*47,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^M0*97,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^M0*98,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^M0*71.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
+        {exp:/^M0*72.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^G0*93.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
         {exp:/^G0*45.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
         {exp:/^G0*82.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
@@ -184,6 +187,10 @@ export class ExcellonParser {
         this.commandParser.parseBlock(block);
     }
 
+    flush() {
+        this.commandParser.flush();
+    }
+
     private parseCommand(cmd:string, lineNo:number) {
         if (cmd.length == 0) {
             return;
@@ -199,7 +206,7 @@ export class ExcellonParser {
             }
             let command = dispatcher.cb(cmd, lineNo);
             this.commands.push(new ParserCommand(command, lineNo));
-            console.log(`Cmd: '${cmd}', '${command.formatOutput(this.fmt)}'`);
+            //console.log(`Cmd: '${cmd}', '${command.formatOutput(this.fmt)}'`);
         } catch (e) {
             console.log(`Error parsing excellon file at line ${lineNo}.`);
             console.log(`Offending command: ${cmd.substr(0, 100)}`);

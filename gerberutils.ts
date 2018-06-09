@@ -49,12 +49,7 @@ const gerFileDescriptors:Array<FileNameDescriptor> = [
 
 export class GerberUtils {
 
-    public static boardFileType(fileName: string, content:string) : BoardFileType {
-        let fileSplit = fileName.split(".");
-        let ext = fileSplit[fileSplit.length - 1].toLowerCase();
-        if (ext in ["config", "exe", "dll", "png", "zip", "gif", "jpeg", "doc", "docx", "jpg", "bmp"]) {
-            return BoardFileType.Unsupported;
-        }
+    public static boardFileType(content:string) : BoardFileType {
         if (content.indexOf("%FS") >= 0) return BoardFileType.Gerber;
         if (content.indexOf("M48") >= 0) return BoardFileType.Drill;
         return BoardFileType.Unsupported;
@@ -360,6 +355,8 @@ export class GerberUtils {
 
             case "drill_TOP_BOTTOM":
             case "drl":
+            case "xln":
+            //case "dri":
             case "drill":
             case "drillnpt":
                 result  = { side:BoardSide.Both, layer:BoardLayer.Drill };
@@ -462,14 +459,14 @@ export class GerberUtils {
         "rul",
         "rpt",
         "pdf",
-        "xln",
+        //"xln",
         "gpi",
         "kicad_pcb",
         "prjpcb",
         "project",
         "cproject",
         "net",
-        "dri",
+        //"dri",
         "drr",
         "rep",
         "info",

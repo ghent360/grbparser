@@ -3,7 +3,9 @@ import * as fs from "fs-extra-promise";
 import * as JSZip from "jszip";
 import * as ut from "./gerberutils";
 
-import {GerberToPolygons, Init} from "./converters";
+import { GerberToPolygons, Init } from "./converters";
+import { ExcellonParser } from "./excellonparser";
+const {performance} = require('perf_hooks');
 
 let results = [];
 
@@ -11,11 +13,52 @@ async function parseGerber(zipFileName:string, fileName:string, content:string) 
     try {
         await Init;
         //console.log(`Parsing '${fileName}'`);
+        let start = performance.now();
         GerberToPolygons(content);
-        results.push({zipFileName: zipFileName, gerber:fileName, status:"success"});
+        let duration = performance.now() - start;
+        results.push({
+            zipFileName: zipFileName, 
+            file:fileName, 
+            status:"success",
+            duration: duration,
+            type:"Gerber",
+        });
     } catch (e) {
         //console.log(`Parsing '${fileName}' - error ${e}`);
-        results.push({zipFileName: zipFileName, gerber:fileName, status:"parse error", err:e});
+        results.push({
+            zipFileName: zipFileName,
+            file:fileName,
+            status:"parse error",
+            err:e,
+            type:"Gerber",
+        });
+    }
+}
+
+function parseExcellon(zipFileName:string, fileName:string, content:string) {
+    try {
+        //console.log(`Parsing '${fileName}'`);
+        let parser = new ExcellonParser();
+        let start = performance.now();
+        parser.parseBlock(content);
+        parser.flush();
+        let duration = performance.now() - start;
+        results.push({
+            zipFileName: zipFileName,
+            file:fileName,
+            status:"success",
+            duration: duration,
+            type:"Excellon",
+        });
+    } catch (e) {
+        //console.log(`Parsing '${fileName}' - error ${e}`);
+        results.push({
+            zipFileName: zipFileName,
+            file:fileName,
+            status:"parse error",
+            err:e,
+            type:"Excellon",
+        });
     }
 }
 
@@ -40,9 +83,7 @@ async function processZipFile(zipFileName:string) {
         if (file.dir) {
             //console.log(`Folder ${fileName}`);
         } else {
-            if (fileName.endsWith('.DS_Store')
-                || fileName.toLowerCase().endsWith('.drl')
-                || fileName.toLowerCase().endsWith('.drill')) {
+            if (fileName.endsWith('.DS_Store')) {
                 continue;
             }
             if (fileName.indexOf('__MACOSX') >= 0) {
@@ -59,12 +100,17 @@ async function processZipFile(zipFileName:string) {
                 try {
                     content = await file.async("text");
                 } catch (err) {
-                    results.push({zipFileName: zipFileName, gerber:fileName, status:"unzip error", err:err});
+                    results.push({zipFileName: zipFileName, file:fileName, status:"unzip error", err:err});
                     return;
                 }
-                let result = await parseGerber(zipFileName, fileName, content);
+                let fileType = ut.GerberUtils.boardFileType(content);
+                let result = (
+                    (info.layer == ut.BoardLayer.Drill && fileType == ut.BoardFileType.Unsupported) || fileType == ut.BoardFileType.Drill ?
+                      parseExcellon(zipFileName, fileName, content)
+                    : await parseGerber(zipFileName, fileName, content)
+                );
             } else {
-                results.push({zipFileName: zipFileName, gerber:fileName, status:"skip"});
+                results.push({zipFileName: zipFileName, file:fileName, status:"skip"});
             }
         }
     }
