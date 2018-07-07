@@ -46,12 +46,7 @@ const gerFileDescriptors = [
     { fileString: ".internalplane2", boardType: { side: BoardSide.Internal, layer: BoardLayer.Copper } },
 ];
 class GerberUtils {
-    static boardFileType(fileName, content) {
-        let fileSplit = fileName.split(".");
-        let ext = fileSplit[fileSplit.length - 1].toLowerCase();
-        if (ext in ["config", "exe", "dll", "png", "zip", "gif", "jpeg", "doc", "docx", "jpg", "bmp"]) {
-            return BoardFileType.Unsupported;
-        }
+    static boardFileType(content) {
         if (content.indexOf("%FS") >= 0)
             return BoardFileType.Gerber;
         if (content.indexOf("M48") >= 0)
@@ -368,6 +363,8 @@ class GerberUtils {
                 break;
             case "drill_TOP_BOTTOM":
             case "drl":
+            case "xln":
+            //case "dri":
             case "drill":
             case "drillnpt":
                 result = { side: BoardSide.Both, layer: BoardLayer.Drill };
@@ -468,14 +465,14 @@ GerberUtils.bannedExtensions = [
     "rul",
     "rpt",
     "pdf",
-    "xln",
+    //"xln",
     "gpi",
     "kicad_pcb",
     "prjpcb",
     "project",
     "cproject",
     "net",
-    "dri",
+    //"dri",
     "drr",
     "rep",
     "info",

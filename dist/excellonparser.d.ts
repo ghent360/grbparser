@@ -46,6 +46,22 @@ export interface ExcellonCommand {
     readonly name: string;
     readonly lineNo?: number;
     formatOutput(fmt: CoordinateFormatSpec): string;
+    execute(ctx: ExcellonState): any;
+}
+export declare enum Units {
+    MILIMETERS = 0,
+    INCHES = 1
+}
+export declare class ExcellonState {
+    tools: Map<number, number>;
+    activeTool: number;
+    units: Units;
+    header: boolean;
+    fmt: CoordinateFormatSpec;
+    toMM(v: number): number;
+    toInch(v: number): number;
+    fromMM(v: number): number;
+    fromInch(v: number): number;
 }
 /**
  * The main excellon parser class.
@@ -54,11 +70,12 @@ export interface ExcellonCommand {
  */
 export declare class ExcellonParser {
     private commandParser;
-    private fmt;
+    private ctx;
     private commandDispatcher;
     private commands;
     constructor();
     parseBlock(block: string): void;
+    flush(): void;
     private parseCommand;
     output(): string;
 }

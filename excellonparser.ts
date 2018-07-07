@@ -7,7 +7,7 @@
  * License: MIT License, see LICENSE.txt
  */
 
- import {CoordinateZeroFormat} from "./primitives";
+import {CoordinateZeroFormat} from "./primitives";
 import * as cmds from "./excelloncommands";
 
 export class ExcellonParseException {
@@ -112,6 +112,7 @@ export interface ExcellonCommand {
     readonly name:string;
     readonly lineNo?:number;
     formatOutput(fmt:CoordinateFormatSpec):string;
+    execute(ctx:ExcellonState);
 }
 
 class ParserCommand {
@@ -124,6 +125,47 @@ interface Parslet {
     cb:(cmd:string, lineNo:number) => ExcellonCommand;
 }
 
+export enum Units {
+    MILIMETERS,
+    INCHES
+}
+
+export class ExcellonState {
+    public tools:Map<number, number> = new Map();
+    public activeTool:number;
+    public units:Units = Units.INCHES;
+    public header:boolean = true;
+    public fmt:CoordinateFormatSpec = new CoordinateFormatSpec(2, 4, CoordinateZeroFormat.TRAILING);
+
+    public toMM(v:number):number {
+        if (this.units == Units.MILIMETERS) {
+            return v;
+        }
+        return v * 2.54;
+    }
+
+    public toInch(v:number):number {
+        if (this.units == Units.INCHES) {
+            return v;
+        }
+        return v / 2.54;
+    }
+
+    public fromMM(v:number):number {
+        if (this.units == Units.MILIMETERS) {
+            return v;
+        }
+        return v / 2.54;
+    }
+
+    public fromInch(v:number):number {
+        if (this.units == Units.INCHES) {
+            return v;
+        }
+        return v * 2.54;
+    }
+}
+
 /**
  * The main excellon parser class.
  * 
@@ -131,7 +173,7 @@ interface Parslet {
  */
 export class ExcellonParser {
     private commandParser:CommandParser = new CommandParser();
-    private fmt:CoordinateFormatSpec;
+    private ctx:ExcellonState;
 
     // Order in this array is important, because some regex are more broad
     // and would detect previous commands.
@@ -154,7 +196,7 @@ export class ExcellonParser {
         {exp:/^FSB,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {
             exp:/^T(\d+(?:,\d+)?)((?:[CFSHBZ](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/, 
-            cb: (cmd, lineNo) => new cmds.ToolDefinitionCommand(cmd, this.fmt, lineNo)
+            cb: (cmd, lineNo) => new cmds.ToolDefinitionCommand(cmd, this.ctx.fmt, lineNo)
         },
         {exp:/^%$/, cb: (cmd, lineNo) => new cmds.EndOfHeaderCommand(cmd, lineNo)},
         {exp:/^M0*47,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
@@ -162,24 +204,24 @@ export class ExcellonParser {
         {exp:/^M0*98,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^M0*71.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^M0*72.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
-        {exp:/^G0*93.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
-        {exp:/^G0*45.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
-        {exp:/^G0*82.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.fmt, 'XY', lineNo)},
-        {exp:/^M0*2.*/, cb: (cmd, lineNo) => new cmds.MCodeWithMods(cmd, this.fmt, 'XYM', lineNo)},
-        {exp:/^R\d+.*/, cb: (cmd, lineNo) => new cmds.RepeatCommand(cmd, this.fmt, 'XYM', lineNo)},
-        {exp:/^P\d+.*/, cb: (cmd, lineNo) => new cmds.PatternRepeatCommand(cmd, this.fmt, 'XY', lineNo)},
+        {exp:/^G0*93.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.ctx.fmt, 'XY', lineNo)},
+        {exp:/^G0*45.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.ctx.fmt, 'XY', lineNo)},
+        {exp:/^G0*82.*/, cb: (cmd, lineNo) => new cmds.GCodeWithMods(cmd, this.ctx.fmt, 'XY', lineNo)},
+        {exp:/^M0*2.*/, cb: (cmd, lineNo) => new cmds.MCodeWithMods(cmd, this.ctx.fmt, 'XYM', lineNo)},
+        {exp:/^R\d+.*/, cb: (cmd, lineNo) => new cmds.RepeatCommand(cmd, this.ctx.fmt, 'XYM', lineNo)},
+        {exp:/^P\d+.*/, cb: (cmd, lineNo) => new cmds.PatternRepeatCommand(cmd, this.ctx.fmt, 'XY', lineNo)},
         {exp:/^T(?:\d+)$/, cb: (cmd, lineNo) => new cmds.ToolChangeCommand(cmd, lineNo)},
         {exp:/^G(?:\d+)$/, cb: (cmd, lineNo) => new cmds.GCodeCommand(cmd, lineNo)},
         {exp:/^M(?:\d+)$/, cb: (cmd, lineNo) => new cmds.MCodeCommand(cmd, lineNo)},
         {
             exp:/^[XY](?:\d*(?:\.\d*)?)/,
-            cb: (cmd, lineNo) => new cmds.CoordinatesCommand(cmd, this.fmt, 'XYZG', lineNo)
+            cb: (cmd, lineNo) => new cmds.CoordinatesCommand(cmd, this.ctx.fmt, 'XYZG', lineNo)
         },
     ];
     private commands:Array<ParserCommand> = [];
 
     constructor() {
-        this.fmt = new CoordinateFormatSpec(2, 4, CoordinateZeroFormat.TRAILING);
+        this.ctx = new ExcellonState();
         this.commandParser.setConsumer((cmd:string, lineNo:number) => this.parseCommand(cmd, lineNo));
     }
 
@@ -207,6 +249,7 @@ export class ExcellonParser {
             let command = dispatcher.cb(cmd, lineNo);
             this.commands.push(new ParserCommand(command, lineNo));
             //console.log(`Cmd: '${cmd}', '${command.formatOutput(this.fmt)}'`);
+            command.execute(this.ctx);
         } catch (e) {
             console.log(`Error parsing excellon file at line ${lineNo}.`);
             console.log(`Offending command: ${cmd.substr(0, 100)}`);
@@ -219,18 +262,10 @@ export class ExcellonParser {
         let result = "";
         for (let parseCommand of this.commands) {
             let cmd = parseCommand.cmd;
-            let cmdString = cmd.formatOutput(this.fmt);
+            let cmdString = cmd.formatOutput(this.ctx.fmt);
             result += cmdString;
             result += "\n";
         }
         return result;
     }
-
-    /*
-    public execute(ctx:GerberState) {
-        for (let parseCommand of this.commands) {
-            parseCommand.cmd.execute(ctx);
-        }
-    }
-    */
 }

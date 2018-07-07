@@ -1,4 +1,4 @@
-import { CoordinateFormatSpec, ExcellonCommand } from "./excellonparser";
+import { CoordinateFormatSpec, ExcellonCommand, ExcellonState } from "./excellonparser";
 /**
  * Gerber Parsing Library
  *
@@ -26,6 +26,7 @@ export declare class CommentCommand implements ExcellonCommand {
     readonly name: string;
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;
+    execute(): void;
 }
 export declare class GCodeCommand implements ExcellonCommand {
     readonly lineNo?: number;
@@ -34,6 +35,7 @@ export declare class GCodeCommand implements ExcellonCommand {
     private static matchExp;
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class MCodeCommand implements ExcellonCommand {
     readonly lineNo?: number;
@@ -42,6 +44,7 @@ export declare class MCodeCommand implements ExcellonCommand {
     private static matchExp;
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class CommaCommandBase implements ExcellonCommand {
     readonly lineNo?: number;
@@ -49,18 +52,22 @@ export declare class CommaCommandBase implements ExcellonCommand {
     name: string;
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class ResetCommand extends CommaCommandBase {
     readonly lineNo?: number;
     constructor(cmd: string, lineNo?: number);
+    execute(): void;
 }
 export declare class AxisVersionCommand extends CommaCommandBase {
     readonly lineNo?: number;
     constructor(cmd: string, lineNo?: number);
+    execute(): void;
 }
 export declare class FileFormatCommand extends CommaCommandBase {
     readonly lineNo?: number;
     constructor(cmd: string, lineNo?: number);
+    execute(): void;
 }
 export declare class UnitsCommand extends CommaCommandBase {
     readonly lineNo?: number;
@@ -86,6 +93,7 @@ export declare class ToolDefinitionCommand implements ExcellonCommand {
     private static toolMatch;
     constructor(cmd: string, fmt: CoordinateFormatSpec, lineNo?: number);
     formatOutput(fmt: CoordinateFormatSpec): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class ToolChangeCommand implements ExcellonCommand {
     readonly lineNo?: number;
@@ -94,12 +102,14 @@ export declare class ToolChangeCommand implements ExcellonCommand {
     private static match;
     constructor(cmd: string, lineNo?: number);
     formatOutput(fmt: CoordinateFormatSpec): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class EndOfHeaderCommand implements ExcellonCommand {
     readonly lineNo?: number;
     readonly name: string;
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class GCodeWithMods implements ExcellonCommand {
     readonly lineNo?: number;
@@ -109,6 +119,7 @@ export declare class GCodeWithMods implements ExcellonCommand {
     private static gCodeExpr;
     constructor(cmd: string, fmt: CoordinateFormatSpec, allowedMods: string, lineNo?: number);
     formatOutput(fmt: CoordinateFormatSpec): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class MCodeWithMods implements ExcellonCommand {
     readonly lineNo?: number;
@@ -118,6 +129,7 @@ export declare class MCodeWithMods implements ExcellonCommand {
     private static mCodeExpr;
     constructor(cmd: string, fmt: CoordinateFormatSpec, allowedMods: string, lineNo?: number);
     formatOutput(fmt: CoordinateFormatSpec): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class RepeatCommand implements ExcellonCommand {
     readonly lineNo?: number;
@@ -127,6 +139,7 @@ export declare class RepeatCommand implements ExcellonCommand {
     private static match;
     constructor(cmd: string, fmt: CoordinateFormatSpec, allowedMods: string, lineNo?: number);
     formatOutput(fmt: CoordinateFormatSpec): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class PatternRepeatCommand implements ExcellonCommand {
     readonly lineNo?: number;
@@ -136,6 +149,7 @@ export declare class PatternRepeatCommand implements ExcellonCommand {
     private static match;
     constructor(cmd: string, fmt: CoordinateFormatSpec, allowedMods: string, lineNo?: number);
     formatOutput(fmt: CoordinateFormatSpec): string;
+    execute(ctx: ExcellonState): void;
 }
 export declare class CoordinatesCommand implements ExcellonCommand {
     readonly lineNo?: number;
@@ -143,4 +157,5 @@ export declare class CoordinatesCommand implements ExcellonCommand {
     readonly modifiers: Array<Modifier>;
     constructor(cmd: string, fmt: CoordinateFormatSpec, allowedMods: string, lineNo?: number);
     formatOutput(fmt: CoordinateFormatSpec): string;
+    execute(ctx: ExcellonState): void;
 }

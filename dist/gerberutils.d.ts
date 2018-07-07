@@ -25,7 +25,7 @@ export declare enum BoardFileType {
     Unsupported = 2
 }
 export declare class GerberUtils {
-    static boardFileType(fileName: string, content: string): BoardFileType;
+    static boardFileType(content: string): BoardFileType;
     static determineSideAndLayer(fileName: string): {
         side: BoardSide;
         layer: BoardLayer;

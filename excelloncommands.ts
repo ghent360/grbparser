@@ -1,5 +1,5 @@
 import { CoordinateZeroFormat, CoordinateUnits, Epsilon } from "./primitives";
-import { CoordinateFormatSpec, ExcellonCommand, ExcellonParseException } from "./excellonparser";
+import { CoordinateFormatSpec, ExcellonCommand, ExcellonParseException, ExcellonState } from "./excellonparser";
 import { parseCoordinate, formatFixedNumber } from "./utils";
 
 /**
@@ -39,6 +39,8 @@ export class CommentCommand implements ExcellonCommand {
     formatOutput():string {
         return ';' + this.comment;
     }
+
+    execute() {}
 }
 
 export class GCodeCommand implements ExcellonCommand {
@@ -62,6 +64,9 @@ export class GCodeCommand implements ExcellonCommand {
         }
         result += this.codeId;
         return result;
+    }
+
+    execute(ctx:ExcellonState) {
     }
 }
 
@@ -87,6 +92,9 @@ export class MCodeCommand implements ExcellonCommand {
         result += this.codeId;
         return result;
     }
+
+    execute(ctx:ExcellonState) {
+    }
 }
 
 export class CommaCommandBase implements ExcellonCommand {
@@ -105,6 +113,9 @@ export class CommaCommandBase implements ExcellonCommand {
         this.values.forEach(v => result = result + "," + v);
         return result;
     }
+
+    execute(ctx:ExcellonState) {
+    }
 }
 
 export class ResetCommand extends CommaCommandBase {
@@ -114,6 +125,7 @@ export class ResetCommand extends CommaCommandBase {
             throw new ExcellonParseException(`Invalid R command ${cmd}`);
         }
     }
+    execute() {}
 }
 
 export class AxisVersionCommand extends CommaCommandBase {
@@ -123,6 +135,8 @@ export class AxisVersionCommand extends CommaCommandBase {
             throw new ExcellonParseException(`Invalid VER command ${cmd}`);
         }
     }
+
+    execute() {}
 }
 
 export class FileFormatCommand extends CommaCommandBase {
@@ -132,6 +146,7 @@ export class FileFormatCommand extends CommaCommandBase {
             throw new ExcellonParseException(`Invalid FMAT command ${cmd}`);
         }
     }
+    execute() {}
 }
 
 export class UnitsCommand extends CommaCommandBase {
@@ -307,6 +322,8 @@ export class ToolDefinitionCommand implements ExcellonCommand {
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }
+    execute(ctx:ExcellonState) {
+    }
 }
 
 export class ToolChangeCommand implements ExcellonCommand {
@@ -326,6 +343,8 @@ export class ToolChangeCommand implements ExcellonCommand {
     formatOutput(fmt:CoordinateFormatSpec):string {
         return "T" + this.toolId;
     }
+    execute(ctx:ExcellonState) {
+    }
 }
 
 export class EndOfHeaderCommand implements ExcellonCommand {
@@ -339,6 +358,8 @@ export class EndOfHeaderCommand implements ExcellonCommand {
 
     formatOutput():string {
         return '%';
+    }
+    execute(ctx:ExcellonState) {
     }
 }
 
@@ -372,6 +393,8 @@ export class GCodeWithMods implements ExcellonCommand {
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }
+    execute(ctx:ExcellonState) {
+    }
 }
 
 export class MCodeWithMods implements ExcellonCommand {
@@ -404,6 +427,8 @@ export class MCodeWithMods implements ExcellonCommand {
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }
+    execute(ctx:ExcellonState) {
+    }
 }
 
 export class RepeatCommand implements ExcellonCommand {
@@ -430,6 +455,8 @@ export class RepeatCommand implements ExcellonCommand {
         let result = "R" + this.repeat;
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
+    }
+    execute(ctx:ExcellonState) {
     }
 }
 
@@ -458,6 +485,8 @@ export class PatternRepeatCommand implements ExcellonCommand {
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }
+    execute(ctx:ExcellonState) {
+    }
 }
 
 export class CoordinatesCommand implements ExcellonCommand {
@@ -477,5 +506,7 @@ export class CoordinatesCommand implements ExcellonCommand {
         let result = "";
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
+    }
+    execute(ctx:ExcellonState) {
     }
 }
