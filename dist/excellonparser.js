@@ -10,6 +10,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const primitives_1 = require("./primitives");
 const cmds = require("./excelloncommands");
+const point_1 = require("./point");
 class ExcellonParseException {
     constructor(message, line) {
         this.message = message;
@@ -117,6 +118,9 @@ var CoordinateMode;
     CoordinateMode[CoordinateMode["ABSOLUTE"] = 0] = "ABSOLUTE";
     CoordinateMode[CoordinateMode["RELATIVE"] = 1] = "RELATIVE";
 })(CoordinateMode = exports.CoordinateMode || (exports.CoordinateMode = {}));
+function holeBounds(hole) {
+    return new primitives_1.Bounds(new point_1.Point(hole.x - hole.drillSize, hole.y - hole.drillSize), new point_1.Point(hole.x + hole.drillSize, hole.y + hole.drillSize));
+}
 class ExcellonState {
     constructor() {
         this.tools = new Map();
@@ -220,9 +224,18 @@ class ExcellonParser {
     }
     flush() {
         this.commandParser.flush();
+        this.calcBounds();
     }
-    getDrills() {
-        return this.ctx.holes;
+    result() {
+        return { holes: this.ctx.holes, bounds: this.ctx.bounds };
+    }
+    calcBounds() {
+        if (this.ctx.holes.length < 1) {
+            return;
+        }
+        let bounds = holeBounds(this.ctx.holes[0]);
+        this.ctx.holes.forEach(hole => bounds.merge(holeBounds(hole)));
+        this.ctx.bounds = bounds.toSimpleBounds();
     }
     parseCommand(cmd, lineNo) {
         if (cmd.length == 0) {

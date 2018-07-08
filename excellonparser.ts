@@ -7,8 +7,9 @@
  * License: MIT License, see LICENSE.txt
  */
 
-import {CoordinateZeroFormat} from "./primitives";
+import {CoordinateZeroFormat, SimpleBounds, Bounds} from "./primitives";
 import * as cmds from "./excelloncommands";
+import { Point } from "./point";
 
 export class ExcellonParseException {
     constructor(readonly message:string, readonly line?:number) {
@@ -142,6 +143,17 @@ export interface DrillHole {
     drillSize:number;
 }
 
+export interface ExcellonParserResult {
+    holes:Array<DrillHole>;
+    bounds:SimpleBounds;
+}
+
+function holeBounds(hole:DrillHole):Bounds {
+    return new Bounds(
+        new Point(hole.x - hole.drillSize, hole.y - hole.drillSize),
+        new Point(hole.x + hole.drillSize, hole.y + hole.drillSize));
+}
+
 export class ExcellonState {
     public tools:Map<number, number> = new Map();
     public activeTool:number;
@@ -154,6 +166,7 @@ export class ExcellonState {
     public xPos:number = 0;
     public yPos:number = 0;
     public holes:Array<DrillHole> = [];
+    public bounds:SimpleBounds;
 
     public toMM(v:number):number {
         if (this.units == Units.MILIMETERS) {
@@ -254,10 +267,20 @@ export class ExcellonParser {
 
     flush() {
         this.commandParser.flush();
+        this.calcBounds();
     }
 
-    getDrills():Array<DrillHole> {
-        return this.ctx.holes;
+    result():ExcellonParserResult {
+        return {holes:this.ctx.holes, bounds:this.ctx.bounds};
+    }
+
+    private calcBounds() {
+        if (this.ctx.holes.length < 1) {
+            return;
+        }
+        let bounds = holeBounds(this.ctx.holes[0]);
+        this.ctx.holes.forEach(hole => bounds.merge(holeBounds(hole)));
+        this.ctx.bounds = bounds.toSimpleBounds();
     }
 
     private parseCommand(cmd:string, lineNo:number) {

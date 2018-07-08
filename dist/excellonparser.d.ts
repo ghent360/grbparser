@@ -6,7 +6,7 @@
  *
  * License: MIT License, see LICENSE.txt
  */
-import { CoordinateZeroFormat } from "./primitives";
+import { CoordinateZeroFormat, SimpleBounds } from "./primitives";
 export declare class ExcellonParseException {
     readonly message: string;
     readonly line?: number;
@@ -61,6 +61,10 @@ export interface DrillHole {
     y: number;
     drillSize: number;
 }
+export interface ExcellonParserResult {
+    holes: Array<DrillHole>;
+    bounds: SimpleBounds;
+}
 export declare class ExcellonState {
     tools: Map<number, number>;
     activeTool: number;
@@ -73,6 +77,7 @@ export declare class ExcellonState {
     xPos: number;
     yPos: number;
     holes: Array<DrillHole>;
+    bounds: SimpleBounds;
     toMM(v: number): number;
     toInch(v: number): number;
     fromMM(v: number): number;
@@ -92,7 +97,8 @@ export declare class ExcellonParser {
     constructor();
     parseBlock(block: string): void;
     flush(): void;
-    getDrills(): Array<DrillHole>;
+    result(): ExcellonParserResult;
+    private calcBounds;
     private parseCommand;
     output(): string;
 }
