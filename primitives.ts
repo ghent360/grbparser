@@ -873,7 +873,7 @@ export class ApertureMacro {
 
                     case 20: // Vector line (exposure, width, start x, start y, end x, end y, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
-                        width = state.unitToMM(ApertureMacro.getValue(modifiers, 1));
+                        width = state.unitToMM(ApertureMacro.getValue(modifiers, 1) / 2);
                         let centerStart = state.pointToMM(
                             new Point(
                                 ApertureMacro.getValue(modifiers, 2),
