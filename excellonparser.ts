@@ -172,28 +172,28 @@ export class ExcellonState {
         if (this.units == Units.MILIMETERS) {
             return v;
         }
-        return v * 2.54;
+        return v * 25.4;
     }
 
     public toInch(v:number):number {
         if (this.units == Units.INCHES) {
             return v;
         }
-        return v / 2.54;
+        return v / 25.4;
     }
 
     public fromMM(v:number):number {
         if (this.units == Units.MILIMETERS) {
             return v;
         }
-        return v / 2.54;
+        return v / 25.4;
     }
 
     public fromInch(v:number):number {
         if (this.units == Units.INCHES) {
             return v;
         }
-        return v * 2.54;
+        return v * 25.4;
     }
 
     public drillCommand(x:number, y:number, drill:number) {

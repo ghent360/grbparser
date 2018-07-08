@@ -868,19 +868,19 @@ class GerberState {
         if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
             return v;
         }
-        return v * 2.54;
+        return v * 25.4;
     }
     pointToMM(v) {
         if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
             return v;
         }
-        return new point_1.Point(v.x * 2.54, v.y * 2.54);
+        return new point_1.Point(v.x * 25.4, v.y * 25.4);
     }
     mmToUnit(v) {
         if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
             return v;
         }
-        return v / 2.54;
+        return v / 25.4;
     }
     get currentPointX() {
         if (this.currentPoint_.x == undefined) {

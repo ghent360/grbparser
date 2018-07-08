@@ -1052,21 +1052,21 @@ export class GerberState {
         if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
             return v;
         }
-        return v * 2.54;
+        return v * 25.4;
     }
 
     pointToMM(v:Point):Point {
         if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
             return v;
         }
-        return new Point(v.x * 2.54, v.y * 2.54);
+        return new Point(v.x * 25.4, v.y * 25.4);
     }
 
     mmToUnit(v:number):number {
         if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
             return v;
         }
-        return v / 2.54;
+        return v / 25.4;
     }
 
     get currentPointX():number {

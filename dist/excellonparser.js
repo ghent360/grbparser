@@ -138,25 +138,25 @@ class ExcellonState {
         if (this.units == Units.MILIMETERS) {
             return v;
         }
-        return v * 2.54;
+        return v * 25.4;
     }
     toInch(v) {
         if (this.units == Units.INCHES) {
             return v;
         }
-        return v / 2.54;
+        return v / 25.4;
     }
     fromMM(v) {
         if (this.units == Units.MILIMETERS) {
             return v;
         }
-        return v / 2.54;
+        return v / 25.4;
     }
     fromInch(v) {
         if (this.units == Units.INCHES) {
             return v;
         }
-        return v * 2.54;
+        return v * 25.4;
     }
     drillCommand(x, y, drill) {
         //console.log(`Drill ${x},${y}: ${drill}`);
