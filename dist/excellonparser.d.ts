@@ -52,16 +52,32 @@ export declare enum Units {
     MILIMETERS = 0,
     INCHES = 1
 }
+export declare enum CoordinateMode {
+    ABSOLUTE = 0,
+    RELATIVE = 1
+}
+export interface DrillHole {
+    x: number;
+    y: number;
+    drillSize: number;
+}
 export declare class ExcellonState {
     tools: Map<number, number>;
     activeTool: number;
     units: Units;
+    coordinateMode: CoordinateMode;
     header: boolean;
     fmt: CoordinateFormatSpec;
+    fmtSet: boolean;
+    isDrilling: boolean;
+    xPos: number;
+    yPos: number;
+    holes: Array<DrillHole>;
     toMM(v: number): number;
     toInch(v: number): number;
     fromMM(v: number): number;
     fromInch(v: number): number;
+    drillCommand(x: number, y: number, drill: number): void;
 }
 /**
  * The main excellon parser class.

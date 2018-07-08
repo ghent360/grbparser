@@ -130,12 +130,30 @@ export enum Units {
     INCHES
 }
 
+export enum CoordinateMode {
+    ABSOLUTE,
+    RELATIVE
+}
+
+export interface DrillHole {
+    // All sizes are mm
+    x:number;
+    y:number;
+    drillSize:number;
+}
+
 export class ExcellonState {
     public tools:Map<number, number> = new Map();
     public activeTool:number;
     public units:Units = Units.INCHES;
+    public coordinateMode:CoordinateMode = CoordinateMode.ABSOLUTE;
     public header:boolean = true;
     public fmt:CoordinateFormatSpec = new CoordinateFormatSpec(2, 4, CoordinateZeroFormat.TRAILING);
+    public fmtSet:boolean = false;
+    public isDrilling:boolean = false;
+    public xPos:number = 0;
+    public yPos:number = 0;
+    public holes:Array<DrillHole> = [];
 
     public toMM(v:number):number {
         if (this.units == Units.MILIMETERS) {
@@ -163,6 +181,11 @@ export class ExcellonState {
             return v;
         }
         return v * 2.54;
+    }
+
+    public drillCommand(x:number, y:number, drill:number) {
+        //console.log(`Drill ${x},${y}: ${drill}`);
+        this.holes.push({x:x, y:y, drillSize:drill});
     }
 }
 

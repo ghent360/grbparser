@@ -1,5 +1,5 @@
 import { CoordinateZeroFormat, CoordinateUnits, Epsilon } from "./primitives";
-import { CoordinateFormatSpec, ExcellonCommand, ExcellonParseException, ExcellonState } from "./excellonparser";
+import { CoordinateFormatSpec, ExcellonCommand, ExcellonParseException, ExcellonState, CoordinateMode, Units } from "./excellonparser";
 import { parseCoordinate, formatFixedNumber } from "./utils";
 
 /**
@@ -24,6 +24,15 @@ import { parseCoordinate, formatFixedNumber } from "./utils";
  * Note that in the input text the command separators are stipped by the command tokenizer.
  */
 
+ /*
+ ;FORMAT={-:-/ absolute / inch / decimal}
+ ;FORMAT={2:4/ absolute / inch / suppress leading zeros}
+ ;FORMAT={2:4/ absolute / inch / suppress trailing zeros}
+ ;FORMAT={2:4/ absolute / inch / keep zeros}
+ ;FORMAT={-:-/ absolute / metric / decimal}
+ ;FORMAT={3:3/ absolute / metric / suppress leading zeros}
+
+  */
 export class CommentCommand implements ExcellonCommand {
     private static matchExp = /^;.*$/;
     private comment:string;
@@ -40,7 +49,46 @@ export class CommentCommand implements ExcellonCommand {
         return ';' + this.comment;
     }
 
-    execute() {}
+    execute(ctx:ExcellonState) {
+        if (this.comment.startsWith(";FORMAT={")) {
+            let format = this.comment
+                .substring(9, this.comment.length - 1)
+                .split('/')
+                .map(s => s.trim());
+            this.parseFormat(format, ctx);
+        }
+    }
+
+    private parseFormat(format:string[], ctx:ExcellonState) {
+        let numberFormat = format[0].split(':');
+        let numIntPos = numberFormat[0] != '-' ? Number.parseInt(numberFormat[0]) : -1;
+        let numDecPos = numberFormat[1] != '-' ? Number.parseInt(numberFormat[1]) : -1;
+        let position:CoordinateMode = format[1] == 'absolute' ? CoordinateMode.ABSOLUTE : CoordinateMode.RELATIVE;
+        let units:Units = format[2] == 'inch' ? Units.INCHES : Units.MILIMETERS;
+        let zeroFormat:CoordinateZeroFormat = CoordinateZeroFormat.NONE;
+        switch (format[3]) {
+            case 'decimal':
+                zeroFormat = CoordinateZeroFormat.DIRECT;
+                break;
+            case 'suppress leading zeros':
+                zeroFormat = CoordinateZeroFormat.TRAILING;
+                break;
+            case 'suppress trailing zeros':
+            case 'keep zeroes':
+                zeroFormat = CoordinateZeroFormat.LEADING;
+                break;
+        }
+        if (numIntPos < 0) {
+            numIntPos = units == Units.INCHES ? 2 : 3;
+        }
+        if (numDecPos < 0) {
+            numDecPos = units == Units.INCHES ? 4 : 3;
+        }
+        ctx.fmt = new CoordinateFormatSpec(numIntPos, numDecPos, zeroFormat);
+        ctx.fmtSet = true;
+        ctx.units = units;
+        ctx.coordinateMode = position;
+    }
 }
 
 export class GCodeCommand implements ExcellonCommand {
@@ -67,6 +115,20 @@ export class GCodeCommand implements ExcellonCommand {
     }
 
     execute(ctx:ExcellonState) {
+        switch(this.codeId) {
+            case 90:
+                ctx.coordinateMode = CoordinateMode.ABSOLUTE;
+                break;
+            case 91:
+                ctx.coordinateMode = CoordinateMode.RELATIVE;
+                break;
+            case 5:
+                ctx.isDrilling = true;
+                break;
+            case 0:
+                ctx.isDrilling = false;
+                break;
+        }
     }
 }
 
@@ -94,6 +156,11 @@ export class MCodeCommand implements ExcellonCommand {
     }
 
     execute(ctx:ExcellonState) {
+        switch(this.codeId) {
+            case 95:
+                ctx.header = false;
+                break;
+        }
     }
 }
 
@@ -115,6 +182,14 @@ export class CommaCommandBase implements ExcellonCommand {
     }
 
     execute(ctx:ExcellonState) {
+        switch(this.name) {
+            case 'M71':
+                ctx.units = Units.MILIMETERS;
+                break;
+            case 'M72':
+                ctx.units = Units.INCHES;
+                break;
+        }
     }
 }
 
@@ -155,6 +230,28 @@ export class UnitsCommand extends CommaCommandBase {
         if (this.name != 'INCH' && this.name != 'METRIC') {
             throw new ExcellonParseException(`Invalid units command ${cmd}`);
         }
+    }
+
+    execute(ctx:ExcellonState) {
+        let zeroFormat:CoordinateZeroFormat = CoordinateZeroFormat.NONE;
+        let units = this.name == 'INCH' ? Units.INCHES : Units.MILIMETERS;
+        if (this.values.length > 1) {
+            switch (this.values[0]) {
+                case 'LZ':
+                    zeroFormat = CoordinateZeroFormat.TRAILING;
+                    break;
+                case 'TZ':
+                    zeroFormat = CoordinateZeroFormat.LEADING;
+                    break;
+            }
+            let numIntPos = units == Units.INCHES ? 2 : 3;
+            let numDecPos = units == Units.INCHES ? 4 : 3;
+            if (!ctx.fmtSet) {
+                ctx.fmt = new CoordinateFormatSpec(numIntPos, numDecPos, zeroFormat);
+                ctx.fmtSet = true;
+            }
+        }
+        ctx.units = units;
     }
 }
 
@@ -232,6 +329,14 @@ function parseMods(mods:string, fmt:CoordinateFormatSpec, allowedMods?:string):A
         mods = mods.substr(idx);
     }
     return result;
+}
+
+function findModifier(code:string, mods:Array<Modifier>):number {
+    let mod = mods.find(m => m.code == code);
+    if (mod) {
+        return mod.value;
+    }
+    return undefined;
 }
 
 function fomratModNumber(
@@ -322,7 +427,15 @@ export class ToolDefinitionCommand implements ExcellonCommand {
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }
+
     execute(ctx:ExcellonState) {
+        if (this.tool.isRange()) {
+            for(let idx = this.tool.start; idx < this.tool.end; idx++) {
+                ctx.tools.set(idx, findModifier("C", this.modifiers));
+            }
+        } else {
+            ctx.tools.set(this.tool.start, findModifier("C", this.modifiers));
+        }
     }
 }
 
@@ -343,7 +456,14 @@ export class ToolChangeCommand implements ExcellonCommand {
     formatOutput(fmt:CoordinateFormatSpec):string {
         return "T" + this.toolId;
     }
+
     execute(ctx:ExcellonState) {
+        /*
+        if (ctx.tools.get(this.toolId) === undefined) {
+            throw new ExcellonParseException(`Tool ${this.toolId} is not defined.`);
+        }
+        */
+        ctx.activeTool = this.toolId;
     }
 }
 
@@ -359,7 +479,9 @@ export class EndOfHeaderCommand implements ExcellonCommand {
     formatOutput():string {
         return '%';
     }
+
     execute(ctx:ExcellonState) {
+        ctx.header = false;
     }
 }
 
@@ -507,6 +629,28 @@ export class CoordinatesCommand implements ExcellonCommand {
         this.modifiers.forEach(m => result += formatMod(m, fmt));
         return result;
     }
+
     execute(ctx:ExcellonState) {
+        let x:number = findModifier("X", this.modifiers);
+        let y:number = findModifier("Y", this.modifiers);
+        let isRelative = ctx.coordinateMode == CoordinateMode.RELATIVE;
+        if (x === undefined) {
+            x = isRelative ? 0 : ctx.xPos;
+        }
+        if (y === undefined) {
+            y = isRelative ? 0 : ctx.yPos;
+        }
+        if (ctx.coordinateMode == CoordinateMode.RELATIVE) {
+            x += ctx.xPos;
+            y += ctx.yPos;
+        }
+        let drill = ctx.tools.get(ctx.activeTool);
+        if (drill == undefined) {
+            console.log(`Undefined drill size for tool ID ${ctx.activeTool}`);
+            drill = 0;
+        }
+        ctx.drillCommand(ctx.toMM(x), ctx.toMM(y), ctx.toMM(drill));
+        ctx.xPos = x;
+        ctx.yPos = y;
     }
 }

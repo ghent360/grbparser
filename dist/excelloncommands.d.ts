@@ -26,7 +26,8 @@ export declare class CommentCommand implements ExcellonCommand {
     readonly name: string;
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;
-    execute(): void;
+    execute(ctx: ExcellonState): void;
+    private parseFormat;
 }
 export declare class GCodeCommand implements ExcellonCommand {
     readonly lineNo?: number;
@@ -72,6 +73,7 @@ export declare class FileFormatCommand extends CommaCommandBase {
 export declare class UnitsCommand extends CommaCommandBase {
     readonly lineNo?: number;
     constructor(cmd: string, lineNo?: number);
+    execute(ctx: ExcellonState): void;
 }
 export interface Modifier {
     readonly code: string;
