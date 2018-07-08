@@ -735,7 +735,7 @@ class ApertureMacro {
                         break;
                     case 20: // Vector line (exposure, width, start x, start y, end x, end y, rotation)
                         isPositive = ApertureMacro.getValue(modifiers, 0) != 0;
-                        width = state.unitToMM(ApertureMacro.getValue(modifiers, 1));
+                        width = state.unitToMM(ApertureMacro.getValue(modifiers, 1) / 2);
                         let centerStart = state.pointToMM(new point_1.Point(ApertureMacro.getValue(modifiers, 2), ApertureMacro.getValue(modifiers, 3)));
                         let centerEnd = state.pointToMM(new point_1.Point(ApertureMacro.getValue(modifiers, 4), ApertureMacro.getValue(modifiers, 5)));
                         rotation = ApertureMacro.getValue(modifiers, 6);
