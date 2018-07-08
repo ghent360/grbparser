@@ -221,6 +221,9 @@ class ExcellonParser {
     flush() {
         this.commandParser.flush();
     }
+    getDrills() {
+        return this.ctx.holes;
+    }
     parseCommand(cmd, lineNo) {
         if (cmd.length == 0) {
             return;

@@ -256,6 +256,10 @@ export class ExcellonParser {
         this.commandParser.flush();
     }
 
+    getDrills():Array<DrillHole> {
+        return this.ctx.holes;
+    }
+
     private parseCommand(cmd:string, lineNo:number) {
         if (cmd.length == 0) {
             return;

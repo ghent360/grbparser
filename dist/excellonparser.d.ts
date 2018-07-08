@@ -92,6 +92,7 @@ export declare class ExcellonParser {
     constructor();
     parseBlock(block: string): void;
     flush(): void;
+    getDrills(): Array<DrillHole>;
     private parseCommand;
     output(): string;
 }
