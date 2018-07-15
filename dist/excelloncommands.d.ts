@@ -28,6 +28,7 @@ export declare class CommentCommand implements ExcellonCommand {
     formatOutput(): string;
     execute(ctx: ExcellonState): void;
     private parseFormat;
+    private parseFormat2;
 }
 export declare class GCodeCommand implements ExcellonCommand {
     readonly lineNo?: number;

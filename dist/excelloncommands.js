@@ -45,12 +45,18 @@ class CommentCommand {
         return ';' + this.comment;
     }
     execute(ctx) {
-        if (this.comment.startsWith(";FORMAT={")) {
+        if (this.comment.startsWith("FORMAT={")) {
             let format = this.comment
-                .substring(9, this.comment.length - 1)
+                .substring(8, this.comment.length - 1)
                 .split('/')
                 .map(s => s.trim());
             this.parseFormat(format, ctx);
+        }
+        else if (this.comment.startsWith("FILE_FORMAT=")) {
+            let format = this.comment
+                .substring(12)
+                .trim();
+            this.parseFormat2(format, ctx);
         }
     }
     parseFormat(format, ctx) {
@@ -82,6 +88,15 @@ class CommentCommand {
         ctx.fmtSet = true;
         ctx.units = units;
         ctx.coordinateMode = position;
+    }
+    parseFormat2(format, ctx) {
+        let numberFormat = format.split(':');
+        let numIntPos = numberFormat[0] != '-' ? Number.parseInt(numberFormat[0]) : -1;
+        let numDecPos = numberFormat[1] != '-' ? Number.parseInt(numberFormat[1]) : -1;
+        if (numIntPos >= 0 && numDecPos >= 0) {
+            ctx.fmt = new excellonparser_1.CoordinateFormatSpec(numIntPos, numDecPos, primitives_1.CoordinateZeroFormat.TRAILING);
+            ctx.fmtSet = true;
+        }
     }
 }
 CommentCommand.matchExp = /^;.*$/;
@@ -220,7 +235,7 @@ class UnitsCommand extends CommaCommandBase {
     execute(ctx) {
         let zeroFormat = primitives_1.CoordinateZeroFormat.NONE;
         let units = this.name == 'INCH' ? excellonparser_1.Units.INCHES : excellonparser_1.Units.MILIMETERS;
-        if (this.values.length > 1) {
+        if (this.values.length > 0) {
             switch (this.values[0]) {
                 case 'LZ':
                     zeroFormat = primitives_1.CoordinateZeroFormat.TRAILING;
@@ -229,12 +244,18 @@ class UnitsCommand extends CommaCommandBase {
                     zeroFormat = primitives_1.CoordinateZeroFormat.LEADING;
                     break;
             }
-            let numIntPos = units == excellonparser_1.Units.INCHES ? 2 : 3;
-            let numDecPos = units == excellonparser_1.Units.INCHES ? 4 : 3;
-            if (!ctx.fmtSet) {
-                ctx.fmt = new excellonparser_1.CoordinateFormatSpec(numIntPos, numDecPos, zeroFormat);
-                ctx.fmtSet = true;
+            let numIntPos;
+            let numDecPos;
+            if (ctx.fmtSet) {
+                numIntPos = ctx.fmt.numIntPos;
+                numDecPos = ctx.fmt.numDecimalPos;
             }
+            else {
+                numIntPos = units == excellonparser_1.Units.INCHES ? 2 : 3;
+                numDecPos = units == excellonparser_1.Units.INCHES ? 4 : 3;
+            }
+            ctx.fmt = new excellonparser_1.CoordinateFormatSpec(numIntPos, numDecPos, zeroFormat);
+            ctx.fmtSet = true;
         }
         ctx.units = units;
     }

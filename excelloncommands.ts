@@ -50,12 +50,17 @@ export class CommentCommand implements ExcellonCommand {
     }
 
     execute(ctx:ExcellonState) {
-        if (this.comment.startsWith(";FORMAT={")) {
+        if (this.comment.startsWith("FORMAT={")) {
             let format = this.comment
-                .substring(9, this.comment.length - 1)
+                .substring(8, this.comment.length - 1)
                 .split('/')
                 .map(s => s.trim());
             this.parseFormat(format, ctx);
+        } else if (this.comment.startsWith("FILE_FORMAT=")) {
+            let format = this.comment
+                .substring(12)
+                .trim();
+            this.parseFormat2(format, ctx);
         }
     }
 
@@ -88,6 +93,16 @@ export class CommentCommand implements ExcellonCommand {
         ctx.fmtSet = true;
         ctx.units = units;
         ctx.coordinateMode = position;
+    }
+
+    private parseFormat2(format:string, ctx:ExcellonState) {
+        let numberFormat = format.split(':');
+        let numIntPos = numberFormat[0] != '-' ? Number.parseInt(numberFormat[0]) : -1;
+        let numDecPos = numberFormat[1] != '-' ? Number.parseInt(numberFormat[1]) : -1;
+        if (numIntPos >= 0 && numDecPos >= 0) {
+            ctx.fmt = new CoordinateFormatSpec(numIntPos, numDecPos, CoordinateZeroFormat.TRAILING);
+            ctx.fmtSet = true;
+        }
     }
 }
 
@@ -235,7 +250,7 @@ export class UnitsCommand extends CommaCommandBase {
     execute(ctx:ExcellonState) {
         let zeroFormat:CoordinateZeroFormat = CoordinateZeroFormat.NONE;
         let units = this.name == 'INCH' ? Units.INCHES : Units.MILIMETERS;
-        if (this.values.length > 1) {
+        if (this.values.length > 0) {
             switch (this.values[0]) {
                 case 'LZ':
                     zeroFormat = CoordinateZeroFormat.TRAILING;
@@ -244,12 +259,17 @@ export class UnitsCommand extends CommaCommandBase {
                     zeroFormat = CoordinateZeroFormat.LEADING;
                     break;
             }
-            let numIntPos = units == Units.INCHES ? 2 : 3;
-            let numDecPos = units == Units.INCHES ? 4 : 3;
-            if (!ctx.fmtSet) {
-                ctx.fmt = new CoordinateFormatSpec(numIntPos, numDecPos, zeroFormat);
-                ctx.fmtSet = true;
+            let numIntPos:number;
+            let numDecPos:number;
+            if (ctx.fmtSet) {
+                numIntPos = ctx.fmt.numIntPos;
+                numDecPos = ctx.fmt.numDecimalPos;
+            } else {
+                numIntPos = units == Units.INCHES ? 2 : 3;
+                numDecPos = units == Units.INCHES ? 4 : 3;
             }
+            ctx.fmt = new CoordinateFormatSpec(numIntPos, numDecPos, zeroFormat);
+            ctx.fmtSet = true;
         }
         ctx.units = units;
     }

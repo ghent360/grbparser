@@ -47,7 +47,7 @@ describe("ExcellonParser tests", () => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
                 let parser = new xp.ExcellonParser();
-                //console.log(`Parsing ${fullFileName}`);
+                console.log(`Parsing ${fullFileName}`);
                 parser.parseBlock(content);
             });
     });
