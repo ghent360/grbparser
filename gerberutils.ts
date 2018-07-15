@@ -65,7 +65,7 @@ export class GerberUtils {
             case "grb":
             case "ger":
             case "art":
-                let fileNameNoExt = fileSplit[0].toLowerCase();
+                let fileNameNoExt = fileSplit.slice(0, fileSplit.length - 1).join('.').toLowerCase();
                 switch (fileNameNoExt) {
                     case "boardoutline":
                         result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
@@ -159,10 +159,10 @@ export class GerberUtils {
                         } else {
                             let side = BoardSide.Unknown;
                             let layer = BoardLayer.Unknown;
-                            if (fileNameLowerCase.indexOf("top") >= 0) {
+                            if (fileNameLowerCase.indexOf("top") >= 0 || fileNameLowerCase.indexOf("front") >= 0) {
                                 side = BoardSide.Top;
                                 layer = BoardLayer.Copper;
-                            } else if (fileNameLowerCase.indexOf("bot") >= 0) {
+                            } else if (fileNameLowerCase.indexOf("bot") >= 0 || fileNameLowerCase.indexOf("back") >= 0) {
                                 side = BoardSide.Bottom;
                                 layer = BoardLayer.Copper;
                             } else if (fileNameLowerCase.indexOf("board") >= 0) {
