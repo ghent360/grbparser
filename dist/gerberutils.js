@@ -185,7 +185,7 @@ class GerberUtils {
                                 side = BoardSide.Top;
                                 layer = BoardLayer.Copper;
                             }
-                            else if (fileNameLowerCase.indexOf("bottom") >= 0) {
+                            else if (fileNameLowerCase.indexOf("bot") >= 0) {
                                 side = BoardSide.Bottom;
                                 layer = BoardLayer.Copper;
                             }
