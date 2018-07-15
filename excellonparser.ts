@@ -160,7 +160,7 @@ export class ExcellonState {
     public units:Units = Units.INCHES;
     public coordinateMode:CoordinateMode = CoordinateMode.ABSOLUTE;
     public header:boolean = true;
-    public fmt:CoordinateFormatSpec = new CoordinateFormatSpec(2, 4, CoordinateZeroFormat.TRAILING);
+    public fmt:CoordinateFormatSpec = new CoordinateFormatSpec(2, 4, CoordinateZeroFormat.LEADING);
     public fmtSet:boolean = false;
     public isDrilling:boolean = false;
     public xPos:number = 0;

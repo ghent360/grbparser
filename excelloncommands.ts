@@ -100,7 +100,7 @@ export class CommentCommand implements ExcellonCommand {
         let numIntPos = numberFormat[0] != '-' ? Number.parseInt(numberFormat[0]) : -1;
         let numDecPos = numberFormat[1] != '-' ? Number.parseInt(numberFormat[1]) : -1;
         if (numIntPos >= 0 && numDecPos >= 0) {
-            ctx.fmt = new CoordinateFormatSpec(numIntPos, numDecPos, CoordinateZeroFormat.TRAILING);
+            ctx.fmt = new CoordinateFormatSpec(numIntPos, numDecPos, CoordinateZeroFormat.LEADING);
             ctx.fmtSet = true;
         }
     }
@@ -200,9 +200,17 @@ export class CommaCommandBase implements ExcellonCommand {
         switch(this.name) {
             case 'M71':
                 ctx.units = Units.MILIMETERS;
+                if (ctx.header && !ctx.fmtSet) {
+                    ctx.fmt = new CoordinateFormatSpec(3, 3, CoordinateZeroFormat.LEADING);
+                    ctx.fmtSet = true;
+                }
                 break;
             case 'M72':
                 ctx.units = Units.INCHES;
+                if (ctx.header && !ctx.fmtSet) {
+                    ctx.fmt = new CoordinateFormatSpec(2, 4, CoordinateZeroFormat.LEADING);
+                    ctx.fmtSet = true;
+                }
                 break;
         }
     }

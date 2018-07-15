@@ -282,11 +282,13 @@ class GerberUtils {
             case "gbp":
             case "spbottom":
             case "pms":
+            case "crs":
                 result = { side: BoardSide.Bottom, layer: BoardLayer.Paste };
                 break;
             case "gtp":
             case "sptop":
             case "pmc":
+            case "crc":
                 result = { side: BoardSide.Top, layer: BoardLayer.Paste };
                 break;
             case "gbo":
@@ -426,7 +428,6 @@ GerberUtils.bannedExtensions = [
     "vhdl",
     "vhd",
     "vhi",
-    "cmp",
     "exe",
     "dll",
     "lib",

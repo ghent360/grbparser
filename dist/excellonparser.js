@@ -127,7 +127,7 @@ class ExcellonState {
         this.units = Units.INCHES;
         this.coordinateMode = CoordinateMode.ABSOLUTE;
         this.header = true;
-        this.fmt = new CoordinateFormatSpec(2, 4, primitives_1.CoordinateZeroFormat.TRAILING);
+        this.fmt = new CoordinateFormatSpec(2, 4, primitives_1.CoordinateZeroFormat.LEADING);
         this.fmtSet = false;
         this.isDrilling = false;
         this.xPos = 0;

@@ -94,7 +94,7 @@ class CommentCommand {
         let numIntPos = numberFormat[0] != '-' ? Number.parseInt(numberFormat[0]) : -1;
         let numDecPos = numberFormat[1] != '-' ? Number.parseInt(numberFormat[1]) : -1;
         if (numIntPos >= 0 && numDecPos >= 0) {
-            ctx.fmt = new excellonparser_1.CoordinateFormatSpec(numIntPos, numDecPos, primitives_1.CoordinateZeroFormat.TRAILING);
+            ctx.fmt = new excellonparser_1.CoordinateFormatSpec(numIntPos, numDecPos, primitives_1.CoordinateZeroFormat.LEADING);
             ctx.fmtSet = true;
         }
     }
@@ -183,9 +183,17 @@ class CommaCommandBase {
         switch (this.name) {
             case 'M71':
                 ctx.units = excellonparser_1.Units.MILIMETERS;
+                if (ctx.header && !ctx.fmtSet) {
+                    ctx.fmt = new excellonparser_1.CoordinateFormatSpec(3, 3, primitives_1.CoordinateZeroFormat.LEADING);
+                    ctx.fmtSet = true;
+                }
                 break;
             case 'M72':
                 ctx.units = excellonparser_1.Units.INCHES;
+                if (ctx.header && !ctx.fmtSet) {
+                    ctx.fmt = new excellonparser_1.CoordinateFormatSpec(2, 4, primitives_1.CoordinateZeroFormat.LEADING);
+                    ctx.fmtSet = true;
+                }
                 break;
         }
     }
