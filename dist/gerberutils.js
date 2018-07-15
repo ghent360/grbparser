@@ -241,6 +241,7 @@ class GerberUtils {
             case "oln":
             case "gko":
             case "outline":
+            case "gmb":
                 result = { side: BoardSide.Both, layer: BoardLayer.Outline };
                 break;
             case "l2":
@@ -251,6 +252,10 @@ class GerberUtils {
             case "g3":
             case "gl2":
             case "g3l":
+            case "lo1":
+            case "lo2":
+            case "lo3":
+            case "lo4":
                 result = { side: BoardSide.Internal, layer: BoardLayer.Copper };
                 break;
             case "adtop":
@@ -265,39 +270,47 @@ class GerberUtils {
             case "l4":
             case "gbl":
             case "l2m":
+            case "sol":
                 result = { side: BoardSide.Bottom, layer: BoardLayer.Copper };
                 break;
             case "l1":
             case "l1m":
             case "gtl":
+            case "cmp":
                 result = { side: BoardSide.Top, layer: BoardLayer.Copper };
                 break;
             case "gbp":
             case "spbottom":
+            case "pms":
                 result = { side: BoardSide.Bottom, layer: BoardLayer.Paste };
                 break;
             case "gtp":
             case "sptop":
+            case "pmc":
                 result = { side: BoardSide.Top, layer: BoardLayer.Paste };
                 break;
             case "gbo":
             case "ss2":
             case "ssbottom":
+            case "pls":
                 result = { side: BoardSide.Bottom, layer: BoardLayer.Silk };
                 break;
             case "gto":
             case "ss1":
             case "sstop":
+            case "plc":
                 result = { side: BoardSide.Top, layer: BoardLayer.Silk };
                 break;
             case "gbs":
             case "sm2":
             case "smbottom":
+            case "sts":
                 result = { side: BoardSide.Bottom, layer: BoardLayer.SolderMask };
                 break;
             case "gts":
             case "sm1":
             case "smtop":
+            case "stc":
                 result = { side: BoardSide.Top, layer: BoardLayer.SolderMask };
                 break;
             case "gb3": // oshstencils bottom outline
