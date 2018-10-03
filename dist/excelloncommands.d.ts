@@ -23,7 +23,7 @@ export declare class CommentCommand implements ExcellonCommand {
     readonly lineNo?: number;
     private static matchExp;
     private comment;
-    readonly name: string;
+    readonly name = "Comment";
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;
     execute(ctx: ExcellonState): void;
@@ -89,7 +89,7 @@ export declare class ToolPost {
 }
 export declare class ToolDefinitionCommand implements ExcellonCommand {
     readonly lineNo?: number;
-    readonly name: string;
+    readonly name = "T";
     readonly tool: ToolPost;
     readonly modifiers: Array<Modifier>;
     private static match;
@@ -100,7 +100,7 @@ export declare class ToolDefinitionCommand implements ExcellonCommand {
 }
 export declare class ToolChangeCommand implements ExcellonCommand {
     readonly lineNo?: number;
-    readonly name: string;
+    readonly name = "T";
     readonly toolId: number;
     private static match;
     constructor(cmd: string, lineNo?: number);
@@ -109,7 +109,7 @@ export declare class ToolChangeCommand implements ExcellonCommand {
 }
 export declare class EndOfHeaderCommand implements ExcellonCommand {
     readonly lineNo?: number;
-    readonly name: string;
+    readonly name = "%";
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;
     execute(ctx: ExcellonState): void;
