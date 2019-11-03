@@ -26,6 +26,13 @@ function GetAlphaAsFrac(clr) {
 //a very simple class that builds an SVG file with any number of 
 //polygons of the specified formats ...
 class StyleInfo {
+    constructor() {
+        //this.pft = c.PolyFillType.pftNonZero;
+        this.brushClr = 0xFFFFFFCC;
+        this.penClr = 0xFF000000;
+        this.penWidth = 0;
+        this.showCoords = false;
+    }
     Clone() {
         let si = new StyleInfo();
         si.brushClr = this.brushClr;
@@ -33,13 +40,6 @@ class StyleInfo {
         si.penWidth = this.penWidth;
         si.showCoords = this.showCoords;
         return si;
-    }
-    constructor() {
-        //this.pft = c.PolyFillType.pftNonZero;
-        this.brushClr = 0xFFFFFFCC;
-        this.penClr = 0xFF000000;
-        this.penWidth = 0;
-        this.showCoords = false;
     }
 }
 exports.StyleInfo = StyleInfo;

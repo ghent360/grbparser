@@ -85,8 +85,8 @@ class FSCommand {
         ctx.coordinateFormatSpec = this.coordinateFormat;
     }
 }
-FSCommand.matchExp = /^FS([LTD]?)([IA])(N\d)?(G\d)?X(\d)(\d)Y(\d)(\d)(Z\d+)?(D\d)?(M\d)?\*$/;
 exports.FSCommand = FSCommand;
+FSCommand.matchExp = /^FS([LTD]?)([IA])(N\d)?(G\d)?X(\d)(\d)Y(\d)(\d)(Z\d+)?(D\d)?(M\d)?\*$/;
 class MOCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -267,8 +267,8 @@ class ADCommand {
         }
     }
 }
-ADCommand.matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z\-0-9_~.$]*)(,(?:\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)(?:X\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)*)?\*$/;
 exports.ADCommand = ADCommand;
+ADCommand.matchExp = /^ADD(\d+)([a-zA-Z_.$][a-zA-Z\-0-9_~.$]*)(,(?:\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)(?:X\s*[\+\-]?(?:\d*\.?\d*)(?:[eE][\+\-]?\d+)?\s*)*)?\*$/;
 function skipIntCode(cmd, start = 1) {
     for (let startIdx = start; startIdx < cmd.length; startIdx++) {
         let charAt = cmd.charAt(startIdx);
@@ -295,8 +295,8 @@ class G04Command {
     execute(ctx) {
     }
 }
-G04Command.matchExp = /^G[0]*4(.*)$/;
 exports.G04Command = G04Command;
+G04Command.matchExp = /^G[0]*4(.*)$/;
 class AMCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -397,8 +397,8 @@ class ABCommand {
         }
     }
 }
-ABCommand.matchExp = /^AB(?:D(\d+))?\*$/;
 exports.ABCommand = ABCommand;
+ABCommand.matchExp = /^AB(?:D(\d+))?\*$/;
 /**
  * This is the "set current aperture" command, not the D01, D02 or D03 command.
  */
@@ -424,8 +424,8 @@ class DCommand {
         ctx.currentAppretureId = this.apertureId;
     }
 }
-DCommand.matchExp = /^(?:G54)?D(\d+)$/;
 exports.DCommand = DCommand;
+DCommand.matchExp = /^(?:G54)?D(\d+)$/;
 function parseCoordinateX(coordinate, fmt) {
     return utils_1.parseCoordinate(coordinate, fmt.xNumIntPos, fmt.xNumDecPos, fmt.coordFormat);
 }
@@ -650,8 +650,8 @@ class D01Command {
         }
     }
 }
-D01Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(I([\+\-]?\d+))?(J([\+\-]?\d+))?(?:D[0]*1)?$/;
 exports.D01Command = D01Command;
+D01Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(I([\+\-]?\d+))?(J([\+\-]?\d+))?(?:D[0]*1)?$/;
 class D02Command {
     constructor(cmd, fmt, lineNo) {
         this.lineNo = lineNo;
@@ -695,8 +695,8 @@ class D02Command {
         ctx.closeRegionContour();
     }
 }
-D02Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*2)?$/;
 exports.D02Command = D02Command;
+D02Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*2)?$/;
 class D03Command {
     constructor(cmd, fmt, lineNo) {
         this.lineNo = lineNo;
@@ -750,8 +750,8 @@ class D03Command {
         ctx.flash(new point_1.Point(targetX, targetY), this);
     }
 }
-D03Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*3)?$/;
 exports.D03Command = D03Command;
+D03Command.matchExp = /^(X([\+\-]?\d+))?(Y([\+\-]?\d+))?(?:D[0]*3)?$/;
 class BaseGCodeCommand {
     constructor(cmd, cmdCode, lineNo) {
         this.lineNo = lineNo;
@@ -774,8 +774,8 @@ class BaseGCodeCommand {
         return result;
     }
 }
-BaseGCodeCommand.matchExp = /^G(\d+)$/;
 exports.BaseGCodeCommand = BaseGCodeCommand;
+BaseGCodeCommand.matchExp = /^G(\d+)$/;
 class G01Command extends BaseGCodeCommand {
     constructor(cmd, lineNo) {
         super(cmd, 1, lineNo);
@@ -914,8 +914,8 @@ class LPCommand {
         ctx.objectPolarity = this.polarity;
     }
 }
-LPCommand.matchExp = /^LP(C|D)\*$/;
 exports.LPCommand = LPCommand;
+LPCommand.matchExp = /^LP(C|D)\*$/;
 class LMCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -962,8 +962,8 @@ class LMCommand {
         ctx.objectMirroring = this.miroring;
     }
 }
-LMCommand.matchExp = /^LM(N|X|Y|XY)\*$/;
 exports.LMCommand = LMCommand;
+LMCommand.matchExp = /^LM(N|X|Y|XY)\*$/;
 class LRCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -982,8 +982,8 @@ class LRCommand {
         ctx.objectRotation = this.rotation;
     }
 }
-LRCommand.matchExp = /^LR([\+\-]?(?:\d*\.\d+|\d+))\*$/;
 exports.LRCommand = LRCommand;
+LRCommand.matchExp = /^LR([\+\-]?(?:\d*\.\d+|\d+))\*$/;
 class LSCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -1002,8 +1002,8 @@ class LSCommand {
         ctx.objectScaling = this.scale;
     }
 }
-LSCommand.matchExp = /^LS([\+\-]?(?:\d*\.\d+|\d+))\*$/;
 exports.LSCommand = LSCommand;
+LSCommand.matchExp = /^LS([\+\-]?(?:\d*\.\d+|\d+))\*$/;
 class G36Command extends BaseGCodeCommand {
     constructor(cmd, lineNo) {
         super(cmd, 36, lineNo);
@@ -1065,8 +1065,8 @@ class SRCommand {
         }
     }
 }
-SRCommand.matchExp = /^SR(?:X(\d+)Y(\d+)I(\d*\.\d+|\d+)J(\d*\.\d+|\d+))?\*$/;
 exports.SRCommand = SRCommand;
+SRCommand.matchExp = /^SR(?:X(\d+)Y(\d+)I(\d*\.\d+|\d+)J(\d*\.\d+|\d+))?\*$/;
 class M02Command {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -1084,8 +1084,8 @@ class M02Command {
         ctx.endFile(this);
     }
 }
-M02Command.matchExp = /^M0*[20]$/;
 exports.M02Command = M02Command;
+M02Command.matchExp = /^M0*[20]$/;
 class TCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -1140,8 +1140,8 @@ class TCommand {
         //console.log("Tx command is not implemnted");
     }
 }
-TCommand.matchExp = /^T(A|F|O)([a-zA-Z_.$][a-zA-Z0-9_.$]*)((?:,[^,]+)*)\*$/;
 exports.TCommand = TCommand;
+TCommand.matchExp = /^T(A|F|O)([a-zA-Z_.$][a-zA-Z0-9_.$]*)((?:,[^,]+)*)\*$/;
 class TDCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -1166,6 +1166,6 @@ class TDCommand {
         //console.log("TD command is not implemnted");
     }
 }
-TDCommand.matchExp = /^TD([a-zA-Z_.$][a-zA-Z0-9_.$]*)?\*$/;
 exports.TDCommand = TDCommand;
+TDCommand.matchExp = /^TD([a-zA-Z_.$][a-zA-Z0-9_.$]*)?\*$/;
 //# sourceMappingURL=gerbercommands.js.map

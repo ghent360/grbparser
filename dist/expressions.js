@@ -257,7 +257,7 @@ class ExpressionParser {
         return result;
     }
 }
+exports.ExpressionParser = ExpressionParser;
 ExpressionParser.MatchVariable = /^\$(\d+)/;
 ExpressionParser.MatchNumber = /^(\d*\.\d*|\d+)/;
-exports.ExpressionParser = ExpressionParser;
 //# sourceMappingURL=expressions.js.map

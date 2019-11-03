@@ -99,8 +99,8 @@ class CommentCommand {
         }
     }
 }
-CommentCommand.matchExp = /^;.*$/;
 exports.CommentCommand = CommentCommand;
+CommentCommand.matchExp = /^;.*$/;
 class GCodeCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -136,8 +136,8 @@ class GCodeCommand {
         }
     }
 }
-GCodeCommand.matchExp = /^G(\d+)/;
 exports.GCodeCommand = GCodeCommand;
+GCodeCommand.matchExp = /^G(\d+)/;
 class MCodeCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -164,8 +164,8 @@ class MCodeCommand {
         }
     }
 }
-MCodeCommand.matchExp = /^M(\d+)/;
 exports.MCodeCommand = MCodeCommand;
+MCodeCommand.matchExp = /^M(\d+)/;
 class CommaCommandBase {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -432,9 +432,9 @@ class ToolDefinitionCommand {
         }
     }
 }
+exports.ToolDefinitionCommand = ToolDefinitionCommand;
 ToolDefinitionCommand.match = /^T(\d+(?:,\d+)?)((?:[CFSHBZ](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/;
 ToolDefinitionCommand.toolMatch = /^(\d+)(?:,(\d+))?$/;
-exports.ToolDefinitionCommand = ToolDefinitionCommand;
 class ToolChangeCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -457,8 +457,8 @@ class ToolChangeCommand {
         ctx.activeTool = this.toolId;
     }
 }
-ToolChangeCommand.match = /^T(\d+)$/;
 exports.ToolChangeCommand = ToolChangeCommand;
+ToolChangeCommand.match = /^T(\d+)$/;
 class EndOfHeaderCommand {
     constructor(cmd, lineNo) {
         this.lineNo = lineNo;
@@ -499,8 +499,8 @@ class GCodeWithMods {
     execute(ctx) {
     }
 }
-GCodeWithMods.gCodeExpr = /G(\d+)/;
 exports.GCodeWithMods = GCodeWithMods;
+GCodeWithMods.gCodeExpr = /G(\d+)/;
 class MCodeWithMods {
     constructor(cmd, fmt, allowedMods, lineNo) {
         this.lineNo = lineNo;
@@ -525,8 +525,8 @@ class MCodeWithMods {
     execute(ctx) {
     }
 }
-MCodeWithMods.mCodeExpr = /M(\d+)/;
 exports.MCodeWithMods = MCodeWithMods;
+MCodeWithMods.mCodeExpr = /M(\d+)/;
 class RepeatCommand {
     constructor(cmd, fmt, allowedMods, lineNo) {
         this.lineNo = lineNo;
@@ -547,8 +547,8 @@ class RepeatCommand {
     execute(ctx) {
     }
 }
-RepeatCommand.match = /R(\d+)/;
 exports.RepeatCommand = RepeatCommand;
+RepeatCommand.match = /R(\d+)/;
 class PatternRepeatCommand {
     constructor(cmd, fmt, allowedMods, lineNo) {
         this.lineNo = lineNo;
@@ -569,8 +569,8 @@ class PatternRepeatCommand {
     execute(ctx) {
     }
 }
-PatternRepeatCommand.match = /P(\d+)/;
 exports.PatternRepeatCommand = PatternRepeatCommand;
+PatternRepeatCommand.match = /P(\d+)/;
 class CoordinatesCommand {
     constructor(cmd, fmt, allowedMods, lineNo) {
         this.lineNo = lineNo;

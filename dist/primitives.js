@@ -435,8 +435,8 @@ class ApertureDefinition {
         return result;
     }
 }
-ApertureDefinition.standardTemplates = ["C", "R", "O", "P"];
 exports.ApertureDefinition = ApertureDefinition;
+ApertureDefinition.standardTemplates = ["C", "R", "O", "P"];
 class VariableDefinition {
     constructor(id, expression) {
         this.id = id;

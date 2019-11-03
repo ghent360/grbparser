@@ -155,12 +155,12 @@ class CommandParser {
         return result;
     }
 }
+exports.CommandParser = CommandParser;
 CommandParser.gCodeSplit = /^(G\d+)((?:[XYIJ][\+\-]?\d+)*(?:D\d+)?)$/;
 CommandParser.gdmnCodeSplit = /^([GDMN]\d+)((?:[GDMN]\d+)+)$/;
 CommandParser.g04Match = /^G0*4$/;
 CommandParser.dCmdMatch = /^([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?([XYIJ][\+\-]?\d+)?(D\d+)$/;
 CommandParser.coordinatesOrder = "XYIJ";
-exports.CommandParser = CommandParser;
 class ParserCommand {
     constructor(cmd, lineNo) {
         this.cmd = cmd;

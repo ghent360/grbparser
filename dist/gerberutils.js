@@ -402,6 +402,7 @@ class GerberUtils {
         return fileName.substring(dotIdx + 1);
     }
 }
+exports.GerberUtils = GerberUtils;
 GerberUtils.bannedExtensions = [
     "c",
     "o",
@@ -519,5 +520,4 @@ GerberUtils.bannedExtensions = [
     "b#8",
     "b#9",
 ];
-exports.GerberUtils = GerberUtils;
 //# sourceMappingURL=gerberutils.js.map
