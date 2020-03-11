@@ -276,7 +276,7 @@ export declare class TCommand implements GerberCommand {
     readonly isAdvanced = true;
     private static matchExp;
     constructor(cmd: string, lineNo?: number);
-    readonly name: string;
+    get name(): string;
     formatOutput(): string;
     execute(ctx: GerberState): void;
 }

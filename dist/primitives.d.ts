@@ -113,7 +113,7 @@ export declare class ApertureDefinition implements ApertureBase {
     constructor(apertureId: number, templateName: string, modifiers: number[]);
     isMacro(): boolean;
     isDrawable(): boolean;
-    readonly macro: ApertureMacro;
+    get macro(): ApertureMacro;
     execute(ctx: GerberState): void;
     generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolyongWithThinkness;
     generateCircleDraw(center: Point, radius: number, state: ObjectState): PolyongSetWithThinkness;
@@ -193,19 +193,27 @@ export declare class GerberState {
     private blockParams_;
     private primitives_;
     private isDone_;
-    coordinateFormatSpec: CoordinateFormatSpec;
-    coordinateUnits: CoordinateUnits;
+    get coordinateFormatSpec(): CoordinateFormatSpec;
+    set coordinateFormatSpec(value: CoordinateFormatSpec);
+    get coordinateUnits(): CoordinateUnits;
+    set coordinateUnits(value: CoordinateUnits);
     unitToMM(v: number): number;
     pointToMM(v: Point): Point;
     mmToUnit(v: number): number;
-    currentPointX: number;
-    currentPointY: number;
-    currentI: number;
-    currentJ: number;
-    currentAppretureId: number;
-    quadrantMode: QuadrantMode;
-    readonly isDone: boolean;
-    readonly primitives: Array<GraphicsPrimitive>;
+    get currentPointX(): number;
+    set currentPointX(value: number);
+    get currentPointY(): number;
+    set currentPointY(value: number);
+    get currentI(): number;
+    set currentI(value: number);
+    get currentJ(): number;
+    set currentJ(value: number);
+    get currentAppretureId(): number;
+    set currentAppretureId(value: number);
+    get quadrantMode(): QuadrantMode;
+    set quadrantMode(value: QuadrantMode);
+    get isDone(): boolean;
+    get primitives(): Array<GraphicsPrimitive>;
     getObjectState(): ObjectState;
     getAperture(id: number): ApertureBase;
     getCurrentAperture(): ApertureBase;
@@ -223,7 +231,7 @@ export declare class GerberState {
     endRegion(cmd: GerberCommand): void;
     saveGraphicsConsumer(): void;
     restoreGraphicsConsumer(): void;
-    readonly graphicsOperations: GraphicsOperations;
+    get graphicsOperations(): GraphicsOperations;
     startBlockAperture(blockId: number): void;
     endBlockAperture(): void;
     startRepeat(params: BlockParams): void;
@@ -243,8 +251,8 @@ export declare class Bounds {
     constructor(min: Point, max: Point);
     merge(other: Bounds | Point | SimpleBounds): void;
     mergexy(x: number, y: number): void;
-    readonly width: number;
-    readonly height: number;
+    get width(): number;
+    get height(): number;
     toSimpleBounds(): SimpleBounds;
 }
 export declare class LineSegment {
@@ -253,7 +261,7 @@ export declare class LineSegment {
     readonly cmd: GerberCommand;
     constructor(from: Point, to: Point, cmd: GerberCommand);
     toString(): string;
-    readonly bounds: Bounds;
+    get bounds(): Bounds;
     translate(vector: Point): LineSegment;
 }
 export declare class CircleSegment {
@@ -262,7 +270,7 @@ export declare class CircleSegment {
     readonly cmd: GerberCommand;
     constructor(center: Point, radius: number, cmd: GerberCommand);
     toString(): string;
-    readonly bounds: Bounds;
+    get bounds(): Bounds;
     translate(vector: Point): CircleSegment;
 }
 export declare class ArcSegment {
@@ -274,7 +282,7 @@ export declare class ArcSegment {
     readonly cmd: GerberCommand;
     constructor(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, cmd: GerberCommand);
     toString(): string;
-    readonly bounds: Bounds;
+    get bounds(): Bounds;
     translate(vector: Point): ArcSegment;
 }
 export declare type RegionSegment = LineSegment | CircleSegment | ArcSegment;
@@ -300,9 +308,9 @@ export declare class Line {
     private objects_;
     constructor(from: Point, to: Point, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
-    readonly objects: GraphicsObjects;
-    readonly bounds: Bounds;
-    readonly primitives: this;
+    get objects(): GraphicsObjects;
+    get bounds(): Bounds;
+    get primitives(): this;
     translate(vector: Point): Line;
 }
 export declare class Circle {
@@ -314,9 +322,9 @@ export declare class Circle {
     private objects_;
     constructor(center: Point, radius: number, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
-    readonly objects: GraphicsObjects;
-    readonly bounds: Bounds;
-    readonly primitives: this;
+    get objects(): GraphicsObjects;
+    get bounds(): Bounds;
+    get primitives(): this;
     translate(vector: Point): Circle;
 }
 export declare class Arc {
@@ -331,9 +339,9 @@ export declare class Arc {
     private objects_;
     constructor(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
-    readonly objects: GraphicsObjects;
-    readonly bounds: Bounds;
-    readonly primitives: this;
+    get objects(): GraphicsObjects;
+    get bounds(): Bounds;
+    get primitives(): this;
     translate(vector: Point): Arc;
 }
 export declare class Flash {
@@ -344,9 +352,9 @@ export declare class Flash {
     private objects_;
     constructor(center: Point, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
-    readonly objects: GraphicsObjects;
-    readonly bounds: Bounds;
-    readonly primitives: this;
+    get objects(): GraphicsObjects;
+    get bounds(): Bounds;
+    get primitives(): this;
     translate(vector: Point): Flash;
 }
 export declare class Region {
@@ -362,9 +370,9 @@ export declare class Region {
     private static reOrderCountour;
     private static buildPolygonSet;
     private static buildPolygon;
-    readonly objects: GraphicsObjects;
-    readonly bounds: Bounds;
-    readonly primitives: this;
+    get objects(): GraphicsObjects;
+    get bounds(): Bounds;
+    get primitives(): this;
     translate(vector: Point): Region;
 }
 export declare class Repeat {
@@ -376,18 +384,18 @@ export declare class Repeat {
     private primitives_;
     constructor(block: Block, xOffset: number, yOffset: any, cmd: GerberCommand);
     toString(): string;
-    readonly objects: GraphicsObjects;
-    readonly bounds: Bounds;
+    get objects(): GraphicsObjects;
+    get bounds(): Bounds;
     private buildObjects;
     private buildPrimitives;
-    readonly primitives: GraphicsPrimitive[];
+    get primitives(): GraphicsPrimitive[];
     translate(vector: Point): Repeat;
 }
 export declare type GraphicsPrimitive = Line | Circle | Arc | Flash | Region | Repeat;
 export declare function EmptyBounds(): Bounds;
 export declare class BaseGraphicsOperationsConsumer implements GraphicsOperations {
     private primitives_;
-    readonly primitives: Array<GraphicsPrimitive>;
+    get primitives(): Array<GraphicsPrimitive>;
     line(from: Point, to: Point, cmd: GerberCommand, ctx: GerberState): void;
     circle(center: Point, radius: number, cmd: GerberCommand, ctx: GerberState): void;
     arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, cmd: GerberCommand, ctx: GerberState): void;
@@ -398,8 +406,8 @@ export declare class BaseGraphicsOperationsConsumer implements GraphicsOperation
 export declare class BlockGraphicsOperationsConsumer implements GraphicsOperations {
     private objects_;
     private primitives_;
-    readonly primitives: Array<GraphicsPrimitive>;
-    readonly objects: GraphicsObjects;
+    get primitives(): Array<GraphicsPrimitive>;
+    get objects(): GraphicsObjects;
     line(from: Point, to: Point, cmd: GerberCommand, ctx: GerberState): void;
     circle(center: Point, radius: number, cmd: GerberCommand, ctx: GerberState): void;
     arc(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, cmd: GerberCommand, ctx: GerberState): void;

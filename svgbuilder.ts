@@ -7,7 +7,6 @@
  * License: MIT License, see LICENSE.txt
  */
 
-import {Point} from "./point";
 import {Polygon, PolygonSet} from "./polygonSet";
 import * as fs from "fs";
 
