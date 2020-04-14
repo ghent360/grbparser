@@ -9,7 +9,7 @@
 
 import {SimpleBounds, Bounds} from "./primitives";
 import { Point } from "./point";
-import { BoardSide } from "./gerberutils";
+import { BoardSide, BoardLayer } from "./gerberutils";
 import * as csv from "csv-parse";
 
 export class KicadCentroidParseException {
@@ -132,7 +132,17 @@ export class KicadCentroidParser {
     }
 
     result() {
-        return {components:this.components, bounds:this.bounds};
+        let side = BoardSide.Unknown;
+        if (this.components.length > 0) {
+            side = this.components[0].layer;
+        }
+        for (let idx = 1; idx < this.components.length; idx++) {
+            if (this.components[idx].layer != side) {
+                side = BoardSide.Both;
+                break;
+            }
+        }
+        return {components:this.components, bounds:this.bounds, side:side};
     }
 
     private processRecord(record:any):void {
@@ -167,11 +177,11 @@ export class KicadCentroidParser {
         this.nameIdx = this.header.indexOf("Designator");
         if (this.nameIdx < 0) this.nameIdx = this.header.indexOf("Ref");
         this.xPosIdx = this.header.indexOf("MidX");
-        if (this.xPosIdx < 0) this.nameIdx = this.header.indexOf("PosX");
+        if (this.xPosIdx < 0) this.xPosIdx = this.header.indexOf("PosX");
         this.rotationIdx = this.header.indexOf("Rotation");
-        if (this.rotationIdx < 0) this.nameIdx = this.header.indexOf("Rot");
+        if (this.rotationIdx < 0) this.rotationIdx = this.header.indexOf("Rot");
         this.layerIdx = this.header.indexOf("Layer");
-        if (this.layerIdx < 0) this.nameIdx = this.header.indexOf("Side");
+        if (this.layerIdx < 0) this.layerIdx = this.header.indexOf("Side");
     }
 
     private calcBounds() {

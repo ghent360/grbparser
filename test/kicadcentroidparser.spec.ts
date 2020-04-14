@@ -23,6 +23,7 @@ describe("KiCAD centroid Parser tests", () => {
                 //console.log(`Parsing ${fullFileName}`);
                 parser.parseBlock(content);
                 parser.flush();
+                parser.result();
             });
     });
 });
