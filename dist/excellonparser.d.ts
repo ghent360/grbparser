@@ -26,14 +26,11 @@ export declare class CommandParser {
     private consumer;
     private commandLineStart;
     private command;
-    private errorHandler;
     parseBlock(buffer: string): void;
     flush(): void;
     private append;
-    private static consoleError;
     private static emptyConsumer;
     setConsumer(consumer: (cmd: string, lineNo: number) => void): (cmd: string, lineNo: number) => void;
-    setErrorHandler(handler: (lineNumber: number, buffer: string, idx: number) => void): (lineNumber: number, buffer: string, idx: number) => void;
     private commandPreprocessor;
 }
 export declare class CoordinateFormatSpec {

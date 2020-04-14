@@ -37,7 +37,6 @@ class CommandParser {
         this.lineNumber = 1;
         this.consumer = CommandParser.emptyConsumer;
         this.command = "";
-        this.errorHandler = CommandParser.consoleError;
     }
     parseBlock(buffer) {
         let idx;
@@ -71,22 +70,12 @@ class CommandParser {
         }
         this.command += chr;
     }
-    static consoleError(lineNumber, buffer, idx) {
-        console.log(`Error at line ${lineNumber}`);
-        console.log(`   ${buffer}`);
-        console.log(`---${'-'.repeat(idx + 1)}^`);
-    }
     static emptyConsumer(cmd, line) {
     }
     setConsumer(consumer) {
         let oldValue = this.consumer;
         this.consumer = consumer;
         return oldValue;
-    }
-    setErrorHandler(handler) {
-        let old = this.errorHandler;
-        this.errorHandler = handler;
-        return old;
     }
     commandPreprocessor() {
         let cmd = this.command;
