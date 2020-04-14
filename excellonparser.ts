@@ -37,8 +37,6 @@ export class CommandParser {
         = CommandParser.emptyConsumer;
     private commandLineStart:number;
     private command = "";
-    private errorHandler:(line:number, buffer:string, idx:number) => void
-        = CommandParser.consoleError;
 
     parseBlock(buffer:string) {
         let idx:number;
@@ -72,12 +70,6 @@ export class CommandParser {
         this.command += chr;
     }
 
-    private static consoleError(lineNumber:number, buffer:string, idx:number) {
-        console.log(`Error at line ${lineNumber}`);
-        console.log(`   ${buffer}`);
-        console.log(`---${'-'.repeat(idx + 1)}^`);
-    }
-
     private static emptyConsumer(cmd:string, line:number) {
     }
 
@@ -88,18 +80,10 @@ export class CommandParser {
         return oldValue;
     }
 
-    setErrorHandler(handler:(lineNumber:number, buffer:string, idx:number)=>void)
-        : (lineNumber:number, buffer:string, idx:number)=>void {
-        let old = this.errorHandler;
-        this.errorHandler = handler;
-        return old;
-    }
-
     private commandPreprocessor() {
         let cmd = this.command;
         this.consumer(cmd, this.commandLineStart);
     }
-
 }
 
 export class CoordinateFormatSpec {
