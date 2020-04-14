@@ -10,7 +10,8 @@ export declare enum BoardLayer {
     Notes = 8,
     Assembly = 9,
     Mechanical = 10,
-    Unknown = 11
+    Place = 11,
+    Unknown = 12
 }
 export declare enum BoardSide {
     Top = 0,
@@ -22,7 +23,8 @@ export declare enum BoardSide {
 export declare enum BoardFileType {
     Gerber = 0,
     Drill = 1,
-    Unsupported = 2
+    Centroid = 2,
+    Unsupported = 3
 }
 export declare class GerberUtils {
     static boardFileType(content: string): BoardFileType;

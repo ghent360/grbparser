@@ -84,6 +84,7 @@ class ComponentPositionImpl {
 export interface KicadCentroidParserResult {
     components:Array<ComponentPosition>;
     bounds:SimpleBounds;
+    side:BoardSide;
 }
 
 const kDesignator = "Designator";
@@ -98,7 +99,6 @@ const kLayer = "Layer";
  */
 export class KicadCentroidParser {
     private csvParser:csv.Parser = new csv.Parser({
-        delimiter:',',
         skip_empty_lines: true
     });
 
@@ -131,7 +131,7 @@ export class KicadCentroidParser {
         this.calcBounds();
     }
 
-    result() {
+    result():KicadCentroidParserResult {
         let side = BoardSide.Unknown;
         if (this.components.length > 0) {
             side = this.components[0].layer;
@@ -153,6 +153,7 @@ export class KicadCentroidParser {
         }
         let cp = new ComponentPositionImpl();
         record.forEach((elm, idx) => {
+            elm = elm.trim('\r');
             switch(idx) {
                 case this.nameIdx: cp.name = elm; break;
                 case this.xPosIdx: cp.center.x = Number.parseFloat(elm); break;

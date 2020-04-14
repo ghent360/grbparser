@@ -13,7 +13,8 @@ var BoardLayer;
     BoardLayer[BoardLayer["Notes"] = 8] = "Notes";
     BoardLayer[BoardLayer["Assembly"] = 9] = "Assembly";
     BoardLayer[BoardLayer["Mechanical"] = 10] = "Mechanical";
-    BoardLayer[BoardLayer["Unknown"] = 11] = "Unknown";
+    BoardLayer[BoardLayer["Place"] = 11] = "Place";
+    BoardLayer[BoardLayer["Unknown"] = 12] = "Unknown";
 })(BoardLayer = exports.BoardLayer || (exports.BoardLayer = {}));
 var BoardSide;
 (function (BoardSide) {
@@ -27,7 +28,8 @@ var BoardFileType;
 (function (BoardFileType) {
     BoardFileType[BoardFileType["Gerber"] = 0] = "Gerber";
     BoardFileType[BoardFileType["Drill"] = 1] = "Drill";
-    BoardFileType[BoardFileType["Unsupported"] = 2] = "Unsupported";
+    BoardFileType[BoardFileType["Centroid"] = 2] = "Centroid";
+    BoardFileType[BoardFileType["Unsupported"] = 3] = "Unsupported";
 })(BoardFileType = exports.BoardFileType || (exports.BoardFileType = {}));
 class FileNameDescriptor {
 }
@@ -47,6 +49,10 @@ const gerFileDescriptors = [
 ];
 class GerberUtils {
     static boardFileType(content) {
+        if (content.indexOf("Ref,Val,Package,PosX,PosY,Rot,Side") >= 0)
+            return BoardFileType.Centroid;
+        if (content.indexOf("Designator,Val,Package,MidX,MidY,Rotation,Layer") >= 0)
+            return BoardFileType.Centroid;
         if (content.indexOf("%FS") >= 0)
             return BoardFileType.Gerber;
         if (content.indexOf("M48") >= 0)
@@ -75,27 +81,33 @@ class GerberUtils {
                         result = { side: BoardSide.Both, layer: BoardLayer.Outline };
                         break;
                     case "bottom":
+                    case "bot_copper":
                         result = { side: BoardSide.Bottom, layer: BoardLayer.Copper };
                         break;
                     case "bottommask":
+                    case "bot_solder":
                         result = { side: BoardSide.Bottom, layer: BoardLayer.SolderMask };
                         break;
                     case "bottompaste":
                         result = { side: BoardSide.Bottom, layer: BoardLayer.Paste };
                         break;
                     case "bottomsilk":
+                    case "bot_silk":
                         result = { side: BoardSide.Bottom, layer: BoardLayer.Silk };
                         break;
                     case "top":
+                    case "top_copper":
                         result = { side: BoardSide.Top, layer: BoardLayer.Copper };
                         break;
                     case "topmask":
+                    case "top_solder":
                         result = { side: BoardSide.Top, layer: BoardLayer.SolderMask };
                         break;
                     case "toppaste":
                         result = { side: BoardSide.Top, layer: BoardLayer.Paste };
                         break;
                     case "topsilk":
+                    case "top_silk":
                         result = { side: BoardSide.Top, layer: BoardLayer.Silk };
                         break;
                     case "inner1":
@@ -199,7 +211,8 @@ class GerberUtils {
                                 || fileNameLowerCase.indexOf("cream") >= 0) {
                                 layer = BoardLayer.Paste;
                             }
-                            else if (fileNameLowerCase.indexOf("mask") >= 0) {
+                            else if (fileNameLowerCase.indexOf("mask") >= 0
+                                || fileNameLowerCase.indexOf("solder") >= 0) {
                                 layer = BoardLayer.SolderMask;
                             }
                             else if (fileNameLowerCase.indexOf("silk") >= 0) {
@@ -384,6 +397,10 @@ class GerberUtils {
             case "drillnpt":
                 result = { side: BoardSide.Both, layer: BoardLayer.Drill };
                 break;
+            case "csv":
+            case "pos":
+                result = { side: BoardSide.Both, layer: BoardLayer.Place };
+                break;
         }
         return result;
     }
@@ -434,7 +451,6 @@ GerberUtils.bannedExtensions = [
     "lib",
     "lst",
     "mod",
-    "csv",
     "dcm",
     "png",
     "jpg",

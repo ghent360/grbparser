@@ -10,6 +10,7 @@ export enum BoardLayer {
     Notes,
     Assembly,
     Mechanical,
+    Place,
     Unknown,
 }
 
@@ -24,6 +25,7 @@ export enum BoardSide {
 export enum BoardFileType {
     Gerber,
     Drill,
+    Centroid,
     Unsupported
 }
 
@@ -50,6 +52,10 @@ const gerFileDescriptors:Array<FileNameDescriptor> = [
 export class GerberUtils {
 
     public static boardFileType(content:string) : BoardFileType {
+        if (content.indexOf("Ref,Val,Package,PosX,PosY,Rot,Side") >= 0)
+            return BoardFileType.Centroid;
+        if (content.indexOf("Designator,Val,Package,MidX,MidY,Rotation,Layer") >= 0)
+            return BoardFileType.Centroid;
         if (content.indexOf("%FS") >= 0) return BoardFileType.Gerber;
         if (content.indexOf("M48") >= 0) return BoardFileType.Drill;
         return BoardFileType.Unsupported;
@@ -77,27 +83,33 @@ export class GerberUtils {
                         result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
                         break;
                     case "bottom":
+                    case "bot_copper":
                         result  = { side:BoardSide.Bottom, layer:BoardLayer.Copper };
                         break;
                     case "bottommask":
+                    case "bot_solder":
                         result  = { side:BoardSide.Bottom, layer:BoardLayer.SolderMask };
                         break;
                     case "bottompaste":
                         result  = { side:BoardSide.Bottom, layer:BoardLayer.Paste };
                         break;
                     case "bottomsilk":
+                    case "bot_silk":
                         result  = { side:BoardSide.Bottom, layer:BoardLayer.Silk };
                         break;
                     case "top":
+                    case "top_copper":
                         result  = { side:BoardSide.Top, layer:BoardLayer.Copper };
                         break;
                     case "topmask":
+                    case "top_solder":
                         result  = { side:BoardSide.Top, layer:BoardLayer.SolderMask };
                         break;
                     case "toppaste":
                         result  = { side:BoardSide.Top, layer:BoardLayer.Paste };
                         break;
                     case "topsilk":
+                    case "top_silk":
                         result  = { side:BoardSide.Top, layer:BoardLayer.Silk };
                         break;
                     case "inner1":
@@ -173,7 +185,8 @@ export class GerberUtils {
                             } else if (fileNameLowerCase.indexOf("paste") >= 0
                                 || fileNameLowerCase.indexOf("cream") >= 0) {
                                 layer = BoardLayer.Paste;
-                            } else if (fileNameLowerCase.indexOf("mask") >= 0) {
+                            } else if (fileNameLowerCase.indexOf("mask") >= 0
+                                || fileNameLowerCase.indexOf("solder") >= 0) {
                                 layer = BoardLayer.SolderMask;
                             } else if (fileNameLowerCase.indexOf("silk") >= 0) {
                                 layer = BoardLayer.Silk;
@@ -376,6 +389,11 @@ export class GerberUtils {
             case "drillnpt":
                 result  = { side:BoardSide.Both, layer:BoardLayer.Drill };
                 break;
+            case "csv":
+            case "pos":
+                    result  = { side:BoardSide.Both, layer:BoardLayer.Place };
+                    break;
+    
         }
         return result;
     }
@@ -427,7 +445,6 @@ export class GerberUtils {
         "lib",
         "lst",
         "mod",
-        "csv",
         "dcm",
         "png",
         "jpg",
