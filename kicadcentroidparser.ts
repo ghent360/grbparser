@@ -189,7 +189,7 @@ export class KicadCentroidParser {
         if (this.components.length < 1) {
             return;
         }
-        let bounds = new Bounds(this.components[0].center, this.components[0].center);
+        let bounds = new Bounds(this.components[0].center.clone(), this.components[0].center.clone());
         this.components.forEach(cmp => bounds.merge(cmp.center));
         this.bounds = bounds.toSimpleBounds();
     }
