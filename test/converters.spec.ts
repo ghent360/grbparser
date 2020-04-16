@@ -48,7 +48,7 @@ describe("Conveter tests", () => {
                 result = cv.PrimitiveConverter.GerberToPrimitives(content);
                 //console.log(`${result}`);
                 result = cv.SVGConverter.GerberToSvg(
-                    content, 0x101010, 1000, 0);
+                    content, 0x909090, 1000, 0);
                 let outputFileName = folder + "/" + fileName + ".svg";
                 let stream = fs.createWriteStream(outputFileName);
                 stream.write(result);
