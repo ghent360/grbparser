@@ -52,7 +52,6 @@ import {
     distanceVector2
 } from "./vectorUtils";
 import {
-    AritmeticOperation,
     ExpressionParser
 } from "./expressions";
 import { formatFixedNumber, parseCoordinate } from './utils';
@@ -589,15 +588,15 @@ export class D01Command implements GerberCommand {
             let targetJ:number;
             if (this.i != undefined) {
                 targetI = this.i;
-                ctx.currentI = this.i;
+                //ctx.currentI = this.i;
             } else {
-                targetI = ctx.currentI;
+                targetI = 0;//ctx.currentI;
             }
             if (this.j != undefined) {
                 targetJ = this.j;
-                ctx.currentJ = this.j;
+                //ctx.currentJ = this.j;
             } else {
-                targetJ = ctx.currentJ;
+                targetJ = 0;//ctx.currentJ;
             }
             let startPointX = ctx.currentPointX;
             let startPointY = ctx.currentPointY;
@@ -628,6 +627,7 @@ export class D01Command implements GerberCommand {
                 } else {
                     ctx.warning("D01 arc radius too small.");
                 }
+                ctx.interpolationMode = InterpolationMode.LINEARx1;
                 return;
             }
 /*            
@@ -715,7 +715,7 @@ export class D01Command implements GerberCommand {
                     true,
                     this);
             }
-//
+            ctx.interpolationMode = InterpolationMode.LINEARx1;
         }
     }
 }

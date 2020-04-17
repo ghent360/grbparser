@@ -9,7 +9,7 @@
 
 import {SimpleBounds, Bounds} from "./primitives";
 import { Point } from "./point";
-import { BoardSide, BoardLayer } from "./gerberutils";
+import { BoardSide } from "./gerberutils";
 import * as csv from "csv-parse";
 
 export class KicadCentroidParseException {

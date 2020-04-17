@@ -1,5 +1,12 @@
-import { CoordinateZeroFormat, CoordinateUnits, Epsilon } from "./primitives";
-import { CoordinateFormatSpec, ExcellonCommand, ExcellonParseException, ExcellonState, CoordinateMode, Units } from "./excellonparser";
+import { CoordinateZeroFormat,  Epsilon } from "./primitives";
+import {
+    CoordinateFormatSpec,
+    ExcellonCommand,
+    ExcellonParseException,
+    ExcellonState,
+    CoordinateMode,
+    Units
+} from "./excellonparser";
 import { parseCoordinate, formatFixedNumber } from "./utils";
 
 /**

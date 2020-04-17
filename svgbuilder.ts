@@ -7,7 +7,7 @@
  * License: MIT License, see LICENSE.txt
  */
 
-import {Polygon, PolygonSet} from "./polygonSet";
+import {PolygonSet} from "./polygonSet";
 import * as fs from "fs";
 
 function toString2(n:number):string {

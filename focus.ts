@@ -1,6 +1,4 @@
-import * as cvt from "./converters";
 import * as fs from "fs-extra-promise";
-import * as JSZip from "jszip";
 import * as ut from "./gerberutils";
 
 function percent(n:number):string {

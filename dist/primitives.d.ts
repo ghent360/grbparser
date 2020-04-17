@@ -176,7 +176,6 @@ export declare class GerberState {
     private coordinateFormat_;
     private coordinateUnits_;
     private currentPoint_;
-    private currentCenterOffset_;
     private currentAppretureId_;
     interpolationMode: InterpolationMode;
     coordinateMode: CoordinateMode;
@@ -204,10 +203,6 @@ export declare class GerberState {
     set currentPointX(value: number);
     get currentPointY(): number;
     set currentPointY(value: number);
-    get currentI(): number;
-    set currentI(value: number);
-    get currentJ(): number;
-    set currentJ(value: number);
     get currentAppretureId(): number;
     set currentAppretureId(value: number);
     get quadrantMode(): QuadrantMode;

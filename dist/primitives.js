@@ -824,7 +824,7 @@ class GerberState {
         this.coordinateFormat_ = undefined;
         this.coordinateUnits_ = undefined;
         this.currentPoint_ = new point_1.Point();
-        this.currentCenterOffset_ = new point_1.Point();
+        //private currentCenterOffset_:Point = new Point();
         this.currentAppretureId_ = undefined;
         this.interpolationMode = InterpolationMode.LINEARx1;
         this.coordinateMode = CoordinateMode.ABSOLUTE;
@@ -900,24 +900,29 @@ class GerberState {
     set currentPointY(value) {
         this.currentPoint_.y = value;
     }
-    get currentI() {
+    /*
+    get currentI():number {
         if (this.currentCenterOffset_.x == undefined) {
             this.error("Current I is not set.");
         }
         return this.currentCenterOffset_.x;
     }
-    set currentI(value) {
+
+    set currentI(value:number) {
         this.currentCenterOffset_.x = value;
     }
-    get currentJ() {
+
+    get currentJ():number {
         if (this.currentCenterOffset_.y == undefined) {
             this.error("Current J is not set.");
         }
         return this.currentCenterOffset_.y;
     }
-    set currentJ(value) {
+
+    set currentJ(value:number) {
         this.currentCenterOffset_.y = value;
     }
+    */
     get currentAppretureId() {
         if (this.currentAppretureId_ == undefined) {
             this.error("Current appreture is not set.");

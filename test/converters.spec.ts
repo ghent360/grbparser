@@ -39,7 +39,7 @@ describe("Conveter tests", () => {
         let folder = "test/Gerber_File_Format_Examples/bugs";
         fs.readdirSync(folder)
             .filter(fileName => !fileName.match(/\.svg$/))
-            //.filter(fileName => fileName.endsWith("bad_arc.gtl"))
+            .filter(fileName => fileName.endsWith("arc-bug.grb"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();

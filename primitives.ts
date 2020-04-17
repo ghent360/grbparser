@@ -16,7 +16,6 @@
 
 import {formatFloat} from "./utils";
 import {
-    vectorLength,
     scaleVector,
     unitVector,
     addVector,
@@ -1003,7 +1002,7 @@ export class GerberState {
     private coordinateFormat_:CoordinateFormatSpec = undefined;
     private coordinateUnits_:CoordinateUnits = undefined;
     private currentPoint_:Point = new Point();
-    private currentCenterOffset_:Point = new Point();
+    //private currentCenterOffset_:Point = new Point();
     private currentAppretureId_:number = undefined;
     public interpolationMode:InterpolationMode = InterpolationMode.LINEARx1;
     public coordinateMode:CoordinateMode = CoordinateMode.ABSOLUTE;
@@ -1091,6 +1090,7 @@ export class GerberState {
         this.currentPoint_.y = value;        
     }
 
+    /*
     get currentI():number {
         if (this.currentCenterOffset_.x == undefined) {
             this.error("Current I is not set.");
@@ -1112,7 +1112,7 @@ export class GerberState {
     set currentJ(value:number) {
         this.currentCenterOffset_.y = value;
     }
-
+    */
     get currentAppretureId():number {
         if (this.currentAppretureId_ == undefined) {
             this.error("Current appreture is not set.");

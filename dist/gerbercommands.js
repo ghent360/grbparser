@@ -524,17 +524,17 @@ class D01Command {
             let targetJ;
             if (this.i != undefined) {
                 targetI = this.i;
-                ctx.currentI = this.i;
+                //ctx.currentI = this.i;
             }
             else {
-                targetI = ctx.currentI;
+                targetI = 0; //ctx.currentI;
             }
             if (this.j != undefined) {
                 targetJ = this.j;
-                ctx.currentJ = this.j;
+                //ctx.currentJ = this.j;
             }
             else {
-                targetJ = ctx.currentJ;
+                targetJ = 0; //ctx.currentJ;
             }
             let startPointX = ctx.currentPointX;
             let startPointY = ctx.currentPointY;
@@ -568,6 +568,7 @@ class D01Command {
                 else {
                     ctx.warning("D01 arc radius too small.");
                 }
+                ctx.interpolationMode = primitives_1.InterpolationMode.LINEARx1;
                 return;
             }
             /*
@@ -646,7 +647,7 @@ class D01Command {
                 }
                 ctx.arc(new point_1.Point(center.x, center.y), radius, new point_1.Point(startPointX, startPointY), new point_1.Point(endPointX, endPointY), true, this);
             }
-            //
+            ctx.interpolationMode = primitives_1.InterpolationMode.LINEARx1;
         }
     }
 }

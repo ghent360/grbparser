@@ -107,7 +107,7 @@ export function arcToPolygon(
         endAngle += Math.PI * 2;
     }
     let radius = (center.distance(start) + center.distance(end)) / 2;
-    let step = (endAngle - startAngle) / NUMSTEPS;
+    let step = (endAngle - startAngle) / (NUMSTEPS - 1);
     let startOffset = -2;
     if (closeStart) {
         result[0] = start.x;

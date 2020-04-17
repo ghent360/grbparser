@@ -12,19 +12,13 @@
  * to other formats for example - polygon sets, svg etc.
  */
 import {
-    LineSegment,
-    CircleSegment,
-    ArcSegment,
     Line,
     Circle,
     Arc,
     Flash,
     Region,
-    RegionSegment,
-    RegionContour,
     GraphicsPrimitive,
     Bounds,
-    EmptyBounds,
     ObjectPolarity,
     GraphicsObjects,
     composeSolidImage,
@@ -34,7 +28,6 @@ import {
 } from "./primitives";
 import {Point} from "./point";
 import {PolygonSet, waitClipperLoad, connectWires, polySetBounds} from "./polygonSet";
-import {formatFloat} from "./utils";
 import {GerberParser} from "./grbparser";
 import {Build} from "./build";
 import { M02Command } from "./gerbercommands";
