@@ -225,21 +225,40 @@ export class GerberUtils {
             case "oln":
             case "gko":
             case "outline":
+            case "otl":
             case "gmb":
                 result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
                 break;
+            case "g1":
             case "l2":
             case "g2":
             case "gl1":
             case "g2l":
             case "l3":
             case "g3":
+            case "g4":
+            case "g5":
+            case "g6":
             case "gl2":
             case "g3l":
             case "lo1":
             case "lo2":
             case "lo3":
             case "lo4":
+            case "l01":
+            case "l02":
+            case "l03":
+            case "l04":
+            case "l05":
+            case "l06":
+            case "l07":
+            case "l08":
+            case "l09":
+            case "l10":
+            case "l11":
+            case "l12":
+            case "l13":
+            case "l14":
                 result  = { side:BoardSide.Internal, layer:BoardLayer.Copper };
                 break;
             case "adtop":
@@ -269,6 +288,9 @@ export class GerberUtils {
             case "spbottom":
             case "pms":
             case "crs":
+            case "spa":
+            case "spb":
+            case "gpb":
                 result  = { side:BoardSide.Bottom, layer:BoardLayer.Paste };
                 break;
 
@@ -276,6 +298,9 @@ export class GerberUtils {
             case "sptop":
             case "pmc":
             case "crc":
+            case "ppa":
+            case "spt":
+            case "gpt":
                 result  = { side:BoardSide.Top, layer:BoardLayer.Paste };
                 break;
 
@@ -283,6 +308,9 @@ export class GerberUtils {
             case "ss2":
             case "ssbottom":
             case "pls":
+            case "ssl":
+            case "bsk":
+            case "ssb":
                 result  = { side:BoardSide.Bottom, layer:BoardLayer.Silk };
                 break;
 
@@ -290,6 +318,9 @@ export class GerberUtils {
             case "ss1":
             case "sstop":
             case "plc":
+            case "psl":
+            case "slk":
+            case "sst":
                 result  = { side:BoardSide.Top, layer:BoardLayer.Silk };
                 break;
 
@@ -297,20 +328,21 @@ export class GerberUtils {
             case "sm2":
             case "smbottom":
             case "sts":
-                result  = { side:BoardSide.Bottom, layer:BoardLayer.SolderMask };
+            case "smk":
+            case "smb":
+                    result  = { side:BoardSide.Bottom, layer:BoardLayer.SolderMask };
                 break;
 
             case "gts":
             case "sm1":
             case "smtop":
             case "stc":
+            case "pmk":
+            case "smt":
                 result  = { side:BoardSide.Top, layer:BoardLayer.SolderMask };
                 break;
 
             case "gb3": // oshstencils bottom outline
-                result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
-                break;
-
             case "gt3": // oshstencils top outline
                 result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
                 break;
@@ -322,40 +354,6 @@ export class GerberUtils {
             case "bottom":
             case "bot":
                 result  = { side:BoardSide.Bottom, layer:BoardLayer.Copper };
-                break;
-
-            case "smb":
-                result  = { side:BoardSide.Bottom, layer:BoardLayer.SolderMask };
-                break;
-
-            case "smt":
-                result  = { side:BoardSide.Top, layer:BoardLayer.SolderMask };
-                break;
-
-            case "slk":
-            case "sst":
-                result  = { side:BoardSide.Top, layer:BoardLayer.Silk };
-                break;
-
-            case "bsk":
-            case "ssb":
-                result  = { side:BoardSide.Bottom, layer:BoardLayer.Silk };
-                break;
-
-            case "spt":
-                result  = { side:BoardSide.Top, layer:BoardLayer.Paste };
-                break;
-
-            case "spb":
-                result  = { side:BoardSide.Bottom, layer:BoardLayer.Paste };
-                break;
-
-            case "gpb":
-                result  = { side:BoardSide.Bottom, layer:BoardLayer.Paste };
-                break;
-
-            case "gpt":
-                result  = { side:BoardSide.Top, layer:BoardLayer.Paste };
                 break;
 
             case "gm1":
