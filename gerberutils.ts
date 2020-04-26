@@ -74,11 +74,8 @@ export class GerberUtils {
                 let fileNameNoExt = fileSplit.slice(0, fileSplit.length - 1).join('.').toLowerCase();
                 switch (fileNameNoExt) {
                     case "boardoutline":
-                        result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
-                        break;
                     case "outline":
-                        result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
-                        break;
+                    case "contour":
                     case "board":
                         result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
                         break;
@@ -118,9 +115,9 @@ export class GerberUtils {
                         break;
 
                     default:
-                        if (fileNameLowerCase.indexOf("outline") >= 0) {
-                            result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
-                        } else if (fileNameLowerCase.indexOf("-edge_cuts") >= 0) {
+                        if (fileNameLowerCase.indexOf("-edge_cuts") >= 0 ||
+                            fileNameLowerCase.indexOf("outline") >= 0 ||
+                            fileNameLowerCase.indexOf("contour") >= 0) {
                             result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
                         } else if (fileNameLowerCase.indexOf("-b_cu") >= 0) {
                             result  = { side:BoardSide.Bottom, layer:BoardLayer.Copper };
@@ -196,7 +193,8 @@ export class GerberUtils {
                                 || fileNameLowerCase.indexOf("Assem") >= 0) {
                                 layer = BoardLayer.Assembly;
                             } else if (fileNameLowerCase.indexOf("outline") >= 0
-                                || fileNameLowerCase.indexOf("dimension") >= 0) {
+                                || fileNameLowerCase.indexOf("dimension") >= 0
+                                || fileNameLowerCase.indexOf("contour") >= 0) {
                                 layer = BoardLayer.Outline;
                             } else if (fileNameLowerCase.indexOf("layer") >= 0) {
                                 layer = BoardLayer.Copper;
@@ -376,7 +374,13 @@ export class GerberUtils {
             case "gm18":
             case "gm19":
             case "gm20":
-                result = { side:BoardSide.Both, layer:BoardLayer.Mechanical};
+                if (fileNameLowerCase.indexOf("-edge_cuts") >= 0 ||
+                    fileNameLowerCase.indexOf("outline") >= 0 ||
+                    fileNameLowerCase.indexOf("contour") >= 0) {
+                    result  = { side:BoardSide.Both, layer:BoardLayer.Outline };
+                } else {
+                    result = { side:BoardSide.Both, layer:BoardLayer.Mechanical};
+                }
                 break;
 
             case "drill_TOP_BOTTOM":
