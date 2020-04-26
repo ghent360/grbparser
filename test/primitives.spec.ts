@@ -34,7 +34,7 @@ function saveSVGObjects(objects:pr.GraphicsObjects, fileName:string) {
     stream.end();
 }
 
-function perseExpressions(expressions:Array<string>):Array<exp.AritmeticOperation> {
+function perseExpressions(expressions:Array<string>):Array<exp.ArithmeticOperation> {
     return expressions.map(e => new exp.ExpressionParser(e).parse());
 }
 

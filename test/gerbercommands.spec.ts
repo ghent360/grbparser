@@ -34,7 +34,7 @@ describe("Commands tests", () => {
         assert.equal(cmd.units, pr.CoordinateUnits.INCHES);
         assert.deepEqual(cmd.formatOutput(), "MOIN*");
         cmd = new cm.MOCommand("MOMM*");
-        assert.equal(cmd.units, pr.CoordinateUnits.MILIMETERS);
+        assert.equal(cmd.units, pr.CoordinateUnits.MILLIMETERS);
         assert.deepEqual(cmd.formatOutput(), "MOMM*");
     });
     it('AD Command', () => {
@@ -156,7 +156,7 @@ describe("Commands tests", () => {
         ctx.coordinateUnits = pr.CoordinateUnits.INCHES;
         // Aperture circle 1 unit diameter
         ctx.setAperture(new pr.ApertureDefinition(10, "C", [1]));
-        ctx.currentAppretureId = 10;
+        ctx.currentApertureId = 10;
         // Arc center at 0, 0
         ctx.currentPointX = 10;
         ctx.currentPointY = 0;

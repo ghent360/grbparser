@@ -40,7 +40,7 @@ export declare class CommandParser {
      * for example Y123X567D03. We convert it to X567Y123D03.
      * @param cmd input command
      */
-    private static orderDoperation;
+    private static orderDOperation;
 }
 /**
  * The main gerber parser class.

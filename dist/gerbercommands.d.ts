@@ -16,7 +16,7 @@
 * Each command class would be able to construct a well formatted text representation of
 * the command suitable for output in a gerber file.
 *
-* Note that in the input text the command separators are stipped by the command tokenizer.
+* Note that in the input text the command separators are stripped by the command tokenizer.
 */
 import { ApertureDefinition, ApertureMacro, CoordinateFormatSpec, CoordinateUnits, ObjectPolarity, ObjectMirroring, Attribute, GerberCommand, GerberState } from './primitives';
 export declare class FSCommand implements GerberCommand {
@@ -212,7 +212,7 @@ export declare class LMCommand implements GerberCommand {
     readonly lineNo?: number;
     readonly name = "LM";
     readonly isAdvanced = true;
-    readonly miroring: ObjectMirroring;
+    readonly mirroring: ObjectMirroring;
     private static matchExp;
     constructor(cmd: string, lineNo?: number);
     formatOutput(): string;

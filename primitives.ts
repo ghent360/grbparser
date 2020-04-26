@@ -22,7 +22,7 @@ import {
     negVector,
 } from "./vectorUtils";
 import {
-    AritmeticOperation,
+    ArithmeticOperation,
     Memory} from "./expressions";
 import {
     Polygon,
@@ -55,7 +55,7 @@ import {
 
 export enum CoordinateUnits {
     INCHES,
-    MILIMETERS
+    MILLIMETERS
 }
 
 export enum InterpolationMode {
@@ -96,8 +96,8 @@ export enum AttributeType {
     OBJECT
 }
 
-export type PolyongWithThinkness = {polygon:Polygon, is_solid:boolean};
-export type PolyongSetWithThinkness = {polygonSet:PolygonSet, is_solid:boolean};
+export type PolygonWithThickness = {polygon:Polygon, is_solid:boolean};
+export type PolygonSetWithThickness = {polygonSet:PolygonSet, is_solid:boolean};
 export type PolySetWithPolarity = {polySet:PolygonSet, polarity:ObjectPolarity};
 export type GraphicsObjects = Array<PolySetWithPolarity>;
 
@@ -184,9 +184,9 @@ export interface ApertureBase {
     
     isDrawable():boolean;
     objects(polarity:ObjectPolarity, state:ObjectState):GraphicsObjects;
-    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolyongWithThinkness;
-    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolyongSetWithThinkness;
-    generateLineDraw(start:Point, end:Point, state:ObjectState):PolyongWithThinkness;
+    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolygonWithThickness;
+    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSetWithThickness;
+    generateLineDraw(start:Point, end:Point, state:ObjectState):PolygonWithThickness;
 }
 
 export class BlockAperture implements ApertureBase {
@@ -209,15 +209,15 @@ export class BlockAperture implements ApertureBase {
         return this.objects_;
     }
 
-    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolyongWithThinkness {
+    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolygonWithThickness {
         throw new GerberParseException("Draw with block aperture is not supported.");
     }
 
-    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolyongSetWithThinkness {
+    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSetWithThickness {
         throw new GerberParseException("Draw with block aperture is not supported.");
     }
 
-    generateLineDraw(start:Point, end:Point, state:ObjectState):PolyongWithThinkness {
+    generateLineDraw(start:Point, end:Point, state:ObjectState):PolygonWithThickness {
         throw new GerberParseException("Draw with block aperture is not supported.");
     }
 }
@@ -249,10 +249,14 @@ export class ApertureDefinition implements ApertureBase {
     execute(ctx:GerberState) {
         if (this.isMacro()) {
             this.macro_ = ctx.getApertureMacro(this.templateName);
+        } else if (ctx.isOutlineMode) {
+            if (this.templateName == "C" || this.templateName == "O") {
+                this.modifiers[0] = 0;
+            }
         }
     }
 
-    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolyongWithThinkness {
+    generateArcDraw(start:Point, end:Point, center:Point, state:ObjectState):PolygonWithThickness {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {
             if (this.templateName == "C" || this.templateName == "O") {
@@ -330,7 +334,7 @@ export class ApertureDefinition implements ApertureBase {
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
 
-    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolyongSetWithThinkness {
+    generateCircleDraw(center:Point, radius:number, state:ObjectState):PolygonSetWithThickness {
         if (this.templateName == "C" || this.templateName == "O" || this.templateName == "R") {
             let result:PolygonSet = [];
             let apertureRadius = state.unitToMM(state.scale * this.modifiers[0] / 2);
@@ -351,7 +355,7 @@ export class ApertureDefinition implements ApertureBase {
         throw new GerberParseException(`Draw with this aperture is not supported. ${this.templateName}`);
     }
 
-    generateLineDraw(start:Point, end:Point, state:ObjectState):PolyongWithThinkness {
+    generateLineDraw(start:Point, end:Point, state:ObjectState):PolygonWithThickness {
         let result:Polygon;
         if (start.distance(end) < Epsilon) {
             if (this.templateName == "C" || this.templateName == "O") {
@@ -481,7 +485,7 @@ export class ApertureDefinition implements ApertureBase {
         if (this.templateName === "C") {
             let radius = state.unitToMM(this.modifiers[0] / 2);
             if (radius < Epsilon) {
-                throw new GerberParseException('Can not convert zero size aperture to polyset');
+                throw new GerberParseException('Can not convert zero size aperture to poly set');
             }
             result.push(circleToPolygon(radius));
             if (this.modifiers.length == 2 && this.modifiers[1] > Epsilon) {
@@ -558,14 +562,14 @@ export class ApertureDefinition implements ApertureBase {
 }
 
 export class VariableDefinition {
-    constructor(readonly id:number, readonly expression:AritmeticOperation) {
+    constructor(readonly id:number, readonly expression:ArithmeticOperation) {
     }
 }
 
 export class Primitive {
     constructor(
         readonly code:number,
-        readonly modifiers:Array<AritmeticOperation>) {
+        readonly modifiers:Array<ArithmeticOperation>) {
     }
 }
 
@@ -1003,7 +1007,7 @@ export class GerberState {
     private coordinateUnits_:CoordinateUnits = undefined;
     private currentPoint_:Point = new Point();
     //private currentCenterOffset_:Point = new Point();
-    private currentAppretureId_:number = undefined;
+    private currentApertureId_:number = undefined;
     public interpolationMode:InterpolationMode = InterpolationMode.LINEARx1;
     public coordinateMode:CoordinateMode = CoordinateMode.ABSOLUTE;
     private quadrantMode_:QuadrantMode = undefined;
@@ -1013,12 +1017,13 @@ export class GerberState {
     public objectScaling:number = 1.0;
     private apertures:{[id:number]:ApertureBase} = {};
     private apertureMacros:{[name:string]:ApertureMacro} = {};
-    private graphisOperationsConsumer_:GraphicsOperations = new BaseGraphicsOperationsConsumer();
-    private savedGraphisOperationsConsumer_:Array<GraphicsOperations> = [];
+    private graphicsOperationsConsumer_:GraphicsOperations = new BaseGraphicsOperationsConsumer();
+    private savedGraphicsOperationsConsumer_:Array<GraphicsOperations> = [];
     private blockApertures_:Array<number> = [];
     private blockParams_:Array<BlockParams> = [];
     private primitives_:Array<GraphicsPrimitive>;
     private isDone_:boolean = false;
+    public isOutlineMode:boolean = false;
     
     get coordinateFormatSpec():CoordinateFormatSpec {
         if (this.coordinateFormat_ == undefined) {
@@ -1048,21 +1053,21 @@ export class GerberState {
     }
 
     unitToMM(v:number):number {
-        if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
+        if (this.coordinateUnits_ == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return v * 25.4;
     }
 
     pointToMM(v:Point):Point {
-        if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
+        if (this.coordinateUnits_ == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return new Point(v.x * 25.4, v.y * 25.4);
     }
 
     mmToUnit(v:number):number {
-        if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
+        if (this.coordinateUnits_ == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return v / 25.4;
@@ -1113,15 +1118,15 @@ export class GerberState {
         this.currentCenterOffset_.y = value;
     }
     */
-    get currentAppretureId():number {
-        if (this.currentAppretureId_ == undefined) {
-            this.error("Current appreture is not set.");
+    get currentApertureId():number {
+        if (this.currentApertureId_ == undefined) {
+            this.error("Current aperture is not set.");
         }
-        return this.currentAppretureId_;
+        return this.currentApertureId_;
     }
 
-    set currentAppretureId(value:number) {
-        this.currentAppretureId_ = value;        
+    set currentApertureId(value:number) {
+        this.currentApertureId_ = value;        
     }
 
     get quadrantMode():QuadrantMode {
@@ -1157,18 +1162,18 @@ export class GerberState {
 
     getAperture(id:number):ApertureBase {
         if (id < 10) {
-            this.error(`Invalid aprture ID ${id}`);
+            this.error(`Invalid aperture ID ${id}`);
         }
         if (this.apertures[id] == undefined) {
-            this.error(`Aprture ID ${id} is not defined yet`);
+            this.error(`Aperture ID ${id} is not defined yet`);
         }
         return this.apertures[id];
     }
 
     getCurrentAperture():ApertureBase {
-        let id = this.currentAppretureId
+        let id = this.currentApertureId
         if (this.apertures[id] == undefined) {
-            this.error(`Aprture ID ${id} is not defined yet`);
+            this.error(`Aperture ID ${id} is not defined yet`);
         }
         return this.apertures[id];
     }
@@ -1182,7 +1187,7 @@ export class GerberState {
 
     getApertureMacro(name:string):ApertureMacro {
         if (this.apertureMacros[name] == undefined) {
-            this.error(`Aprture macro name ${name} is not defined yet`);
+            this.error(`Aperture macro name ${name} is not defined yet`);
         }
         return this.apertureMacros[name];
     }
@@ -1206,7 +1211,7 @@ export class GerberState {
         if (!from.isValid() || !to.isValid()) {
             this.error(`Invalid line ${from} ${to}`);
         }
-        this.graphisOperationsConsumer_.line(
+        this.graphicsOperationsConsumer_.line(
             this.pointToMM(from), 
             this.pointToMM(to), cmd, this);
     }
@@ -1215,7 +1220,7 @@ export class GerberState {
         if (!center.isValid() || radius <= Epsilon) {
             this.error(`Invalid circle ${center} R${radius}`);
         }
-        this.graphisOperationsConsumer_.circle(
+        this.graphicsOperationsConsumer_.circle(
             this.pointToMM(center),
             this.unitToMM(radius),
             cmd,
@@ -1226,7 +1231,7 @@ export class GerberState {
         if (!center.isValid() || radius <= Epsilon || !start.isValid() || !end.isValid()) {
             this.error(`Invalid arc ${center} R${radius} from ${start} to ${end}`);
         }
-        this.graphisOperationsConsumer_.arc(
+        this.graphicsOperationsConsumer_.arc(
             this.pointToMM(center),
             this.unitToMM(radius),
             this.pointToMM(start),
@@ -1240,56 +1245,56 @@ export class GerberState {
         if (!center.isValid()) {
             this.error(`Invalid flash location ${center}`);
         }
-        this.graphisOperationsConsumer_.flash(this.pointToMM(center), cmd, this);
+        this.graphicsOperationsConsumer_.flash(this.pointToMM(center), cmd, this);
     }
 
     closeRegionContour() {
-        if (this.graphisOperationsConsumer_ instanceof RegionGraphicsOperationsConsumer) {
-            let regionConsumer = this.graphisOperationsConsumer_ as RegionGraphicsOperationsConsumer;
+        if (this.graphicsOperationsConsumer_ instanceof RegionGraphicsOperationsConsumer) {
+            let regionConsumer = this.graphicsOperationsConsumer_ as RegionGraphicsOperationsConsumer;
             regionConsumer.closeRegionContour(this);
         }
     }
 
     startRegion() {
         this.saveGraphicsConsumer();
-        this.graphisOperationsConsumer_ = new RegionGraphicsOperationsConsumer();
+        this.graphicsOperationsConsumer_ = new RegionGraphicsOperationsConsumer();
     }
 
     endRegion(cmd:GerberCommand) {
-        let region = this.graphisOperationsConsumer_ as RegionGraphicsOperationsConsumer;
+        let region = this.graphicsOperationsConsumer_ as RegionGraphicsOperationsConsumer;
         region.closeRegionContour(this);
 
         this.restoreGraphicsConsumer();
-        this.graphisOperationsConsumer_.region(region.regionContours, cmd, this);
+        this.graphicsOperationsConsumer_.region(region.regionContours, cmd, this);
     }
 
     saveGraphicsConsumer() {
-        this.savedGraphisOperationsConsumer_.push(this.graphisOperationsConsumer_);
+        this.savedGraphicsOperationsConsumer_.push(this.graphicsOperationsConsumer_);
     }
 
     restoreGraphicsConsumer() {
-        if (this.savedGraphisOperationsConsumer_.length == 0) {
+        if (this.savedGraphicsOperationsConsumer_.length == 0) {
             throw new GerberParseException("Invalid parsing state, can't restore operations consumer");
         }
-        this.graphisOperationsConsumer_ = this.savedGraphisOperationsConsumer_.pop();
+        this.graphicsOperationsConsumer_ = this.savedGraphicsOperationsConsumer_.pop();
     }
 
     get graphicsOperations():GraphicsOperations {
-        return this.graphisOperationsConsumer_;
+        return this.graphicsOperationsConsumer_;
     }
 
     startBlockAperture(blockId:number) {
         this.saveGraphicsConsumer();
         this.blockApertures_.push(blockId);
-        this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
+        this.graphicsOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
     }
 
     endBlockAperture() {
         if (this.blockApertures_.length == 0) {
-            throw new GerberParseException('Closing aperture block without mathing opening.');
+            throw new GerberParseException('Closing aperture block without matching opening.');
         }
         let blockId = this.blockApertures_.pop();
-        let blockConsumer = this.graphisOperationsConsumer_ as BlockGraphicsOperationsConsumer;
+        let blockConsumer = this.graphicsOperationsConsumer_ as BlockGraphicsOperationsConsumer;
         let aperture = new BlockAperture(blockId, blockConsumer.objects);
         this.setAperture(aperture);
         this.restoreGraphicsConsumer();
@@ -1298,7 +1303,7 @@ export class GerberState {
     startRepeat(params:BlockParams) {
         this.saveGraphicsConsumer();
         this.blockParams_.push(params);
-        this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
+        this.graphicsOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
     }
 
     tryEndRepeat(cmd:GerberCommand) {
@@ -1309,10 +1314,10 @@ export class GerberState {
 
     endRepeat(cmd:GerberCommand) {
         if (this.blockParams_.length == 0) {
-            throw new GerberParseException('Closing repeat block without mathing opening.');
+            throw new GerberParseException('Closing repeat block without matching opening.');
         }
         let params = this.blockParams_.pop();
-        let blockConsumer = this.graphisOperationsConsumer_ as BlockGraphicsOperationsConsumer;
+        let blockConsumer = this.graphicsOperationsConsumer_ as BlockGraphicsOperationsConsumer;
         let block = new Block(
             params.xRepeat,
             params.yRepeat,
@@ -1321,14 +1326,14 @@ export class GerberState {
             blockConsumer.primitives,
             blockConsumer.objects);
         this.restoreGraphicsConsumer();
-        this.graphisOperationsConsumer_.block(block, cmd, this);
+        this.graphicsOperationsConsumer_.block(block, cmd, this);
     }
 
     endFile(cmd:GerberCommand) {
         while (this.blockParams_.length > 0) {
             this.endRepeat(cmd);
         }
-        let topConsumer = this.graphisOperationsConsumer_ as BaseGraphicsOperationsConsumer;
+        let topConsumer = this.graphicsOperationsConsumer_ as BaseGraphicsOperationsConsumer;
         this.primitives_ = topConsumer.primitives;
         this.isDone_ = true;
     }
@@ -1509,9 +1514,9 @@ function translateRegionContour(contour:RegionContour, vector:Point):RegionConto
     return contour.map(segment => segment.translate(vector));
 }
 
-function contourOrientation(countour:RegionContour):number {
+function contourOrientation(contour:RegionContour):number {
     let sum = 0;
-    countour.forEach(s => {
+    contour.forEach(s => {
         let start:Point;
         let end:Point;
 
@@ -1580,32 +1585,32 @@ export class ObjectState {
         readonly mirroring:ObjectMirroring = ObjectMirroring.NONE,
         readonly scale:number = 1,
         readonly rotation:number = 0,
-        readonly units:CoordinateUnits = CoordinateUnits.MILIMETERS) {
+        readonly units:CoordinateUnits = CoordinateUnits.MILLIMETERS) {
     }
 
     unitToMM(v:number):number {
-        if (this.units == CoordinateUnits.MILIMETERS) {
+        if (this.units == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return v * 25.4;
     }
 
     pointToMM(v:Point):Point {
-        if (this.units == CoordinateUnits.MILIMETERS) {
+        if (this.units == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return new Point(v.x * 25.4, v.y * 25.4);
     }
 
     mmToUnit(v:number):number {
-        if (this.units == CoordinateUnits.MILIMETERS) {
+        if (this.units == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return v / 25.4;
     }
 
     mmToPoint(v:Point):Point {
-        if (this.units == CoordinateUnits.MILIMETERS) {
+        if (this.units == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return new Point(v.x / 25.4, v.y / 25.4);
@@ -1821,7 +1826,7 @@ export class Region {
         contours:Array<RegionContour>,
         readonly state:ObjectState,
         readonly cmd:GerberCommand) {
-        //this.contours = contours.map(c => Region.reOrderCountour(c));
+        //this.contours = contours.map(c => Region.reOrderContour(c));
         this.contours = contours;
     }
 
@@ -1856,7 +1861,7 @@ export class Region {
         } else if (segment instanceof ArcSegment) {
             return (segment as ArcSegment).start;
         }
-        throw new GerberParseException(`Unsupportede segment ${segment} inside region.`);
+        throw new GerberParseException(`Unsupported segment ${segment} inside region.`);
     }
 
     private static endPoint(segment:RegionSegment):Point {
@@ -1867,7 +1872,7 @@ export class Region {
         } else if (segment instanceof ArcSegment) {
             return (segment as ArcSegment).end;
         }
-        throw new GerberParseException(`Unsupportede segment ${segment} inside region.`);
+        throw new GerberParseException(`Unsupported segment ${segment} inside region.`);
     }
 
     private static matchPoint(p:Point, segment:RegionSegment, matchStart:boolean):boolean {
@@ -1875,7 +1880,7 @@ export class Region {
         return pt.distance2(p) < Epsilon;
     }
 
-    private static reOrderCountour(contour:RegionContour):RegionContour {
+    private static reOrderContour(contour:RegionContour):RegionContour {
         if (contour.length < 2) return contour;
         let result:RegionContour = [];
         let segment = contour[0];
@@ -2194,7 +2199,7 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
             if (o.polarity === ObjectPolarity.DARK) {
                 // Check if there is anything to clean?
                 if (clear.length > 0) {
-                    // Check if we are crearing from something
+                    // Check if we are creating from something
                     if (image.length > 0) {
                         image = subtractPolygonSet(image, clear).polygonSet;
                     }
@@ -2207,7 +2212,7 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
         });
     // Check if there is anything left to clean?
     if (clear.length > 0) {
-        // Check if we are crearing from something
+        // Check if we are creating from something
         if (image.length > 0) {
             if (!union) {
                 return subtractPolygonSet(image, clear);

@@ -17,7 +17,7 @@
  * Each command class would be able to construct a well formatted text representation of
  * the command suitable for output in a gerber file.
  * 
- * Note that in the input text the command separators are stipped by the command tokenizer.
+ * Note that in the input text the command separators are stripped by the command tokenizer.
  */
 
 import {
@@ -65,7 +65,7 @@ export class FSCommand implements GerberCommand {
     constructor(cmd:string, readonly lineNo?:number) {
         let match = FSCommand.matchExp.exec(cmd);
         if (!match) {
-            throw new GerberParseException(`Unsuported FS command ${cmd}`);
+            throw new GerberParseException(`Unsupported FS command ${cmd}`);
         }
         let coordZeros = CoordinateZeroFormat.NONE;
         if (match[1]) {
@@ -129,7 +129,7 @@ export class MOCommand implements GerberCommand {
     constructor(cmd:string, readonly lineNo?:number) {
         let mode = cmd.substr(2, 2);
         if (mode === "MM") {
-            this.units = CoordinateUnits.MILIMETERS;
+            this.units = CoordinateUnits.MILLIMETERS;
         } else if (mode = "IN") {
             this.units = CoordinateUnits.INCHES;
         } else {
@@ -138,7 +138,7 @@ export class MOCommand implements GerberCommand {
     }
 
     formatOutput():string {
-        return "MO" + (this.units == CoordinateUnits.MILIMETERS ? "MM" : "IN") + "*";
+        return "MO" + (this.units == CoordinateUnits.MILLIMETERS ? "MM" : "IN") + "*";
     }
 
     execute(ctx:GerberState) {
@@ -481,7 +481,7 @@ export class DCommand implements GerberCommand {
 
     execute(ctx:GerberState) {
         ctx.getAperture(this.apertureId);
-        ctx.currentAppretureId = this.apertureId;
+        ctx.currentApertureId = this.apertureId;
     }
 }
 
@@ -670,11 +670,11 @@ export class D01Command implements GerberCommand {
             let v2 = {x:v.x / 2, y:v.y / 2};
             let v2len = vectorLength(v2);
             let d2 = radius * radius - v2len * v2len;
-            // We consider everything in (-Epsilon, +Epsion) to be 0
+            // We consider everything in (-Epsilon, +Epsilon) to be 0
             if (d2 < -Epsilon) {
                 ctx.warning("D01 Invalid arc, radius too small");
             }
-            // Fix values (-Epsion, 0) to be 0, so Math.sqrt does not complain.
+            // Fix values (-Epsilon, 0) to be 0, so Math.sqrt does not complain.
             if (d2 < 0) {
                 d2 = 0;
             }
@@ -979,7 +979,7 @@ export class G71Command extends BaseGCodeCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        ctx.coordinateUnits = CoordinateUnits.MILIMETERS;
+        ctx.coordinateUnits = CoordinateUnits.MILLIMETERS;
     }
 }
 
@@ -1009,7 +1009,7 @@ export class LPCommand implements GerberCommand {
 export class LMCommand implements GerberCommand {
     readonly name = "LM";
     readonly isAdvanced = true;
-    readonly miroring:ObjectMirroring;
+    readonly mirroring:ObjectMirroring;
     private static matchExp = /^LM(N|X|Y|XY)\*$/;
 
     constructor(cmd:string, readonly lineNo?:number) {
@@ -1019,19 +1019,19 @@ export class LMCommand implements GerberCommand {
         }
         let code = match[1];
         if (code == "N") {
-            this.miroring = ObjectMirroring.NONE;
+            this.mirroring = ObjectMirroring.NONE;
         } else if (code == "X") {
-            this.miroring = ObjectMirroring.X_AXIS;
+            this.mirroring = ObjectMirroring.X_AXIS;
         } else if (code == "Y") {
-            this.miroring = ObjectMirroring.Y_AXIS;
+            this.mirroring = ObjectMirroring.Y_AXIS;
         } else if (code == "XY") {
-            this.miroring = ObjectMirroring.XY_AXIS;
+            this.mirroring = ObjectMirroring.XY_AXIS;
         }
     }
 
     formatOutput():string {
         let result = "LM";
-        switch (this.miroring) {
+        switch (this.mirroring) {
             case ObjectMirroring.NONE: result += "N";break;
             case ObjectMirroring.X_AXIS: result += "X";break;
             case ObjectMirroring.Y_AXIS: result += "Y";break;
@@ -1042,7 +1042,7 @@ export class LMCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        ctx.objectMirroring = this.miroring;
+        ctx.objectMirroring = this.mirroring;
     }
 }
 
@@ -1202,14 +1202,14 @@ export class TCommand implements GerberCommand {
             case "O": attributeType = AttributeType.OBJECT; break;
             default: throw new GerberParseException(`Unknown attribute command ${cmd}`);
         }
-        let attrinuteName = match[2];
+        let attributeName = match[2];
         let fields:Array<string>;
         if (match[3]) {
             fields = match[3].substring(1).split(',');
         } else {
             fields = [];
         }
-        this.attribute = new Attribute(attributeType, attrinuteName, fields);
+        this.attribute = new Attribute(attributeType, attributeName, fields);
     }
 
     get name():string {
@@ -1218,7 +1218,7 @@ export class TCommand implements GerberCommand {
             case AttributeType.FILE: return "TF";
             case AttributeType.OBJECT: return "TO";
         }
-        throw new Error(`Unsuported attribute type ${this.attribute.type}`);
+        throw new Error(`Unsupported attribute type ${this.attribute.type}`);
     }
 
     formatOutput():string {
@@ -1233,7 +1233,7 @@ export class TCommand implements GerberCommand {
 
     execute(ctx:GerberState) {
         //TODO(vne): implement attributes.
-        //console.log("Tx command is not implemnted");
+        //console.log("Tx command is not implemented");
     }
 }
 
@@ -1261,6 +1261,6 @@ export class TDCommand implements GerberCommand {
 
     execute(ctx:GerberState) {
         //TODO(vne): implement attributes.
-        //console.log("TD command is not implemnted");
+        //console.log("TD command is not implemented");
     }
 }

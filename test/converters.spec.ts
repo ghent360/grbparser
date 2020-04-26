@@ -14,7 +14,7 @@ import * as pr from '../primitives';
 import * as cv from '../converters';
 import { SVGConverter, Init } from '../converters';
 
-describe("Conveter tests", () => {
+describe("Converter tests", () => {
     it('Wait to init', () => Init);
     it('parse and convert gerber file', () => {
         let folder = "test/Gerber_File_Format_Examples";
@@ -48,7 +48,7 @@ describe("Conveter tests", () => {
                 result = cv.PrimitiveConverter.GerberToPrimitives(content);
                 //console.log(`${result}`);
                 result = cv.SVGConverter.GerberToSvg(
-                    content, 0x909090, 1000, 0);
+                    content, false, 0x909090, 1000, 0);
                 let outputFileName = folder + "/" + fileName + ".svg";
                 let stream = fs.createWriteStream(outputFileName);
                 stream.write(result);

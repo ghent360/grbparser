@@ -6,12 +6,12 @@
  *
  * License: MIT License, see LICENSE.txt
  */
-import { AritmeticOperation } from "./expressions";
+import { ArithmeticOperation } from "./expressions";
 import { Polygon, PolygonSet, PolygonSetWithBounds } from "./polygonSet";
 import { Point } from "./point";
 export declare enum CoordinateUnits {
     INCHES = 0,
-    MILIMETERS = 1
+    MILLIMETERS = 1
 }
 export declare enum InterpolationMode {
     LINEARx1 = 0,
@@ -45,11 +45,11 @@ export declare enum AttributeType {
     APERTURE = 1,
     OBJECT = 2
 }
-export declare type PolyongWithThinkness = {
+export declare type PolygonWithThickness = {
     polygon: Polygon;
     is_solid: boolean;
 };
-export declare type PolyongSetWithThinkness = {
+export declare type PolygonSetWithThickness = {
     polygonSet: PolygonSet;
     is_solid: boolean;
 };
@@ -89,9 +89,9 @@ export interface ApertureBase {
     readonly apertureId: number;
     isDrawable(): boolean;
     objects(polarity: ObjectPolarity, state: ObjectState): GraphicsObjects;
-    generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolyongWithThinkness;
-    generateCircleDraw(center: Point, radius: number, state: ObjectState): PolyongSetWithThinkness;
-    generateLineDraw(start: Point, end: Point, state: ObjectState): PolyongWithThinkness;
+    generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolygonWithThickness;
+    generateCircleDraw(center: Point, radius: number, state: ObjectState): PolygonSetWithThickness;
+    generateLineDraw(start: Point, end: Point, state: ObjectState): PolygonWithThickness;
 }
 export declare class BlockAperture implements ApertureBase {
     readonly apertureId: number;
@@ -99,9 +99,9 @@ export declare class BlockAperture implements ApertureBase {
     constructor(apertureId: number, objects: GraphicsObjects);
     isDrawable(): boolean;
     objects(polarity: ObjectPolarity): GraphicsObjects;
-    generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolyongWithThinkness;
-    generateCircleDraw(center: Point, radius: number, state: ObjectState): PolyongSetWithThinkness;
-    generateLineDraw(start: Point, end: Point, state: ObjectState): PolyongWithThinkness;
+    generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolygonWithThickness;
+    generateCircleDraw(center: Point, radius: number, state: ObjectState): PolygonSetWithThickness;
+    generateLineDraw(start: Point, end: Point, state: ObjectState): PolygonWithThickness;
 }
 export declare class ApertureDefinition implements ApertureBase {
     readonly apertureId: number;
@@ -115,21 +115,21 @@ export declare class ApertureDefinition implements ApertureBase {
     isDrawable(): boolean;
     get macro(): ApertureMacro;
     execute(ctx: GerberState): void;
-    generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolyongWithThinkness;
-    generateCircleDraw(center: Point, radius: number, state: ObjectState): PolyongSetWithThinkness;
-    generateLineDraw(start: Point, end: Point, state: ObjectState): PolyongWithThinkness;
+    generateArcDraw(start: Point, end: Point, center: Point, state: ObjectState): PolygonWithThickness;
+    generateCircleDraw(center: Point, radius: number, state: ObjectState): PolygonSetWithThickness;
+    generateLineDraw(start: Point, end: Point, state: ObjectState): PolygonWithThickness;
     objects(polarity: ObjectPolarity, state: ObjectState): GraphicsObjects;
     private toPolySet;
 }
 export declare class VariableDefinition {
     readonly id: number;
-    readonly expression: AritmeticOperation;
-    constructor(id: number, expression: AritmeticOperation);
+    readonly expression: ArithmeticOperation;
+    constructor(id: number, expression: ArithmeticOperation);
 }
 export declare class Primitive {
     readonly code: number;
-    readonly modifiers: Array<AritmeticOperation>;
-    constructor(code: number, modifiers: Array<AritmeticOperation>);
+    readonly modifiers: Array<ArithmeticOperation>;
+    constructor(code: number, modifiers: Array<ArithmeticOperation>);
 }
 export declare class PrimitiveComment {
     readonly text: string;
@@ -176,7 +176,7 @@ export declare class GerberState {
     private coordinateFormat_;
     private coordinateUnits_;
     private currentPoint_;
-    private currentAppretureId_;
+    private currentApertureId_;
     interpolationMode: InterpolationMode;
     coordinateMode: CoordinateMode;
     private quadrantMode_;
@@ -186,12 +186,13 @@ export declare class GerberState {
     objectScaling: number;
     private apertures;
     private apertureMacros;
-    private graphisOperationsConsumer_;
-    private savedGraphisOperationsConsumer_;
+    private graphicsOperationsConsumer_;
+    private savedGraphicsOperationsConsumer_;
     private blockApertures_;
     private blockParams_;
     private primitives_;
     private isDone_;
+    isOutlineMode: boolean;
     get coordinateFormatSpec(): CoordinateFormatSpec;
     set coordinateFormatSpec(value: CoordinateFormatSpec);
     get coordinateUnits(): CoordinateUnits;
@@ -203,8 +204,8 @@ export declare class GerberState {
     set currentPointX(value: number);
     get currentPointY(): number;
     set currentPointY(value: number);
-    get currentAppretureId(): number;
-    set currentAppretureId(value: number);
+    get currentApertureId(): number;
+    set currentApertureId(value: number);
     get quadrantMode(): QuadrantMode;
     set quadrantMode(value: QuadrantMode);
     get isDone(): boolean;
@@ -362,7 +363,7 @@ export declare class Region {
     private static startPoint;
     private static endPoint;
     private static matchPoint;
-    private static reOrderCountour;
+    private static reOrderContour;
     private static buildPolygonSet;
     private static buildPolygon;
     get objects(): GraphicsObjects;

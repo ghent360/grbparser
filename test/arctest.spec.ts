@@ -75,7 +75,7 @@ describe("Arc tests", () => {
         content += "D12*\n";
         content += line(new Point(20, 10), new Point (0, 0));
         content += ftr;
-        let result = SVGConverter.GerberToSvg(content, 0x101010, 1000, 0);
+        let result = SVGConverter.GerberToSvg(content, false, 0x101010, 1000, 0);
         saveContent(content, "arcTests/ccw.gbr");
         saveContent(result, "arcTests/ccw.svg");
     });
@@ -87,7 +87,7 @@ describe("Arc tests", () => {
         content += "D12*\n";
         content += line(new Point(20, -10), new Point (0, 0));
         content += ftr;
-        let result = SVGConverter.GerberToSvg(content, 0x101010, 1000, 0);
+        let result = SVGConverter.GerberToSvg(content, false, 0x101010, 1000, 0);
         saveContent(content, "arcTests/cw.gbr");
         saveContent(result, "arcTests/cw.svg");
     });

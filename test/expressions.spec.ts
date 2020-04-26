@@ -8,7 +8,7 @@
  */
 
 import * as assert from 'assert';
-import {Memory, AritmeticOperation, ExpressionParser} from "../expressions";
+import {Memory, ArithmeticOperation, ExpressionParser} from "../expressions";
 
 describe("Expression tests", () => {
     it('Primitive expressions', () => {

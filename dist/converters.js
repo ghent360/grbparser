@@ -9,7 +9,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
- * This file contains classes that convert graphics object primitives from the parset
+ * This file contains classes that convert graphics object primitives from the parser
  * to other formats for example - polygon sets, svg etc.
  */
 const primitives_1 = require("./primitives");
@@ -191,10 +191,11 @@ class SVGConverter extends ConverterBase {
             + SVGConverter.toString2(clr & 0xff);
         return ss;
     }
-    static GerberToSvg(content, layerColor = 0xff1f1c, scale = 100, margin = 10) {
+    static GerberToSvg(content, isOutline = false, layerColor = 0xff1f1c, scale = 100, margin = 10) {
         let parser = new grbparser_1.GerberParser();
         parser.parseBlock(content);
         let ctx = new primitives_1.GerberState();
+        ctx.isOutlineMode = isOutline;
         parser.execute(ctx);
         if (!ctx.isDone) {
             ctx.endFile(new gerbercommands_1.M02Command("M02"));
@@ -212,12 +213,13 @@ exports.SVGConverter = SVGConverter;
 class PolygonConverterResult {
 }
 exports.PolygonConverterResult = PolygonConverterResult;
-function GerberToPolygons(content, union = false) {
+function GerberToPolygons(content, isOutline = false, union = false) {
     //let start = performance.now();
     let parser = new grbparser_1.GerberParser();
     parser.parseBlock(content);
     //let parseEnd = performance.now();
     let ctx = new primitives_1.GerberState();
+    ctx.isOutlineMode = isOutline;
     parser.execute(ctx);
     if (!ctx.isDone) {
         ctx.endFile(new gerbercommands_1.M02Command("M02"));
@@ -267,10 +269,11 @@ function GerberToPolygons(content, union = false) {
 }
 exports.GerberToPolygons = GerberToPolygons;
 class PrimitiveConverter {
-    static GerberToPrimitives(content) {
+    static GerberToPrimitives(content, isOutline = false) {
         let parser = new grbparser_1.GerberParser();
         parser.parseBlock(content);
         let ctx = new primitives_1.GerberState();
+        ctx.isOutlineMode = isOutline;
         parser.execute(ctx);
         return ctx.primitives;
     }

@@ -18,7 +18,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 * Each command class would be able to construct a well formatted text representation of
 * the command suitable for output in a gerber file.
 *
-* Note that in the input text the command separators are stipped by the command tokenizer.
+* Note that in the input text the command separators are stripped by the command tokenizer.
 */
 const primitives_1 = require("./primitives");
 const point_1 = require("./point");
@@ -32,7 +32,7 @@ class FSCommand {
         this.isAdvanced = true;
         let match = FSCommand.matchExp.exec(cmd);
         if (!match) {
-            throw new primitives_1.GerberParseException(`Unsuported FS command ${cmd}`);
+            throw new primitives_1.GerberParseException(`Unsupported FS command ${cmd}`);
         }
         let coordZeros = primitives_1.CoordinateZeroFormat.NONE;
         if (match[1]) {
@@ -94,7 +94,7 @@ class MOCommand {
         this.isAdvanced = true;
         let mode = cmd.substr(2, 2);
         if (mode === "MM") {
-            this.units = primitives_1.CoordinateUnits.MILIMETERS;
+            this.units = primitives_1.CoordinateUnits.MILLIMETERS;
         }
         else if (mode = "IN") {
             this.units = primitives_1.CoordinateUnits.INCHES;
@@ -104,7 +104,7 @@ class MOCommand {
         }
     }
     formatOutput() {
-        return "MO" + (this.units == primitives_1.CoordinateUnits.MILIMETERS ? "MM" : "IN") + "*";
+        return "MO" + (this.units == primitives_1.CoordinateUnits.MILLIMETERS ? "MM" : "IN") + "*";
     }
     execute(ctx) {
         ctx.coordinateUnits = this.units;
@@ -421,7 +421,7 @@ class DCommand {
     }
     execute(ctx) {
         ctx.getAperture(this.apertureId);
-        ctx.currentAppretureId = this.apertureId;
+        ctx.currentApertureId = this.apertureId;
     }
 }
 exports.DCommand = DCommand;
@@ -611,11 +611,11 @@ class D01Command {
             let v2 = { x: v.x / 2, y: v.y / 2 };
             let v2len = vectorUtils_1.vectorLength(v2);
             let d2 = radius * radius - v2len * v2len;
-            // We consider everything in (-Epsilon, +Epsion) to be 0
+            // We consider everything in (-Epsilon, +Epsilon) to be 0
             if (d2 < -primitives_1.Epsilon) {
                 ctx.warning("D01 Invalid arc, radius too small");
             }
-            // Fix values (-Epsion, 0) to be 0, so Math.sqrt does not complain.
+            // Fix values (-Epsilon, 0) to be 0, so Math.sqrt does not complain.
             if (d2 < 0) {
                 d2 = 0;
             }
@@ -893,7 +893,7 @@ class G71Command extends BaseGCodeCommand {
         this.name = "G71";
     }
     execute(ctx) {
-        ctx.coordinateUnits = primitives_1.CoordinateUnits.MILIMETERS;
+        ctx.coordinateUnits = primitives_1.CoordinateUnits.MILLIMETERS;
     }
 }
 exports.G71Command = G71Command;
@@ -928,21 +928,21 @@ class LMCommand {
         }
         let code = match[1];
         if (code == "N") {
-            this.miroring = primitives_1.ObjectMirroring.NONE;
+            this.mirroring = primitives_1.ObjectMirroring.NONE;
         }
         else if (code == "X") {
-            this.miroring = primitives_1.ObjectMirroring.X_AXIS;
+            this.mirroring = primitives_1.ObjectMirroring.X_AXIS;
         }
         else if (code == "Y") {
-            this.miroring = primitives_1.ObjectMirroring.Y_AXIS;
+            this.mirroring = primitives_1.ObjectMirroring.Y_AXIS;
         }
         else if (code == "XY") {
-            this.miroring = primitives_1.ObjectMirroring.XY_AXIS;
+            this.mirroring = primitives_1.ObjectMirroring.XY_AXIS;
         }
     }
     formatOutput() {
         let result = "LM";
-        switch (this.miroring) {
+        switch (this.mirroring) {
             case primitives_1.ObjectMirroring.NONE:
                 result += "N";
                 break;
@@ -960,7 +960,7 @@ class LMCommand {
         return result;
     }
     execute(ctx) {
-        ctx.objectMirroring = this.miroring;
+        ctx.objectMirroring = this.mirroring;
     }
 }
 exports.LMCommand = LMCommand;
@@ -1109,7 +1109,7 @@ class TCommand {
                 break;
             default: throw new primitives_1.GerberParseException(`Unknown attribute command ${cmd}`);
         }
-        let attrinuteName = match[2];
+        let attributeName = match[2];
         let fields;
         if (match[3]) {
             fields = match[3].substring(1).split(',');
@@ -1117,7 +1117,7 @@ class TCommand {
         else {
             fields = [];
         }
-        this.attribute = new primitives_1.Attribute(attributeType, attrinuteName, fields);
+        this.attribute = new primitives_1.Attribute(attributeType, attributeName, fields);
     }
     get name() {
         switch (this.attribute.type) {
@@ -1125,7 +1125,7 @@ class TCommand {
             case primitives_1.AttributeType.FILE: return "TF";
             case primitives_1.AttributeType.OBJECT: return "TO";
         }
-        throw new Error(`Unsuported attribute type ${this.attribute.type}`);
+        throw new Error(`Unsupported attribute type ${this.attribute.type}`);
     }
     formatOutput() {
         let result = this.name + this.attribute.name;
@@ -1138,7 +1138,7 @@ class TCommand {
     }
     execute(ctx) {
         //TODO(vne): implement attributes.
-        //console.log("Tx command is not implemnted");
+        //console.log("Tx command is not implemented");
     }
 }
 exports.TCommand = TCommand;
@@ -1164,7 +1164,7 @@ class TDCommand {
     }
     execute(ctx) {
         //TODO(vne): implement attributes.
-        //console.log("TD command is not implemnted");
+        //console.log("TD command is not implemented");
     }
 }
 exports.TDCommand = TDCommand;

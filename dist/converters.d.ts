@@ -7,7 +7,7 @@
  * License: MIT License, see LICENSE.txt
  */
 /**
- * This file contains classes that convert graphics object primitives from the parset
+ * This file contains classes that convert graphics object primitives from the parser
  * to other formats for example - polygon sets, svg etc.
  */
 import { Line, Circle, Arc, Flash, Region, GraphicsPrimitive, Repeat, SimpleBounds } from "./primitives";
@@ -50,7 +50,7 @@ export declare class SVGConverter extends ConverterBase<string> {
     private polySetToWirePath;
     private static toString2;
     private static colorToHtml;
-    static GerberToSvg(content: string, layerColor?: number, scale?: number, margin?: number): string;
+    static GerberToSvg(content: string, isOutline?: boolean, layerColor?: number, scale?: number, margin?: number): string;
 }
 export declare class PolygonConverterResult {
     readonly solids: PolygonSet;
@@ -58,7 +58,7 @@ export declare class PolygonConverterResult {
     readonly bounds: SimpleBounds;
     readonly primitives: GraphicsPrimitive[];
 }
-export declare function GerberToPolygons(content: string, union?: boolean): PolygonConverterResult;
+export declare function GerberToPolygons(content: string, isOutline?: boolean, union?: boolean): PolygonConverterResult;
 export declare class PrimitiveConverter {
-    static GerberToPrimitives(content: string): Array<GraphicsPrimitive>;
+    static GerberToPrimitives(content: string, isOutline?: boolean): Array<GraphicsPrimitive>;
 }

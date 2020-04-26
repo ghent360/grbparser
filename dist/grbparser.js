@@ -95,7 +95,7 @@ class CommandParser {
                 if (!CommandParser.g04Match.test(gCodeCmd)) {
                     let dCmd = match[2];
                     this.consumer(gCodeCmd, this.commandLineStart, false);
-                    this.consumer(CommandParser.orderDoperation(dCmd), this.commandLineStart, false);
+                    this.consumer(CommandParser.orderDOperation(dCmd), this.commandLineStart, false);
                     return;
                 }
             }
@@ -122,7 +122,7 @@ class CommandParser {
                 return;
             }
         }
-        this.consumer(CommandParser.orderDoperation(cmd), this.commandLineStart, isAdvanced);
+        this.consumer(CommandParser.orderDOperation(cmd), this.commandLineStart, isAdvanced);
     }
     static coordinatePosition(coordinate) {
         if (coordinate == undefined) {
@@ -135,7 +135,7 @@ class CommandParser {
      * for example Y123X567D03. We convert it to X567Y123D03.
      * @param cmd input command
      */
-    static orderDoperation(cmd) {
+    static orderDOperation(cmd) {
         let match = CommandParser.dCmdMatch.exec(cmd);
         if (!match) {
             return cmd;

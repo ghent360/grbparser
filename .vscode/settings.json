@@ -1,5 +1,20 @@
 {
     "mocha.enabled": true,
     "C_Cpp.intelliSenseEngine": "Default",
-    "svg.preview.background": "black"
+    "svg.preview.background": "black",
+    "cSpell.words": [
+        "AMRECTROUNDCORNERS",
+        "AMROUNDEDRECTD",
+        "Dcmd",
+        "FSLAX",
+        "GDMN",
+        "ICAS",
+        "LINEA",
+        "MOIN",
+        "MOMM",
+        "XYIJ",
+        "dcode",
+        "svgbldr",
+        "svgbuilder"
+    ]
 }

@@ -41,11 +41,11 @@ enum TokenID {
     END
 }
 
-export interface AritmeticOperation {
+export interface ArithmeticOperation {
     getValue(memory:Memory):number;
 }
 
-class ConstantNumber implements AritmeticOperation {
+class ConstantNumber implements ArithmeticOperation {
     constructor(public value:number) {
     }
 
@@ -58,7 +58,7 @@ class ConstantNumber implements AritmeticOperation {
     }
 }
 
-class Variable implements AritmeticOperation {
+class Variable implements ArithmeticOperation {
     constructor(readonly id:number) {
     }
 
@@ -71,8 +71,8 @@ class Variable implements AritmeticOperation {
     }
 }
 
-class UnaryMinus implements AritmeticOperation {
-    constructor(public op:AritmeticOperation) {
+class UnaryMinus implements ArithmeticOperation {
+    constructor(public op:ArithmeticOperation) {
     }
 
     getValue(memory:Memory):number {
@@ -84,8 +84,8 @@ class UnaryMinus implements AritmeticOperation {
     }
 }
 
-class Minus implements AritmeticOperation {
-    constructor(public a:AritmeticOperation, public b:AritmeticOperation) {
+class Minus implements ArithmeticOperation {
+    constructor(public a:ArithmeticOperation, public b:ArithmeticOperation) {
     }
 
     getValue(memory:Memory):number {
@@ -97,8 +97,8 @@ class Minus implements AritmeticOperation {
     }
 }
 
-class Plus implements AritmeticOperation {
-    constructor(public a:AritmeticOperation, public b:AritmeticOperation) {
+class Plus implements ArithmeticOperation {
+    constructor(public a:ArithmeticOperation, public b:ArithmeticOperation) {
     }
 
     getValue(memory:Memory):number {
@@ -110,8 +110,8 @@ class Plus implements AritmeticOperation {
     }
 }
 
-class Times implements AritmeticOperation {
-    constructor(public a:AritmeticOperation, public b:AritmeticOperation) {
+class Times implements ArithmeticOperation {
+    constructor(public a:ArithmeticOperation, public b:ArithmeticOperation) {
     }
 
     getValue(memory:Memory):number {
@@ -123,8 +123,8 @@ class Times implements AritmeticOperation {
     }
 }
 
-class Divide implements AritmeticOperation {
-    constructor(public a:AritmeticOperation, public b:AritmeticOperation) {
+class Divide implements ArithmeticOperation {
+    constructor(public a:ArithmeticOperation, public b:ArithmeticOperation) {
     }
 
     getValue(memory:Memory):number {
@@ -136,8 +136,8 @@ class Divide implements AritmeticOperation {
     }
 }
 
-class BracketedExpression implements AritmeticOperation {
-    constructor(public op:AritmeticOperation) {
+class BracketedExpression implements ArithmeticOperation {
+    constructor(public op:ArithmeticOperation) {
     }
 
     getValue(memory:Memory):number {
@@ -223,7 +223,7 @@ export class ExpressionParser {
         throw new Error(`Expected token ID ${TokenID[id]}`);
     }
 
-    private operand():AritmeticOperation {
+    private operand():ArithmeticOperation {
         if (this.accept(TokenID.VARIABLE)) {
             return new Variable(Number.parseInt(this.prevToken.token));
         }
@@ -238,7 +238,7 @@ export class ExpressionParser {
         throw new Error(`Unexpected token ${this.token}`);
     }
 
-    private factor():AritmeticOperation {
+    private factor():ArithmeticOperation {
         if (this.accept(TokenID.MINUS)) {
             let operand = this.operand();
             if (operand instanceof ConstantNumber) {
@@ -252,7 +252,7 @@ export class ExpressionParser {
         }
     }
 
-    private term():AritmeticOperation {
+    private term():ArithmeticOperation {
         let factor1 = this.factor();
         while (this.token.id == TokenID.TIMES || this.token.id == TokenID.DIVIDE) {
             let isTimes = this.token.id == TokenID.TIMES;
@@ -267,7 +267,7 @@ export class ExpressionParser {
         return factor1;
     }
 
-    private expression():AritmeticOperation {
+    private expression():ArithmeticOperation {
         let term1 = this.term();
         while (this.token.id == TokenID.PLUS || this.token.id == TokenID.MINUS) {
             let isPlus = this.token.id == TokenID.PLUS;
@@ -282,7 +282,7 @@ export class ExpressionParser {
         return term1;
     }
 
-    parse():AritmeticOperation {
+    parse():ArithmeticOperation {
         this.nextToken();
         let result = this.expression();
         this.expect(TokenID.END);

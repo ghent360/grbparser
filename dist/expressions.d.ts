@@ -12,7 +12,7 @@ export declare class Memory {
     get(idx: number): number;
     set(idx: number, value: number): void;
 }
-export interface AritmeticOperation {
+export interface ArithmeticOperation {
     getValue(memory: Memory): number;
 }
 export declare class ExpressionParser {
@@ -31,5 +31,5 @@ export declare class ExpressionParser {
     private factor;
     private term;
     private expression;
-    parse(): AritmeticOperation;
+    parse(): ArithmeticOperation;
 }

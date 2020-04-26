@@ -23,7 +23,7 @@ const polygonTools_1 = require("./polygonTools");
 var CoordinateUnits;
 (function (CoordinateUnits) {
     CoordinateUnits[CoordinateUnits["INCHES"] = 0] = "INCHES";
-    CoordinateUnits[CoordinateUnits["MILIMETERS"] = 1] = "MILIMETERS";
+    CoordinateUnits[CoordinateUnits["MILLIMETERS"] = 1] = "MILLIMETERS";
 })(CoordinateUnits = exports.CoordinateUnits || (exports.CoordinateUnits = {}));
 var InterpolationMode;
 (function (InterpolationMode) {
@@ -183,6 +183,11 @@ class ApertureDefinition {
     execute(ctx) {
         if (this.isMacro()) {
             this.macro_ = ctx.getApertureMacro(this.templateName);
+        }
+        else if (ctx.isOutlineMode) {
+            if (this.templateName == "C" || this.templateName == "O") {
+                this.modifiers[0] = 0;
+            }
         }
     }
     generateArcDraw(start, end, center, state) {
@@ -370,7 +375,7 @@ class ApertureDefinition {
         if (this.templateName === "C") {
             let radius = state.unitToMM(this.modifiers[0] / 2);
             if (radius < exports.Epsilon) {
-                throw new GerberParseException('Can not convert zero size aperture to polyset');
+                throw new GerberParseException('Can not convert zero size aperture to poly set');
             }
             result.push(polygonTools_1.circleToPolygon(radius));
             if (this.modifiers.length == 2 && this.modifiers[1] > exports.Epsilon) {
@@ -825,7 +830,7 @@ class GerberState {
         this.coordinateUnits_ = undefined;
         this.currentPoint_ = new point_1.Point();
         //private currentCenterOffset_:Point = new Point();
-        this.currentAppretureId_ = undefined;
+        this.currentApertureId_ = undefined;
         this.interpolationMode = InterpolationMode.LINEARx1;
         this.coordinateMode = CoordinateMode.ABSOLUTE;
         this.quadrantMode_ = undefined;
@@ -835,11 +840,12 @@ class GerberState {
         this.objectScaling = 1.0;
         this.apertures = {};
         this.apertureMacros = {};
-        this.graphisOperationsConsumer_ = new BaseGraphicsOperationsConsumer();
-        this.savedGraphisOperationsConsumer_ = [];
+        this.graphicsOperationsConsumer_ = new BaseGraphicsOperationsConsumer();
+        this.savedGraphicsOperationsConsumer_ = [];
         this.blockApertures_ = [];
         this.blockParams_ = [];
         this.isDone_ = false;
+        this.isOutlineMode = false;
     }
     get coordinateFormatSpec() {
         if (this.coordinateFormat_ == undefined) {
@@ -865,19 +871,19 @@ class GerberState {
         this.coordinateUnits_ = value;
     }
     unitToMM(v) {
-        if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
+        if (this.coordinateUnits_ == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return v * 25.4;
     }
     pointToMM(v) {
-        if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
+        if (this.coordinateUnits_ == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return new point_1.Point(v.x * 25.4, v.y * 25.4);
     }
     mmToUnit(v) {
-        if (this.coordinateUnits_ == CoordinateUnits.MILIMETERS) {
+        if (this.coordinateUnits_ == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return v / 25.4;
@@ -923,14 +929,14 @@ class GerberState {
         this.currentCenterOffset_.y = value;
     }
     */
-    get currentAppretureId() {
-        if (this.currentAppretureId_ == undefined) {
-            this.error("Current appreture is not set.");
+    get currentApertureId() {
+        if (this.currentApertureId_ == undefined) {
+            this.error("Current aperture is not set.");
         }
-        return this.currentAppretureId_;
+        return this.currentApertureId_;
     }
-    set currentAppretureId(value) {
-        this.currentAppretureId_ = value;
+    set currentApertureId(value) {
+        this.currentApertureId_ = value;
     }
     get quadrantMode() {
         if (this.quadrantMode_ == undefined) {
@@ -955,17 +961,17 @@ class GerberState {
     }
     getAperture(id) {
         if (id < 10) {
-            this.error(`Invalid aprture ID ${id}`);
+            this.error(`Invalid aperture ID ${id}`);
         }
         if (this.apertures[id] == undefined) {
-            this.error(`Aprture ID ${id} is not defined yet`);
+            this.error(`Aperture ID ${id} is not defined yet`);
         }
         return this.apertures[id];
     }
     getCurrentAperture() {
-        let id = this.currentAppretureId;
+        let id = this.currentApertureId;
         if (this.apertures[id] == undefined) {
-            this.error(`Aprture ID ${id} is not defined yet`);
+            this.error(`Aperture ID ${id} is not defined yet`);
         }
         return this.apertures[id];
     }
@@ -977,7 +983,7 @@ class GerberState {
     }
     getApertureMacro(name) {
         if (this.apertureMacros[name] == undefined) {
-            this.error(`Aprture macro name ${name} is not defined yet`);
+            this.error(`Aperture macro name ${name} is not defined yet`);
         }
         return this.apertureMacros[name];
     }
@@ -997,65 +1003,65 @@ class GerberState {
         if (!from.isValid() || !to.isValid()) {
             this.error(`Invalid line ${from} ${to}`);
         }
-        this.graphisOperationsConsumer_.line(this.pointToMM(from), this.pointToMM(to), cmd, this);
+        this.graphicsOperationsConsumer_.line(this.pointToMM(from), this.pointToMM(to), cmd, this);
     }
     circle(center, radius, cmd) {
         if (!center.isValid() || radius <= exports.Epsilon) {
             this.error(`Invalid circle ${center} R${radius}`);
         }
-        this.graphisOperationsConsumer_.circle(this.pointToMM(center), this.unitToMM(radius), cmd, this);
+        this.graphicsOperationsConsumer_.circle(this.pointToMM(center), this.unitToMM(radius), cmd, this);
     }
     arc(center, radius, start, end, isCCW, cmd) {
         if (!center.isValid() || radius <= exports.Epsilon || !start.isValid() || !end.isValid()) {
             this.error(`Invalid arc ${center} R${radius} from ${start} to ${end}`);
         }
-        this.graphisOperationsConsumer_.arc(this.pointToMM(center), this.unitToMM(radius), this.pointToMM(start), this.pointToMM(end), isCCW, cmd, this);
+        this.graphicsOperationsConsumer_.arc(this.pointToMM(center), this.unitToMM(radius), this.pointToMM(start), this.pointToMM(end), isCCW, cmd, this);
     }
     flash(center, cmd) {
         if (!center.isValid()) {
             this.error(`Invalid flash location ${center}`);
         }
-        this.graphisOperationsConsumer_.flash(this.pointToMM(center), cmd, this);
+        this.graphicsOperationsConsumer_.flash(this.pointToMM(center), cmd, this);
     }
     closeRegionContour() {
-        if (this.graphisOperationsConsumer_ instanceof RegionGraphicsOperationsConsumer) {
-            let regionConsumer = this.graphisOperationsConsumer_;
+        if (this.graphicsOperationsConsumer_ instanceof RegionGraphicsOperationsConsumer) {
+            let regionConsumer = this.graphicsOperationsConsumer_;
             regionConsumer.closeRegionContour(this);
         }
     }
     startRegion() {
         this.saveGraphicsConsumer();
-        this.graphisOperationsConsumer_ = new RegionGraphicsOperationsConsumer();
+        this.graphicsOperationsConsumer_ = new RegionGraphicsOperationsConsumer();
     }
     endRegion(cmd) {
-        let region = this.graphisOperationsConsumer_;
+        let region = this.graphicsOperationsConsumer_;
         region.closeRegionContour(this);
         this.restoreGraphicsConsumer();
-        this.graphisOperationsConsumer_.region(region.regionContours, cmd, this);
+        this.graphicsOperationsConsumer_.region(region.regionContours, cmd, this);
     }
     saveGraphicsConsumer() {
-        this.savedGraphisOperationsConsumer_.push(this.graphisOperationsConsumer_);
+        this.savedGraphicsOperationsConsumer_.push(this.graphicsOperationsConsumer_);
     }
     restoreGraphicsConsumer() {
-        if (this.savedGraphisOperationsConsumer_.length == 0) {
+        if (this.savedGraphicsOperationsConsumer_.length == 0) {
             throw new GerberParseException("Invalid parsing state, can't restore operations consumer");
         }
-        this.graphisOperationsConsumer_ = this.savedGraphisOperationsConsumer_.pop();
+        this.graphicsOperationsConsumer_ = this.savedGraphicsOperationsConsumer_.pop();
     }
     get graphicsOperations() {
-        return this.graphisOperationsConsumer_;
+        return this.graphicsOperationsConsumer_;
     }
     startBlockAperture(blockId) {
         this.saveGraphicsConsumer();
         this.blockApertures_.push(blockId);
-        this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
+        this.graphicsOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
     }
     endBlockAperture() {
         if (this.blockApertures_.length == 0) {
-            throw new GerberParseException('Closing aperture block without mathing opening.');
+            throw new GerberParseException('Closing aperture block without matching opening.');
         }
         let blockId = this.blockApertures_.pop();
-        let blockConsumer = this.graphisOperationsConsumer_;
+        let blockConsumer = this.graphicsOperationsConsumer_;
         let aperture = new BlockAperture(blockId, blockConsumer.objects);
         this.setAperture(aperture);
         this.restoreGraphicsConsumer();
@@ -1063,7 +1069,7 @@ class GerberState {
     startRepeat(params) {
         this.saveGraphicsConsumer();
         this.blockParams_.push(params);
-        this.graphisOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
+        this.graphicsOperationsConsumer_ = new BlockGraphicsOperationsConsumer();
     }
     tryEndRepeat(cmd) {
         if (this.blockParams_.length > 0) {
@@ -1072,19 +1078,19 @@ class GerberState {
     }
     endRepeat(cmd) {
         if (this.blockParams_.length == 0) {
-            throw new GerberParseException('Closing repeat block without mathing opening.');
+            throw new GerberParseException('Closing repeat block without matching opening.');
         }
         let params = this.blockParams_.pop();
-        let blockConsumer = this.graphisOperationsConsumer_;
+        let blockConsumer = this.graphicsOperationsConsumer_;
         let block = new Block(params.xRepeat, params.yRepeat, this.unitToMM(params.xDelta), this.unitToMM(params.yDelta), blockConsumer.primitives, blockConsumer.objects);
         this.restoreGraphicsConsumer();
-        this.graphisOperationsConsumer_.block(block, cmd, this);
+        this.graphicsOperationsConsumer_.block(block, cmd, this);
     }
     endFile(cmd) {
         while (this.blockParams_.length > 0) {
             this.endRepeat(cmd);
         }
-        let topConsumer = this.graphisOperationsConsumer_;
+        let topConsumer = this.graphicsOperationsConsumer_;
         this.primitives_ = topConsumer.primitives;
         this.isDone_ = true;
     }
@@ -1226,9 +1232,9 @@ exports.ArcSegment = ArcSegment;
 function translateRegionContour(contour, vector) {
     return contour.map(segment => segment.translate(vector));
 }
-function contourOrientation(countour) {
+function contourOrientation(contour) {
     let sum = 0;
-    countour.forEach(s => {
+    contour.forEach(s => {
         let start;
         let end;
         if (s instanceof CircleSegment) {
@@ -1285,7 +1291,7 @@ class RegionGraphicsOperationsConsumer {
     }
 }
 class ObjectState {
-    constructor(polarity = ObjectPolarity.DARK, mirroring = ObjectMirroring.NONE, scale = 1, rotation = 0, units = CoordinateUnits.MILIMETERS) {
+    constructor(polarity = ObjectPolarity.DARK, mirroring = ObjectMirroring.NONE, scale = 1, rotation = 0, units = CoordinateUnits.MILLIMETERS) {
         this.polarity = polarity;
         this.mirroring = mirroring;
         this.scale = scale;
@@ -1293,25 +1299,25 @@ class ObjectState {
         this.units = units;
     }
     unitToMM(v) {
-        if (this.units == CoordinateUnits.MILIMETERS) {
+        if (this.units == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return v * 25.4;
     }
     pointToMM(v) {
-        if (this.units == CoordinateUnits.MILIMETERS) {
+        if (this.units == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return new point_1.Point(v.x * 25.4, v.y * 25.4);
     }
     mmToUnit(v) {
-        if (this.units == CoordinateUnits.MILIMETERS) {
+        if (this.units == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return v / 25.4;
     }
     mmToPoint(v) {
-        if (this.units == CoordinateUnits.MILIMETERS) {
+        if (this.units == CoordinateUnits.MILLIMETERS) {
             return v;
         }
         return new point_1.Point(v.x / 25.4, v.y / 25.4);
@@ -1463,7 +1469,7 @@ class Region {
     constructor(contours, state, cmd) {
         this.state = state;
         this.cmd = cmd;
-        //this.contours = contours.map(c => Region.reOrderCountour(c));
+        //this.contours = contours.map(c => Region.reOrderContour(c));
         this.contours = contours;
     }
     toString() {
@@ -1498,7 +1504,7 @@ class Region {
         else if (segment instanceof ArcSegment) {
             return segment.start;
         }
-        throw new GerberParseException(`Unsupportede segment ${segment} inside region.`);
+        throw new GerberParseException(`Unsupported segment ${segment} inside region.`);
     }
     static endPoint(segment) {
         if (segment instanceof CircleSegment) {
@@ -1510,13 +1516,13 @@ class Region {
         else if (segment instanceof ArcSegment) {
             return segment.end;
         }
-        throw new GerberParseException(`Unsupportede segment ${segment} inside region.`);
+        throw new GerberParseException(`Unsupported segment ${segment} inside region.`);
     }
     static matchPoint(p, segment, matchStart) {
         let pt = (matchStart) ? Region.startPoint(segment) : Region.endPoint(segment);
         return pt.distance2(p) < exports.Epsilon;
     }
-    static reOrderCountour(contour) {
+    static reOrderContour(contour) {
         if (contour.length < 2)
             return contour;
         let result = [];
@@ -1786,7 +1792,7 @@ function composeSolidImage(objects, union = false) {
         if (o.polarity === ObjectPolarity.DARK) {
             // Check if there is anything to clean?
             if (clear.length > 0) {
-                // Check if we are crearing from something
+                // Check if we are creating from something
                 if (image.length > 0) {
                     image = polygonSet_1.subtractPolygonSet(image, clear).polygonSet;
                 }
@@ -1800,7 +1806,7 @@ function composeSolidImage(objects, union = false) {
     });
     // Check if there is anything left to clean?
     if (clear.length > 0) {
-        // Check if we are crearing from something
+        // Check if we are creating from something
         if (image.length > 0) {
             if (!union) {
                 return polygonSet_1.subtractPolygonSet(image, clear);

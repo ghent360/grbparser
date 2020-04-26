@@ -8,7 +8,7 @@
  */
 
 /**
- * This file contains classes that convert graphics object primitives from the parset
+ * This file contains classes that convert graphics object primitives from the parser
  * to other formats for example - polygon sets, svg etc.
  */
 import {
@@ -227,12 +227,14 @@ export class SVGConverter extends ConverterBase<string> {
 
     public static GerberToSvg(
         content:string,
+        isOutline:boolean = false,
         layerColor:number = 0xff1f1c,
         scale:number = 100,
         margin:number = 10):string {
         let parser = new GerberParser();
         parser.parseBlock(content);
         let ctx = new GerberState();
+        ctx.isOutlineMode = isOutline;
         parser.execute(ctx);
         if (!ctx.isDone) {
             ctx.endFile(new M02Command("M02"));
@@ -254,12 +256,14 @@ export class PolygonConverterResult {
     readonly primitives:GraphicsPrimitive[];
 }
 
-export function GerberToPolygons(content:string, union:boolean = false):PolygonConverterResult {
+export function GerberToPolygons(
+    content:string, isOutline:boolean = false, union:boolean = false):PolygonConverterResult {
     //let start = performance.now();
     let parser = new GerberParser();
     parser.parseBlock(content);
     //let parseEnd = performance.now();
     let ctx = new GerberState();
+    ctx.isOutlineMode = isOutline;
     parser.execute(ctx);
     if (!ctx.isDone) {
         ctx.endFile(new M02Command("M02"));
@@ -309,10 +313,11 @@ export function GerberToPolygons(content:string, union:boolean = false):PolygonC
 }
 
 export class PrimitiveConverter {
-    public static GerberToPrimitives(content:string):Array<GraphicsPrimitive> {
+    public static GerberToPrimitives(content:string, isOutline:boolean = false):Array<GraphicsPrimitive> {
         let parser = new GerberParser();
         parser.parseBlock(content);
         let ctx = new GerberState();
+        ctx.isOutlineMode = isOutline;
         parser.execute(ctx);
         return ctx.primitives;
     }
