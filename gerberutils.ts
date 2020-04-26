@@ -391,10 +391,11 @@ export class GerberUtils {
             case "drillnpt":
                 result  = { side:BoardSide.Both, layer:BoardLayer.Drill };
                 break;
+
             case "csv":
             case "pos":
-                    result  = { side:BoardSide.Both, layer:BoardLayer.Place };
-                    break;
+                result  = { side:BoardSide.Both, layer:BoardLayer.Place };
+                break;
     
         }
         return result;
