@@ -9,13 +9,10 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-import * as gp from '../grbparser';
-import * as pr from '../primitives';
 import * as cv from '../converters';
-import { SVGConverter, Init } from '../converters';
 
 describe("Converter tests", () => {
-    it('Wait to init', () => Init);
+    it('Wait to init', () => cv.Init);
     it('parse and convert gerber file', () => {
         let folder = "test/Gerber_File_Format_Examples";
         fs.readdirSync(folder)
@@ -39,7 +36,7 @@ describe("Converter tests", () => {
         let folder = "test/Gerber_File_Format_Examples/bugs";
         fs.readdirSync(folder)
             .filter(fileName => !fileName.match(/\.svg$/))
-            .filter(fileName => fileName.endsWith("arc-bug.grb"))
+            //.filter(fileName => fileName.endsWith("arc-bug.grb"))
             .forEach(fileName => {
                 let fullFileName = folder + "/" + fileName;
                 let content = fs.readFileSync(fullFileName).toString();
@@ -106,4 +103,28 @@ describe("Converter tests", () => {
                 //console.log(`Solids ${result.solids.length} wires ${result.thins.length}`);
             });
     }).timeout(60000);
+    it('Outline files to SVG', () => {
+        let folder = "test/Gerber_File_Format_Examples/outline";
+        fs.readdirSync(folder)
+            .filter(fileName => !fileName.match(/\.svg$/))
+            //.filter(fileName => fileName.endsWith("arc-bug.grb"))
+            .forEach(fileName => {
+                let fullFileName = folder + "/" + fileName;
+                let content = fs.readFileSync(fullFileName).toString();
+                let result:any;
+                //console.log(`Convert ${fileName}`);
+                result = cv.GerberToPolygons(content, true);
+                assert.equal(result.solids.length, 0, "Expected no solid polygons");
+                assert.notEqual(result.thins.length, 0, "Expected some thin polygons");
+                result = cv.PrimitiveConverter.GerberToPrimitives(content);
+                //console.log(`${result}`);
+                result = cv.SVGConverter.GerberToSvg(
+                    content, true, 0xB0B0B0, 1000, 0);
+                let outputFileName = folder + "/" + fileName + ".svg";
+                let stream = fs.createWriteStream(outputFileName);
+                stream.write(result);
+                stream.end();
+                //cv.GerberToPolygons(content);
+            });
+    }).timeout(10000);
 });

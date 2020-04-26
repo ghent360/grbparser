@@ -1,7 +1,7 @@
 {
     "mocha.enabled": true,
     "C_Cpp.intelliSenseEngine": "Default",
-    "svg.preview.background": "black",
+    "svg.preview.background": "custom",
     "cSpell.words": [
         "AMRECTROUNDCORNERS",
         "AMROUNDEDRECTD",

@@ -1,6 +1,11 @@
 *.js
 *.js.map
 *.svg
+*.wasm
+package-lock.json
+build.ts
+dist/build.d.ts
+t/*
 test/*.js
 test/*.js.map
 test/Gerber_File_Format_Examples/*.svg
