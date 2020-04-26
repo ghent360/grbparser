@@ -118,11 +118,12 @@ class SVGConverter extends ConverterBase {
         return ['<?xml version="1.0" standalone="no"?>',
             '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">',
             `<svg width="100%" height="100%" viewBox="0 0 ${this.width_} ${this.height_}"
-                      version="1.1" xmlns="http://www.w3.org/2000/svg">`,
+                      version="1.1" xmlns="http://www.w3.org/2000/svg"
+                      style="background-color:black">`
             /*`<rect x="${this.margin}" y="${this.margin}"
                    width="${bounds.width * this.scale}" height="${bounds.height * this.scale}"
                    stroke="green" stroke-width="1" fill="none"/>`,*/
-            '<g stroke="black">'];
+        ];
     }
     footer() {
         let wires = [];
@@ -176,8 +177,9 @@ class SVGConverter extends ConverterBase {
                     + `${(this.height_ - pointy).toFixed(this.precision)}`;
             }
         });
+        result += ' z" ';
         result += `style="stroke:${SVGConverter.colorToHtml(this.layerColor)}; ` +
-            'stroke-opacity:1; stroke-width:1;"/>\n';
+            `stroke-opacity:1; stroke-width:${this.scale / 10}; fill:none"/>\n`;
         return result;
     }
     static toString2(n) {
