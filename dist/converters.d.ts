@@ -58,7 +58,7 @@ export declare class PolygonConverterResult {
     readonly bounds: SimpleBounds;
     readonly primitives: GraphicsPrimitive[];
 }
-export declare function GerberToPolygons(content: string, isOutline?: boolean, union?: boolean): PolygonConverterResult;
+export declare function GerberToPolygons(content: string, isOutline?: boolean, tolerance?: number, union?: boolean): PolygonConverterResult;
 export declare class PrimitiveConverter {
     static GerberToPrimitives(content: string, isOutline?: boolean): Array<GraphicsPrimitive>;
 }

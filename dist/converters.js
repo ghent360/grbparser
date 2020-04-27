@@ -215,7 +215,7 @@ exports.SVGConverter = SVGConverter;
 class PolygonConverterResult {
 }
 exports.PolygonConverterResult = PolygonConverterResult;
-function GerberToPolygons(content, isOutline = false, union = false) {
+function GerberToPolygons(content, isOutline = false, tolerance = 0.05, union = false) {
     //let start = performance.now();
     let parser = new grbparser_1.GerberParser();
     parser.parseBlock(content);
@@ -244,7 +244,7 @@ function GerberToPolygons(content, isOutline = false, union = false) {
     objects
         .filter(o => o.polarity == primitives_1.ObjectPolarity.THIN)
         .forEach(o => {
-        thins.push(...polygonSet_1.connectWires(o.polySet));
+        thins.push(...o.polySet);
     });
     let bounds = image.bounds;
     if (thins.length > 0) {
@@ -267,7 +267,7 @@ function GerberToPolygons(content, isOutline = false, union = false) {
     */
     return {
         solids: image.polygonSet,
-        thins: polygonSet_1.connectWires(thins),
+        thins: polygonSet_1.connectWires(thins, tolerance),
         bounds: bounds,
         primitives: primitives
     };

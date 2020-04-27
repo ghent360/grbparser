@@ -259,7 +259,10 @@ export class PolygonConverterResult {
 }
 
 export function GerberToPolygons(
-    content:string, isOutline:boolean = false, union:boolean = false):PolygonConverterResult {
+    content:string,
+    isOutline:boolean = false,
+    tolerance:number = 0.05,
+    union:boolean = false):PolygonConverterResult {
     //let start = performance.now();
     let parser = new GerberParser();
     parser.parseBlock(content);
@@ -288,7 +291,7 @@ export function GerberToPolygons(
     objects
         .filter(o => o.polarity == ObjectPolarity.THIN)
         .forEach(o => {
-            thins.push(...connectWires(o.polySet));
+            thins.push(...o.polySet);
         });
     let bounds = image.bounds;
     if (thins.length > 0) {
@@ -311,7 +314,7 @@ export function GerberToPolygons(
 */
     return {
         solids: image.polygonSet,
-        thins: connectWires(thins),
+        thins: connectWires(thins, tolerance),
         bounds: bounds,
         primitives: primitives
     };

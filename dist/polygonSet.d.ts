@@ -33,4 +33,4 @@ export declare function objectsBounds(objects: GraphicsObjects): Bounds;
 export declare function unionPolygonSet(one: PolygonSet, other: PolygonSet): PolygonSetWithBounds;
 export declare function subtractPolygonSet(one: PolygonSet, other: PolygonSet): PolygonSetWithBounds;
 export declare function distance2(x1: number, y1: number, x2: number, y2: number): number;
-export declare function connectWires(polygonSet: PolygonSet): PolygonSet;
+export declare function connectWires(polygonSet: PolygonSet, tolerance?: number): PolygonSet;

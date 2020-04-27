@@ -243,11 +243,10 @@ function firstNonEmpty(polygonSet:PolygonSet):number {
     return -1;
 }
 
-export function connectWires(polygonSet:PolygonSet):PolygonSet {
+export function connectWires(polygonSet:PolygonSet, tolerance:number = 0.05):PolygonSet {
     if (polygonSet.length < 2) {
         return polygonSet;
     }
-    const Epsilon2 = 0.05; // all coordinates are mm at this point allow 0.05mm tolerance
     let result:PolygonSet = [];
 
     while (true) {
@@ -273,7 +272,7 @@ export function connectWires(polygonSet:PolygonSet):PolygonSet {
                     let endY = polygon[polygon.length - 1];
 
                     // Check if we can concat lastEnd with this start
-                    if (distance2(lastEndX, lastEndY, startX, startY) < Epsilon2) {
+                    if (distance2(lastEndX, lastEndY, startX, startY) < tolerance) {
                         let concat = new Float64Array(last.length + polygon.length - 2);
                         concat.set(last);
                         concat.set(polygon.subarray(2), last.length);
@@ -287,7 +286,7 @@ export function connectWires(polygonSet:PolygonSet):PolygonSet {
                         break;
                     }
                     // Check if we can concat this end with lastStart
-                    if (distance2(lastStartX, lastStartY, endX, endY) < Epsilon2) {
+                    if (distance2(lastStartX, lastStartY, endX, endY) < tolerance) {
                         let concat = new Float64Array(last.length + polygon.length - 2);
                         concat.set(polygon);
                         concat.set(last.subarray(2), polygon.length);
@@ -301,7 +300,7 @@ export function connectWires(polygonSet:PolygonSet):PolygonSet {
                         break;
                     }
                     // Check if we can concat lastStart with this start
-                    if (distance2(lastStartX, lastStartY, startX, startY) < Epsilon2) {
+                    if (distance2(lastStartX, lastStartY, startX, startY) < tolerance) {
                         let concat = new Float64Array(last.length + polygon.length - 2);
                         reversePolygon(last);
                         concat.set(last);
@@ -316,7 +315,7 @@ export function connectWires(polygonSet:PolygonSet):PolygonSet {
                         break;
                     }
                     // Check if we can concat lastEnd with this end
-                    if (distance2(lastEndX, lastEndY, endX, endY) < Epsilon2) {
+                    if (distance2(lastEndX, lastEndY, endX, endY) < tolerance) {
                         let concat = new Float64Array(last.length + polygon.length - 2);
                         concat.set(polygon);
                         reversePolygon(last);
