@@ -19,6 +19,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const point_1 = require("./point");
 const primitives_1 = require("./primitives");
+const polygonTools_1 = require("./polygonTools");
 const clipperModule = Promise.resolve().then(() => require("clipperjs/clipper_js"));
 let cl;
 function waitClipperLoad() {
@@ -233,35 +234,101 @@ function distance2(x1, y1, x2, y2) {
     return dx * dx + dy * dy;
 }
 exports.distance2 = distance2;
+function firstNonEmpty(polygonSet) {
+    for (let idx = 0; idx < polygonSet.length; idx++) {
+        if (polygonSet[idx] && polygonSet[idx].length > 0)
+            return idx;
+    }
+    return -1;
+}
 function connectWires(polygonSet) {
-    if (polygonSet.length < 1) {
+    if (polygonSet.length < 2) {
         return polygonSet;
     }
-    let last = polygonSet[0];
-    let lastPtx = last[last.length - 2];
-    let lastPty = last[last.length - 1];
-    let result = [last];
-    let Epsilon2 = primitives_1.Epsilon * primitives_1.Epsilon;
-    for (let idx = 1; idx < polygonSet.length; idx++) {
-        if (polygonSet[idx].length > 0) {
-            let polygon = polygonSet[idx];
-            if (distance2(lastPtx, lastPty, polygon[0], polygon[1]) < Epsilon2) {
-                result.pop();
-                let concat = new Float64Array(last.length + polygon.length - 2);
-                concat.set(last);
-                concat.set(polygon.subarray(2), last.length);
-                result.push(concat);
-                last = concat;
-                lastPtx = last[last.length - 2];
-                lastPty = last[last.length - 1];
+    const Epsilon2 = 0.05; // all coordinates are mm at this point allow 0.05mm tolerance
+    let result = [];
+    while (true) {
+        let lastIdx = firstNonEmpty(polygonSet);
+        if (lastIdx < 0)
+            break;
+        let last = polygonSet[lastIdx];
+        let lastStartX = last[0];
+        let lastStartY = last[1];
+        let lastEndX = last[last.length - 2];
+        let lastEndY = last[last.length - 1];
+        polygonSet[lastIdx] = new Float64Array();
+        let foundContinuation = false;
+        do {
+            foundContinuation = false;
+            for (let idx = lastIdx + 1; idx < polygonSet.length; idx++) {
+                if (polygonSet[idx] && polygonSet[idx].length > 0) {
+                    let polygon = polygonSet[idx];
+                    let startX = polygon[0];
+                    let startY = polygon[1];
+                    let endX = polygon[polygon.length - 2];
+                    let endY = polygon[polygon.length - 1];
+                    // Check if we can concat lastEnd with this start
+                    if (distance2(lastEndX, lastEndY, startX, startY) < Epsilon2) {
+                        let concat = new Float64Array(last.length + polygon.length - 2);
+                        concat.set(last);
+                        concat.set(polygon.subarray(2), last.length);
+                        last = concat;
+                        lastStartX = last[0];
+                        lastStartY = last[1];
+                        lastEndX = last[last.length - 2];
+                        lastEndY = last[last.length - 1];
+                        polygonSet[idx] = new Float64Array(); // delete the polygon from the set
+                        foundContinuation = true;
+                        break;
+                    }
+                    // Check if we can concat this end with lastStart
+                    if (distance2(lastStartX, lastStartY, endX, endY) < Epsilon2) {
+                        let concat = new Float64Array(last.length + polygon.length - 2);
+                        concat.set(polygon);
+                        concat.set(last.subarray(2), polygon.length);
+                        last = concat;
+                        lastStartX = last[0];
+                        lastStartY = last[1];
+                        lastEndX = last[last.length - 2];
+                        lastEndY = last[last.length - 1];
+                        polygonSet[idx] = new Float64Array(); // delete the polygon from the set
+                        foundContinuation = true;
+                        break;
+                    }
+                    // Check if we can concat lastStart with this start
+                    if (distance2(lastStartX, lastStartY, startX, startY) < Epsilon2) {
+                        let concat = new Float64Array(last.length + polygon.length - 2);
+                        polygonTools_1.reversePolygon(last);
+                        concat.set(last);
+                        concat.set(polygon.subarray(2), last.length);
+                        last = concat;
+                        lastStartX = last[0];
+                        lastStartY = last[1];
+                        lastEndX = last[last.length - 2];
+                        lastEndY = last[last.length - 1];
+                        polygonSet[idx] = new Float64Array(); // delete the polygon from the set
+                        foundContinuation = true;
+                        break;
+                    }
+                    // Check if we can concat lastEnd with this end
+                    if (distance2(lastEndX, lastEndY, endX, endY) < Epsilon2) {
+                        let concat = new Float64Array(last.length + polygon.length - 2);
+                        concat.set(polygon);
+                        polygonTools_1.reversePolygon(last);
+                        concat.set(last.subarray(2), polygon.length);
+                        last = concat;
+                        lastStartX = last[0];
+                        lastStartY = last[1];
+                        lastEndX = last[last.length - 2];
+                        lastEndY = last[last.length - 1];
+                        polygonSet[idx] = new Float64Array(); // delete the polygon from the set
+                        foundContinuation = true;
+                        break;
+                    }
+                }
             }
-            else {
-                last = polygon;
-                result.push(last);
-                lastPtx = last[last.length - 2];
-                lastPty = last[last.length - 1];
-            }
-        }
+        } while (foundContinuation);
+        result.push(last);
     }
     //if (result.length < polygonSet.length) {
     //    console.log(`Simplified wires from ${polygonSet.length} to ${result.length}`);

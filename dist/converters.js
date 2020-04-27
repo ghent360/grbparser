@@ -243,11 +243,14 @@ function GerberToPolygons(content, isOutline = false, union = false) {
     let thins = [];
     objects
         .filter(o => o.polarity == primitives_1.ObjectPolarity.THIN)
-        .forEach(o => thins.push(...o.polySet));
+        .forEach(o => {
+        thins.push(...polygonSet_1.connectWires(o.polySet));
+    });
     let bounds = image.bounds;
     if (thins.length > 0) {
         let thinBounds = polygonSet_1.polySetBounds(thins);
-        thinBounds.merge(image.bounds);
+        if (image.bounds)
+            thinBounds.merge(image.bounds);
         bounds = thinBounds.toSimpleBounds();
     }
     /*
