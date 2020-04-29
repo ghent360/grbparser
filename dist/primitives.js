@@ -1818,7 +1818,7 @@ function composeSolidImage(objects, union = false) {
         return polygonSet_1.unionPolygonSet(image, []);
     }
     return {
-        polygonSet: image,
+        polygonSet: image.filter(p => p.length > 2),
         bounds: polygonSet_1.polySetBounds(image).toSimpleBounds()
     };
 }

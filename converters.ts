@@ -291,7 +291,7 @@ export function GerberToPolygons(
     objects
         .filter(o => o.polarity == ObjectPolarity.THIN)
         .forEach(o => {
-            thins.push(...o.polySet);
+            thins.push(...o.polySet.filter(p => p.length > 2));
         });
     let bounds = image.bounds;
     if (thins.length > 0) {

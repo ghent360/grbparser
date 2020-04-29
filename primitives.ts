@@ -2224,7 +2224,7 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
         return unionPolygonSet(image, []);
     }
     return {
-        polygonSet: image,
+        polygonSet: image.filter(p => p.length > 2),
         bounds: polySetBounds(image).toSimpleBounds()
     }
 }
