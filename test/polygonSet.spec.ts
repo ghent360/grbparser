@@ -57,7 +57,9 @@ describe("PolygonSet tests", () => {
         let poly4 = circleToPolygon(new Point(0, 0), 48);
         reversePolygon(poly4);
         let result = ps.unionPolygonSet([poly1, poly2, poly3, poly4], []);
-        saveSVGPolygons(result.polygonSet, 'union_test1.svg');
+        if (result.polygonSet) {
+            saveSVGPolygons(result.polygonSet, 'union_test1.svg');
+        }
         //console.log(result);
     });
     it('Union Test 1', () => {
@@ -67,14 +69,18 @@ describe("PolygonSet tests", () => {
         let poly4 = rectPolygon(0, 9, 10, 91);
         let result = ps.unionPolygonSet([poly1, poly2, poly3, poly4], []);
         saveSVGPolygons([poly1, poly2, poly3, poly4], 'union_test2_a.svg');
-        saveSVGPolygons(result.polygonSet, 'union_test2.svg');
+        if (result.polygonSet) {
+            saveSVGPolygons(result.polygonSet, 'union_test2.svg');
+        }
         //console.log(result);
     });
     it('Subtract Tests', () => {
         let poly1 = rectPolygon(0, 0, 10, 20);
         let poly2 = rectPolygon(0, 0, 20, 10);
         let result = ps.subtractPolygonSet([poly1], [poly2]);
-        saveSVGPolygons(result.polygonSet, 'subtract_test1.svg');
+        if (result.polygonSet) {
+            saveSVGPolygons(result.polygonSet, 'subtract_test1.svg');
+        }
         //console.log(result);
     });
 });

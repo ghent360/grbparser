@@ -178,7 +178,9 @@ class ApertureDefinition {
             || (this.templateName === 'R' && this.modifiers.length == 2);
     }
     get macro() {
-        return this.macro_;
+        if (this.macro_)
+            return this.macro_;
+        throw "Aperture is not a macro";
     }
     execute(ctx) {
         if (this.isMacro()) {
@@ -783,7 +785,10 @@ class ApertureMacro {
             }
         }
         if (negatives.length > 0) {
-            return polygonSet_1.subtractPolygonSet(positives, negatives).polygonSet;
+            let result = polygonSet_1.subtractPolygonSet(positives, negatives).polygonSet;
+            if (result)
+                return result;
+            return [];
         }
         return positives;
     }
@@ -830,7 +835,7 @@ class GerberState {
         this.coordinateUnits_ = undefined;
         this.currentPoint_ = new point_1.Point();
         //private currentCenterOffset_:Point = new Point();
-        this.currentApertureId_ = undefined;
+        this.currentApertureId_ = -1;
         this.interpolationMode = InterpolationMode.LINEARx1;
         this.coordinateMode = CoordinateMode.ABSOLUTE;
         this.quadrantMode_ = undefined;
@@ -844,11 +849,12 @@ class GerberState {
         this.savedGraphicsOperationsConsumer_ = [];
         this.blockApertures_ = [];
         this.blockParams_ = [];
+        this.primitives_ = [];
         this.isDone_ = false;
         this.isOutlineMode = false;
     }
     get coordinateFormatSpec() {
-        if (this.coordinateFormat_ == undefined) {
+        if (!this.coordinateFormat_) {
             this.error("File coordinate format is not set.");
         }
         return this.coordinateFormat_;
@@ -858,8 +864,12 @@ class GerberState {
             this.warning("File coordinate format already set.");
         }
         this.coordinateFormat_ = value;
-        this.coordinateMode =
-            value.coordType == CoordinateType.ABSOLUTE ? CoordinateMode.ABSOLUTE : CoordinateMode.RELATIVE;
+        if (value) {
+            this.coordinateMode =
+                value.coordType == CoordinateType.ABSOLUTE ?
+                    CoordinateMode.ABSOLUTE :
+                    CoordinateMode.RELATIVE;
+        }
     }
     get coordinateUnits() {
         if (this.coordinateUnits_ == undefined) {
@@ -954,7 +964,9 @@ class GerberState {
         if (!this.isDone_) {
             this.warning("Parsing is not complete");
         }
-        return this.primitives_;
+        if (this.primitives_)
+            return this.primitives_;
+        return [];
     }
     getObjectState() {
         return new ObjectState(this.objectPolarity, this.objectMirroring, this.objectScaling, this.objectRotation, this.coordinateUnits);
@@ -1046,7 +1058,13 @@ class GerberState {
         if (this.savedGraphicsOperationsConsumer_.length == 0) {
             throw new GerberParseException("Invalid parsing state, can't restore operations consumer");
         }
-        this.graphicsOperationsConsumer_ = this.savedGraphicsOperationsConsumer_.pop();
+        let nextConsumer = this.savedGraphicsOperationsConsumer_.pop();
+        if (nextConsumer) {
+            this.graphicsOperationsConsumer_ = nextConsumer;
+        }
+        else {
+            this.graphicsOperationsConsumer_ = new BaseGraphicsOperationsConsumer();
+        }
     }
     get graphicsOperations() {
         return this.graphicsOperationsConsumer_;
@@ -1061,10 +1079,12 @@ class GerberState {
             throw new GerberParseException('Closing aperture block without matching opening.');
         }
         let blockId = this.blockApertures_.pop();
-        let blockConsumer = this.graphicsOperationsConsumer_;
-        let aperture = new BlockAperture(blockId, blockConsumer.objects);
-        this.setAperture(aperture);
-        this.restoreGraphicsConsumer();
+        if (blockId != undefined) {
+            let blockConsumer = this.graphicsOperationsConsumer_;
+            let aperture = new BlockAperture(blockId, blockConsumer.objects);
+            this.setAperture(aperture);
+            this.restoreGraphicsConsumer();
+        }
     }
     startRepeat(params) {
         this.saveGraphicsConsumer();
@@ -1081,10 +1101,12 @@ class GerberState {
             throw new GerberParseException('Closing repeat block without matching opening.');
         }
         let params = this.blockParams_.pop();
-        let blockConsumer = this.graphicsOperationsConsumer_;
-        let block = new Block(params.xRepeat, params.yRepeat, this.unitToMM(params.xDelta), this.unitToMM(params.yDelta), blockConsumer.primitives, blockConsumer.objects);
-        this.restoreGraphicsConsumer();
-        this.graphicsOperationsConsumer_.block(block, cmd, this);
+        if (params) {
+            let blockConsumer = this.graphicsOperationsConsumer_;
+            let block = new Block(params.xRepeat, params.yRepeat, this.unitToMM(params.xDelta), this.unitToMM(params.yDelta), blockConsumer.primitives, blockConsumer.objects);
+            this.restoreGraphicsConsumer();
+            this.graphicsOperationsConsumer_.block(block, cmd, this);
+        }
     }
     endFile(cmd) {
         while (this.blockParams_.length > 0) {
@@ -1554,8 +1576,8 @@ class Region {
     }
     static buildPolygon(contour) {
         let numPoints = 0;
-        let lastPt = undefined;
-        let firstPt = undefined;
+        let lastPt;
+        let firstPt;
         contour.forEach(segment => {
             if (segment instanceof LineSegment) {
                 let line = segment;
@@ -1654,7 +1676,7 @@ class Repeat {
     }
     get objects() {
         if (!this.objects_) {
-            this.buildObjects();
+            this.objects_ = this.buildObjects();
         }
         return this.objects_;
     }
@@ -1663,18 +1685,19 @@ class Repeat {
     }
     buildObjects() {
         let xOffset = this.xOffset;
-        this.objects_ = [];
+        let result = [];
         for (let xCnt = 0; xCnt < this.block.xRepeat; xCnt++) {
             let yOffset = this.yOffset;
             for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
                 let translateVector = new point_1.Point(xOffset, yOffset);
                 let blockObjects = polygonSet_1.copyObjects(this.block.objects);
                 polygonSet_1.translateObjects(blockObjects, translateVector);
-                this.objects_.push(...blockObjects);
+                result.push(...blockObjects);
                 yOffset += this.block.yDelta;
             }
             xOffset += this.block.xDelta;
         }
+        return result;
     }
     buildPrimitives() {
         let xOffset = this.xOffset;
@@ -1794,7 +1817,10 @@ function composeSolidImage(objects, union = false) {
             if (clear.length > 0) {
                 // Check if we are creating from something
                 if (image.length > 0) {
-                    image = polygonSet_1.subtractPolygonSet(image, clear).polygonSet;
+                    let tmpImage = polygonSet_1.subtractPolygonSet(image, clear).polygonSet;
+                    if (tmpImage) {
+                        image = tmpImage;
+                    }
                 }
                 clear = [];
             }
@@ -1811,7 +1837,10 @@ function composeSolidImage(objects, union = false) {
             if (!union) {
                 return polygonSet_1.subtractPolygonSet(image, clear);
             }
-            image = polygonSet_1.subtractPolygonSet(image, clear).polygonSet;
+            let tmpImage = polygonSet_1.subtractPolygonSet(image, clear).polygonSet;
+            if (tmpImage) {
+                image = tmpImage;
+            }
         }
     }
     if (union) {

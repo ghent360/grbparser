@@ -35,8 +35,12 @@ describe("ExcellonParser tests", () => {
         assert.equal(cmd.formatOutput(fmt), "T1C.1355B1000H");
         let cmd2 = new GCodeWithMods('G93X0075Y014', fmt, 'XY', 1);
         assert.equal(cmd2.codeId, 93);
-        assert.ok(Math.abs(cmd2.modifiers[0].value - 0.75) < 1e-10);
-        assert.ok(Math.abs(cmd2.modifiers[1].value - 1.4) < 1e-10);
+        assert.ok(cmd2.modifiers[0].value != undefined);
+        assert.ok(cmd2.modifiers[1].value != undefined);
+        if (cmd2.modifiers[0].value && cmd2.modifiers[1].value) {
+            assert.ok(Math.abs(cmd2.modifiers[0].value - 0.75) < 1e-10);
+            assert.ok(Math.abs(cmd2.modifiers[1].value - 1.4) < 1e-10);
+        }
         assert.equal(cmd2.formatOutput(fmt), "G93X0075Y014");
     });
     it('parse and reconstruct excellon files', () => {

@@ -24,7 +24,7 @@ function analyze(result:Array<any>) {
 
 function focus(result:Array<any>) {
     let parseErrors = result.filter(r => r.status == "parse error");
-    let byErrorText = {};
+    let byErrorText:any = {};
     parseErrors.forEach(e => {
         let msg = e.err.message;
         if (!msg) {
@@ -36,7 +36,7 @@ function focus(result:Array<any>) {
         }
         byErrorText[msg]++;
     });
-    let topErrors = [];
+    let topErrors:Array<{count:number, message:string}> = [];
     for (let key in byErrorText) {
         let count = byErrorText[key];
         topErrors.push({count:count, message:key});
@@ -60,7 +60,7 @@ function focus(result:Array<any>) {
 
 function focusSkip(result:Array<any>) {
     let parseErrors = result.filter(r => r.status == "skip");
-    let byErrorText = {};
+    let byErrorText:any = {};
     parseErrors.forEach(e => {
         let fileName:string = e.gerber;
         if (!fileName) {

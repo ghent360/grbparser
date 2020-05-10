@@ -36,6 +36,7 @@ class CommandParser {
     constructor() {
         this.lineNumber = 1;
         this.consumer = CommandParser.emptyConsumer;
+        this.commandLineStart = 0;
         this.command = "";
     }
     parseBlock(buffer) {
@@ -99,7 +100,7 @@ class ParserCommand {
 }
 var Units;
 (function (Units) {
-    Units[Units["MILIMETERS"] = 0] = "MILIMETERS";
+    Units[Units["MILLIMETERS"] = 0] = "MILLIMETERS";
     Units[Units["INCHES"] = 1] = "INCHES";
 })(Units = exports.Units || (exports.Units = {}));
 var CoordinateMode;
@@ -113,6 +114,7 @@ function holeBounds(hole) {
 class ExcellonState {
     constructor() {
         this.tools = new Map();
+        this.activeTool = -1;
         this.units = Units.INCHES;
         this.coordinateMode = CoordinateMode.ABSOLUTE;
         this.header = true;
@@ -124,7 +126,7 @@ class ExcellonState {
         this.holes = [];
     }
     toMM(v) {
-        if (this.units == Units.MILIMETERS) {
+        if (this.units == Units.MILLIMETERS) {
             return v;
         }
         return v * 25.4;
@@ -136,7 +138,7 @@ class ExcellonState {
         return v / 25.4;
     }
     fromMM(v) {
-        if (this.units == Units.MILIMETERS) {
+        if (this.units == Units.MILLIMETERS) {
             return v;
         }
         return v / 25.4;
@@ -170,7 +172,7 @@ class ExcellonParser {
             { exp: /^FMAT,.*/, cb: (cmd, lineNo) => new cmds.FileFormatCommand(cmd, lineNo) },
             { exp: /^INCH.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo) },
             { exp: /^METRIC.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo) },
-            { exp: /^DETECT,.*/, cb: null },
+            { exp: /^DETECT,.*/, cb: undefined },
             { exp: /^BLKD,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo) },
             { exp: /^SBK,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo) },
             { exp: /^SG,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo) },
@@ -213,18 +215,22 @@ class ExcellonParser {
     }
     flush() {
         this.commandParser.flush();
-        this.calcBounds();
+        this.ctx.bounds = this.calcBounds();
     }
     result() {
-        return { holes: this.ctx.holes, bounds: this.ctx.bounds };
+        let bounds = this.ctx.bounds;
+        if (!bounds) {
+            bounds = { minx: 0, miny: 0, maxx: 0, maxy: 0 };
+        }
+        return { holes: this.ctx.holes, bounds: bounds };
     }
     calcBounds() {
         if (this.ctx.holes.length < 1) {
-            return;
+            return { minx: 0, miny: 0, maxx: 0, maxy: 0 };
         }
         let bounds = holeBounds(this.ctx.holes[0]);
         this.ctx.holes.forEach(hole => bounds.merge(holeBounds(hole)));
-        this.ctx.bounds = bounds.toSimpleBounds();
+        return bounds.toSimpleBounds();
     }
     parseCommand(cmd, lineNo) {
         if (cmd.length == 0) {
@@ -235,7 +241,7 @@ class ExcellonParser {
             if (dispatcher == undefined) {
                 throw new ExcellonParseException(`Invalid command ${cmd.substr(0, 100)}`);
             }
-            if (dispatcher.cb == null) {
+            if (dispatcher.cb == undefined) {
                 //console.log(`WARNING: ignoring ${cmd}`);
                 return;
             }

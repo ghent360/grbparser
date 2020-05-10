@@ -17,8 +17,8 @@ export interface ArithmeticOperation {
 }
 export declare class ExpressionParser {
     private expression_;
-    private token;
-    private prevToken;
+    private token?;
+    private prevToken?;
     private bracketLevel;
     private static MatchVariable;
     private static MatchNumber;

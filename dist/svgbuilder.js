@@ -43,8 +43,6 @@ class StyleInfo {
     }
 }
 exports.StyleInfo = StyleInfo;
-class PolyInfo {
-}
 const svg_header = [
     "<?xml version=\"1.0\" standalone=\"no\"?>\n" +
         "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\"\n" +
@@ -72,15 +70,12 @@ class SVGBuilder {
         if (poly.length == 0) {
             return;
         }
-        let pi = new PolyInfo();
-        pi.polygons = poly;
-        pi.si = this.style.Clone();
-        this.PolyInfoList.push(pi);
+        this.PolyInfoList.push({ polygons: poly, si: this.style.Clone() });
     }
     SaveToSVG(file, scale = 1.0, margin = 10) {
         //calculate the bounding rect ...
         let i = 0;
-        let j;
+        let j = 0;
         while (i < this.PolyInfoList.length) {
             j = 0;
             while (j < this.PolyInfoList[i].polygons.length &&
@@ -199,6 +194,7 @@ class SVGBuilder {
             }
         }
         file.write("</svg>\n");
+        return true;
     }
 }
 exports.SVGBuilder = SVGBuilder;

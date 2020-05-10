@@ -21,7 +21,7 @@ const utils_1 = require("./utils");
 * Each command class would be able to construct a well formatted text representation of
 * the command suitable for output in a gerber file.
 *
-* Note that in the input text the command separators are stipped by the command tokenizer.
+* Note that in the input text the command separators are stripped by the command tokenizer.
 */
 /*
 ;FORMAT={-:-/ absolute / inch / decimal}
@@ -64,7 +64,7 @@ class CommentCommand {
         let numIntPos = numberFormat[0] != '-' ? Number.parseInt(numberFormat[0]) : -1;
         let numDecPos = numberFormat[1] != '-' ? Number.parseInt(numberFormat[1]) : -1;
         let position = format[1] == 'absolute' ? excellonparser_1.CoordinateMode.ABSOLUTE : excellonparser_1.CoordinateMode.RELATIVE;
-        let units = format[2] == 'inch' ? excellonparser_1.Units.INCHES : excellonparser_1.Units.MILIMETERS;
+        let units = format[2] == 'inch' ? excellonparser_1.Units.INCHES : excellonparser_1.Units.MILLIMETERS;
         let zeroFormat = primitives_1.CoordinateZeroFormat.NONE;
         switch (format[3]) {
             case 'decimal':
@@ -182,7 +182,7 @@ class CommaCommandBase {
     execute(ctx) {
         switch (this.name) {
             case 'M71':
-                ctx.units = excellonparser_1.Units.MILIMETERS;
+                ctx.units = excellonparser_1.Units.MILLIMETERS;
                 if (ctx.header && !ctx.fmtSet) {
                     ctx.fmt = new excellonparser_1.CoordinateFormatSpec(3, 3, primitives_1.CoordinateZeroFormat.LEADING);
                     ctx.fmtSet = true;
@@ -242,7 +242,7 @@ class UnitsCommand extends CommaCommandBase {
     }
     execute(ctx) {
         let zeroFormat = primitives_1.CoordinateZeroFormat.NONE;
-        let units = this.name == 'INCH' ? excellonparser_1.Units.INCHES : excellonparser_1.Units.MILIMETERS;
+        let units = this.name == 'INCH' ? excellonparser_1.Units.INCHES : excellonparser_1.Units.MILLIMETERS;
         if (this.values.length > 0) {
             switch (this.values[0]) {
                 case 'LZ':
@@ -275,7 +275,10 @@ class ToolPost {
         this.end = end;
     }
     isRange() {
-        return this.end && this.end != this.start;
+        if (this.end) {
+            return this.end != this.start;
+        }
+        return false;
     }
     toString() {
         if (this.isRange()) {
@@ -339,9 +342,11 @@ function parseMods(mods, fmt, allowedMods) {
     return result;
 }
 function findModifier(code, mods) {
-    let mod = mods.find(m => m.code == code);
-    if (mod) {
-        return mod.value;
+    if (mods) {
+        let mod = mods.find(m => m.code == code);
+        if (mod) {
+            return mod.value;
+        }
     }
     return undefined;
 }
@@ -418,17 +423,20 @@ class ToolDefinitionCommand {
     }
     formatOutput(fmt) {
         let result = "T" + this.tool.toString();
-        this.modifiers.forEach(m => result += formatMod(m, fmt));
+        if (this.modifiers) {
+            this.modifiers.forEach(m => result += formatMod(m, fmt));
+        }
         return result;
     }
     execute(ctx) {
-        if (this.tool.isRange()) {
+        let cMod = findModifier("C", this.modifiers);
+        if (this.tool.isRange() && this.tool.end && cMod) {
             for (let idx = this.tool.start; idx < this.tool.end; idx++) {
-                ctx.tools.set(idx, findModifier("C", this.modifiers));
+                ctx.tools.set(idx, cMod);
             }
         }
-        else {
-            ctx.tools.set(this.tool.start, findModifier("C", this.modifiers));
+        else if (cMod) {
+            ctx.tools.set(this.tool.start, cMod);
         }
     }
 }

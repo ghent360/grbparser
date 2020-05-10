@@ -939,6 +939,9 @@ class LMCommand {
         else if (code == "XY") {
             this.mirroring = primitives_1.ObjectMirroring.XY_AXIS;
         }
+        else {
+            throw new primitives_1.GerberParseException(`Invalid LM command format ${cmd}`);
+        }
     }
     formatOutput() {
         let result = "LM";
@@ -1048,15 +1051,24 @@ class SRCommand {
         let result = "SR";
         if (this.x != undefined) {
             result += "X" + this.x.toString();
+        }
+        if (this.y != undefined) {
             result += "Y" + this.y.toString();
+        }
+        if (this.i != undefined) {
             result += "I" + this.i.toString();
+        }
+        if (this.j != undefined) {
             result += "J" + this.j.toString();
         }
         result += "*";
         return result;
     }
     execute(ctx) {
-        if (this.x !== undefined) {
+        if (this.x != undefined &&
+            this.y != undefined &&
+            this.i != undefined &&
+            this.j != undefined) {
             ctx.tryEndRepeat(this);
             let params = new primitives_1.BlockParams(this.x, this.y, this.i, this.j);
             ctx.startRepeat(params);

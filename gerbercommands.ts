@@ -1026,6 +1026,8 @@ export class LMCommand implements GerberCommand {
             this.mirroring = ObjectMirroring.Y_AXIS;
         } else if (code == "XY") {
             this.mirroring = ObjectMirroring.XY_AXIS;
+        } else {
+            throw new GerberParseException(`Invalid LM command format ${cmd}`);
         }
     }
 
@@ -1144,8 +1146,14 @@ export class SRCommand implements GerberCommand {
         let result = "SR";
         if (this.x != undefined) {
             result += "X" + this.x.toString();
+        }
+        if (this.y != undefined) {            
             result += "Y" + this.y.toString();
+        }
+        if (this.i != undefined) {            
             result += "I" + this.i.toString();
+        }
+        if (this.j != undefined) {            
             result += "J" + this.j.toString();
         }
         result += "*";
@@ -1153,7 +1161,10 @@ export class SRCommand implements GerberCommand {
     }
 
     execute(ctx:GerberState) {
-        if (this.x !== undefined) {
+        if (this.x != undefined &&
+            this.y != undefined &&
+            this.i != undefined &&
+            this.j != undefined) {
             ctx.tryEndRepeat(this);
             let params = new BlockParams(this.x, this.y, this.i, this.j);
             ctx.startRepeat(params);

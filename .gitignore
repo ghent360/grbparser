@@ -1,8 +1,5 @@
-*.js
-*.js.map
 *.svg
 *.wasm
-package-lock.json
 build.ts
 dist/build.d.ts
 t/*

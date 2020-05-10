@@ -81,8 +81,8 @@ export declare class CoordinateFormatSpec {
 }
 export declare class GerberParseException {
     readonly message: string;
-    readonly line?: number;
-    constructor(message: string, line?: number);
+    readonly line?: number | undefined;
+    constructor(message: string, line?: number | undefined);
     toString(): string;
 }
 export interface ApertureBase {
@@ -107,9 +107,9 @@ export declare class ApertureDefinition implements ApertureBase {
     readonly apertureId: number;
     readonly templateName: string;
     readonly modifiers: number[];
-    private macro_;
+    private macro_?;
     private static standardTemplates;
-    private polygonSet_;
+    private polygonSet_?;
     constructor(apertureId: number, templateName: string, modifiers: number[]);
     isMacro(): boolean;
     isDrawable(): boolean;
@@ -173,13 +173,13 @@ export interface GraphicsOperations {
     block(block: Block, cmd: GerberCommand, ctx: GerberState): void;
 }
 export declare class GerberState {
-    private coordinateFormat_;
-    private coordinateUnits_;
+    private coordinateFormat_?;
+    private coordinateUnits_?;
     private currentPoint_;
     private currentApertureId_;
     interpolationMode: InterpolationMode;
     coordinateMode: CoordinateMode;
-    private quadrantMode_;
+    private quadrantMode_?;
     objectPolarity: ObjectPolarity;
     objectMirroring: ObjectMirroring;
     objectRotation: number;
@@ -193,10 +193,10 @@ export declare class GerberState {
     private primitives_;
     private isDone_;
     isOutlineMode: boolean;
-    get coordinateFormatSpec(): CoordinateFormatSpec;
-    set coordinateFormatSpec(value: CoordinateFormatSpec);
-    get coordinateUnits(): CoordinateUnits;
-    set coordinateUnits(value: CoordinateUnits);
+    get coordinateFormatSpec(): CoordinateFormatSpec | undefined;
+    set coordinateFormatSpec(value: CoordinateFormatSpec | undefined);
+    get coordinateUnits(): CoordinateUnits | undefined;
+    set coordinateUnits(value: CoordinateUnits | undefined);
     unitToMM(v: number): number;
     pointToMM(v: Point): Point;
     mmToUnit(v: number): number;
@@ -206,8 +206,8 @@ export declare class GerberState {
     set currentPointY(value: number);
     get currentApertureId(): number;
     set currentApertureId(value: number);
-    get quadrantMode(): QuadrantMode;
-    set quadrantMode(value: QuadrantMode);
+    get quadrantMode(): QuadrantMode | undefined;
+    set quadrantMode(value: QuadrantMode | undefined);
     get isDone(): boolean;
     get primitives(): Array<GraphicsPrimitive>;
     getObjectState(): ObjectState;
@@ -301,7 +301,7 @@ export declare class Line {
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
     readonly cmd: GerberCommand;
-    private objects_;
+    private objects_?;
     constructor(from: Point, to: Point, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
     get objects(): GraphicsObjects;
@@ -315,7 +315,7 @@ export declare class Circle {
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
     readonly cmd: GerberCommand;
-    private objects_;
+    private objects_?;
     constructor(center: Point, radius: number, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
     get objects(): GraphicsObjects;
@@ -332,7 +332,7 @@ export declare class Arc {
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
     readonly cmd: GerberCommand;
-    private objects_;
+    private objects_?;
     constructor(center: Point, radius: number, start: Point, end: Point, isCCW: boolean, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
     get objects(): GraphicsObjects;
@@ -345,7 +345,7 @@ export declare class Flash {
     readonly aperture: ApertureBase;
     readonly state: ObjectState;
     readonly cmd: GerberCommand;
-    private objects_;
+    private objects_?;
     constructor(center: Point, aperture: ApertureBase, state: ObjectState, cmd: GerberCommand);
     toString(): string;
     get objects(): GraphicsObjects;
@@ -356,7 +356,7 @@ export declare class Flash {
 export declare class Region {
     readonly state: ObjectState;
     readonly cmd: GerberCommand;
-    private objects_;
+    private objects_?;
     readonly contours: Array<RegionContour>;
     constructor(contours: Array<RegionContour>, state: ObjectState, cmd: GerberCommand);
     toString(): string;
@@ -374,17 +374,17 @@ export declare class Region {
 export declare class Repeat {
     readonly block: Block;
     readonly xOffset: number;
-    readonly yOffset: any;
+    readonly yOffset: number;
     readonly cmd: GerberCommand;
-    private objects_;
-    private primitives_;
-    constructor(block: Block, xOffset: number, yOffset: any, cmd: GerberCommand);
+    private objects_?;
+    private primitives_?;
+    constructor(block: Block, xOffset: number, yOffset: number, cmd: GerberCommand);
     toString(): string;
     get objects(): GraphicsObjects;
     get bounds(): Bounds;
     private buildObjects;
     private buildPrimitives;
-    get primitives(): GraphicsPrimitive[];
+    get primitives(): GraphicsPrimitive[] | undefined;
     translate(vector: Point): Repeat;
 }
 export declare type GraphicsPrimitive = Line | Circle | Arc | Flash | Region | Repeat;

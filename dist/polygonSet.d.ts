@@ -12,8 +12,8 @@ export declare function waitClipperLoad(): Promise<void>;
 export declare type Polygon = Float64Array;
 export declare type PolygonSet = Array<Polygon>;
 export interface PolygonSetWithBounds {
-    readonly polygonSet: PolygonSet;
-    readonly bounds: SimpleBounds;
+    readonly polygonSet?: PolygonSet;
+    readonly bounds?: SimpleBounds;
 }
 export declare function copyPolygon(poly: Polygon): Polygon;
 export declare function copyPolygonSet(polySet: PolygonSet): PolygonSet;

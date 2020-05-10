@@ -70,6 +70,7 @@ function formatFixedNumber(value, precision, intPos, skip) {
             strValue = strValue.substr(0, endTrim + 1);
             return sign + strValue;
     }
+    throw new FormatException(`Value ${value} can not be formatted.`);
 }
 exports.formatFixedNumber = formatFixedNumber;
 function parseCoordinate(coordinate, numIntPos, numDecPos, zeroSkip) {

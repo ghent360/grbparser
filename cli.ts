@@ -6,7 +6,7 @@ import { GerberToPolygons, Init } from "./converters";
 import { ExcellonParser } from "./excellonparser";
 const {performance} = require('perf_hooks');
 
-let results = [];
+let results:Array<any> = [];
 
 async function parseGerber(zipFileName:string, fileName:string, content:string) {
     try {

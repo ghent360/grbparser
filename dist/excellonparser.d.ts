@@ -9,8 +9,8 @@
 import { CoordinateZeroFormat, SimpleBounds } from "./primitives";
 export declare class ExcellonParseException {
     readonly message: string;
-    readonly line?: number;
-    constructor(message: string, line?: number);
+    readonly line?: number | undefined;
+    constructor(message: string, line?: number | undefined);
     toString(): string;
 }
 /**
@@ -43,10 +43,10 @@ export interface ExcellonCommand {
     readonly name: string;
     readonly lineNo?: number;
     formatOutput(fmt: CoordinateFormatSpec): string;
-    execute(ctx: ExcellonState): any;
+    execute(ctx: ExcellonState): void;
 }
 export declare enum Units {
-    MILIMETERS = 0,
+    MILLIMETERS = 0,
     INCHES = 1
 }
 export declare enum CoordinateMode {
@@ -74,7 +74,7 @@ export declare class ExcellonState {
     xPos: number;
     yPos: number;
     holes: Array<DrillHole>;
-    bounds: SimpleBounds;
+    bounds?: SimpleBounds;
     toMM(v: number): number;
     toInch(v: number): number;
     fromMM(v: number): number;

@@ -35,7 +35,7 @@ export class CommandParser {
     public lineNumber = 1;
     private consumer:(cmd:string, line:number) => void
         = CommandParser.emptyConsumer;
-    private commandLineStart:number;
+    private commandLineStart:number = 0;
     private command = "";
 
     parseBlock(buffer:string) {
@@ -97,7 +97,7 @@ export interface ExcellonCommand {
     readonly name:string;
     readonly lineNo?:number;
     formatOutput(fmt:CoordinateFormatSpec):string;
-    execute(ctx:ExcellonState);
+    execute(ctx:ExcellonState):void;
 }
 
 class ParserCommand {
@@ -107,11 +107,11 @@ class ParserCommand {
 
 interface Parslet {
     exp:RegExp;
-    cb:(cmd:string, lineNo:number) => ExcellonCommand;
+    cb?:(cmd:string, lineNo:number) => ExcellonCommand;
 }
 
 export enum Units {
-    MILIMETERS,
+    MILLIMETERS,
     INCHES
 }
 
@@ -140,7 +140,7 @@ function holeBounds(hole:DrillHole):Bounds {
 
 export class ExcellonState {
     public tools:Map<number, number> = new Map();
-    public activeTool:number;
+    public activeTool:number = -1;
     public units:Units = Units.INCHES;
     public coordinateMode:CoordinateMode = CoordinateMode.ABSOLUTE;
     public header:boolean = true;
@@ -150,10 +150,10 @@ export class ExcellonState {
     public xPos:number = 0;
     public yPos:number = 0;
     public holes:Array<DrillHole> = [];
-    public bounds:SimpleBounds;
+    public bounds?:SimpleBounds;
 
     public toMM(v:number):number {
-        if (this.units == Units.MILIMETERS) {
+        if (this.units == Units.MILLIMETERS) {
             return v;
         }
         return v * 25.4;
@@ -167,7 +167,7 @@ export class ExcellonState {
     }
 
     public fromMM(v:number):number {
-        if (this.units == Units.MILIMETERS) {
+        if (this.units == Units.MILLIMETERS) {
             return v;
         }
         return v / 25.4;
@@ -204,7 +204,7 @@ export class ExcellonParser {
         {exp:/^FMAT,.*/, cb: (cmd, lineNo) => new cmds.FileFormatCommand(cmd, lineNo)},
         {exp:/^INCH.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo)},
         {exp:/^METRIC.*/, cb: (cmd, lineNo) => new cmds.UnitsCommand(cmd, lineNo)},
-        {exp:/^DETECT,.*/, cb: null},
+        {exp:/^DETECT,.*/, cb: undefined},
         {exp:/^BLKD,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^SBK,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
         {exp:/^SG,.*/, cb: (cmd, lineNo) => new cmds.CommaCommandBase(cmd, lineNo)},
@@ -251,20 +251,24 @@ export class ExcellonParser {
 
     flush() {
         this.commandParser.flush();
-        this.calcBounds();
+        this.ctx.bounds = this.calcBounds();
     }
 
     result():ExcellonParserResult {
-        return {holes:this.ctx.holes, bounds:this.ctx.bounds};
+        let bounds = this.ctx.bounds;
+        if (!bounds) {
+            bounds = {minx:0, miny:0, maxx:0,maxy:0};
+        }
+        return {holes:this.ctx.holes, bounds:bounds};
     }
 
-    private calcBounds() {
+    private calcBounds():SimpleBounds {
         if (this.ctx.holes.length < 1) {
-            return;
+            return {minx:0, miny:0, maxx:0,maxy:0};
         }
         let bounds = holeBounds(this.ctx.holes[0]);
         this.ctx.holes.forEach(hole => bounds.merge(holeBounds(hole)));
-        this.ctx.bounds = bounds.toSimpleBounds();
+        return bounds.toSimpleBounds();
     }
 
     private parseCommand(cmd:string, lineNo:number) {
@@ -276,7 +280,7 @@ export class ExcellonParser {
             if (dispatcher == undefined) {
                 throw new ExcellonParseException(`Invalid command ${cmd.substr(0, 100)}`);
             }
-            if (dispatcher.cb == null) {
+            if (dispatcher.cb == undefined) {
                 //console.log(`WARNING: ignoring ${cmd}`);
                 return;
             }

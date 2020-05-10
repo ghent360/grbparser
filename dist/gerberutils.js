@@ -31,8 +31,6 @@ var BoardFileType;
     BoardFileType[BoardFileType["Centroid"] = 2] = "Centroid";
     BoardFileType[BoardFileType["Unsupported"] = 3] = "Unsupported";
 })(BoardFileType = exports.BoardFileType || (exports.BoardFileType = {}));
-class FileNameDescriptor {
-}
 const gerFileDescriptors = [
     { fileString: ".topsoldermask", boardType: { side: BoardSide.Top, layer: BoardLayer.SolderMask } },
     { fileString: ".topsilkscreen", boardType: { side: BoardSide.Top, layer: BoardLayer.Silk } },

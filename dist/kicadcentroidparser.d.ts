@@ -11,8 +11,8 @@ import { Point } from "./point";
 import { BoardSide } from "./gerberutils";
 export declare class KicadCentroidParseException {
     readonly message: string;
-    readonly line?: number;
-    constructor(message: string, line?: number);
+    readonly line?: number | undefined;
+    constructor(message: string, line?: number | undefined);
     toString(): string;
 }
 export interface ComponentPosition {
@@ -35,13 +35,13 @@ export interface KicadCentroidParserResult {
  */
 export declare class KicadCentroidParser {
     private csvParser;
-    private header;
+    private header?;
     private nameIdx;
     private xPosIdx;
     private rotationIdx;
     private layerIdx;
     private components;
-    private bounds;
+    private bounds?;
     constructor();
     parseBlock(block: string): void;
     flush(): void;

@@ -157,8 +157,8 @@ interface Token {
 
 export class ExpressionParser {
     private expression_:string;
-    private token:Token;
-    private prevToken:Token;
+    private token?:Token;
+    private prevToken?:Token;
     private bracketLevel = 0;
 
     private static MatchVariable = /^\$(\d+)/;
@@ -205,11 +205,13 @@ export class ExpressionParser {
 }
 
     private consume() {
-        this.expression_ = this.expression_.substr(this.token.len).trim();
+        if (this.token) {
+            this.expression_ = this.expression_.substr(this.token.len).trim();
+        }
     }
 
     private accept(id:TokenID):boolean {
-        if (this.token.id == id) {
+        if (this.token && this.token.id == id) {
             this.nextToken();
             return true;
         }
@@ -224,10 +226,10 @@ export class ExpressionParser {
     }
 
     private operand():ArithmeticOperation {
-        if (this.accept(TokenID.VARIABLE)) {
+        if (this.accept(TokenID.VARIABLE) && this.prevToken) {
             return new Variable(Number.parseInt(this.prevToken.token));
         }
-        if (this.accept(TokenID.NUMBER)) {
+        if (this.accept(TokenID.NUMBER) && this.prevToken) {
             return new ConstantNumber(Number.parseFloat(this.prevToken.token));
         }
         if (this.accept(TokenID.OPEN_BRACKET)) {
@@ -254,7 +256,8 @@ export class ExpressionParser {
 
     private term():ArithmeticOperation {
         let factor1 = this.factor();
-        while (this.token.id == TokenID.TIMES || this.token.id == TokenID.DIVIDE) {
+        while (this.token && 
+              (this.token.id == TokenID.TIMES || this.token.id == TokenID.DIVIDE)) {
             let isTimes = this.token.id == TokenID.TIMES;
             this.nextToken();
             let factor2 = this.factor();
@@ -269,7 +272,8 @@ export class ExpressionParser {
 
     private expression():ArithmeticOperation {
         let term1 = this.term();
-        while (this.token.id == TokenID.PLUS || this.token.id == TokenID.MINUS) {
+        while (this.token &&
+              (this.token.id == TokenID.PLUS || this.token.id == TokenID.MINUS)) {
             let isPlus = this.token.id == TokenID.PLUS;
             this.nextToken();
             let term2 = this.term();

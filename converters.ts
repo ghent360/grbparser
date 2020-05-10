@@ -98,10 +98,9 @@ export class SVGConverter extends ConverterBase<string> {
     public margin = 10;
     public layerColor = 0xff1f1c;
     public precision:number = 3;
-    private bounds_:Bounds;
-    private width_:number;
-    private height_:number
-    private offset_:Point;
+    private width_:number = 0;
+    private height_:number = 0;
+    private offset_:Point = new Point(0, 0);
     private objects_:GraphicsObjects = [];
 
     convertLine(l:Line):string {
@@ -135,13 +134,13 @@ export class SVGConverter extends ConverterBase<string> {
     }
 
     header(primitives:Array<GraphicsPrimitive>):Array<string> {
-        this.bounds_ = primitives[0].bounds;
-        primitives.forEach(p => this.bounds_.merge(p.bounds));
-        this.width_ = this.bounds_.width * this.scale + this.margin * 2;
-        this.height_ = this.bounds_.height * this.scale + this.margin * 2;
+        let bounds = primitives[0].bounds;
+        primitives.forEach(p => bounds.merge(p.bounds));
+        this.width_ = bounds.width * this.scale + this.margin * 2;
+        this.height_ = bounds.height * this.scale + this.margin * 2;
         this.offset_ = new Point(
-            -this.bounds_.min.x * this.scale  + this.margin,
-            -this.bounds_.min.y * this.scale + this.margin);
+            -bounds.min.x * this.scale  + this.margin,
+            -bounds.min.y * this.scale + this.margin);
         
         return ['<?xml version="1.0" standalone="no"?>',
                 '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">',
@@ -162,9 +161,12 @@ export class SVGConverter extends ConverterBase<string> {
         let solids = composeSolidImage(this.objects_);
         wires = connectWires(wires);
         //console.log(`Solids ${solids.length} wires ${wires.length}`);
-        let svgSolids = this.polySetToSolidPath(solids.polygonSet);
-        let svgWires = this.polySetToWirePath(wires);
-        return [svgSolids, svgWires, "</g>", "</svg>"];
+        if (solids.polygonSet) {
+            let svgSolids = this.polySetToSolidPath(solids.polygonSet);
+            let svgWires = this.polySetToWirePath(wires);
+            return [svgSolids, svgWires, "</g>", "</svg>"];
+        }
+        return [];
     }
 
     private polySetToSolidPath(polySet:PolygonSet):string {
@@ -251,7 +253,7 @@ export class SVGConverter extends ConverterBase<string> {
     }
 }
 
-export class PolygonConverterResult {
+export interface PolygonConverterResult {
     readonly solids:PolygonSet;
     readonly thins:PolygonSet;
     readonly bounds:SimpleBounds;
@@ -293,7 +295,12 @@ export function GerberToPolygons(
         .forEach(o => {
             thins.push(...o.polySet.filter(p => p.length > 2));
         });
-    let bounds = image.bounds;
+    let bounds:SimpleBounds;
+    if (image.bounds) {
+        bounds = image.bounds;
+    } else {
+        bounds = {minx:0, miny:0, maxx:0, maxy : 0};
+    }
     if (thins.length > 0) {
         let thinBounds = polySetBounds(thins);
         if (image.bounds)
@@ -313,7 +320,7 @@ export function GerberToPolygons(
     console.log(`Total   Time ${performance.now() - start}ms`);
 */
     return {
-        solids: image.polygonSet,
+        solids: image.polygonSet ? image.polygonSet : [],
         thins: connectWires(thins, tolerance),
         bounds: bounds,
         primitives: primitives

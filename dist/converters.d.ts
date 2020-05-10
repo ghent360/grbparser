@@ -33,7 +33,6 @@ export declare class SVGConverter extends ConverterBase<string> {
     margin: number;
     layerColor: number;
     precision: number;
-    private bounds_;
     private width_;
     private height_;
     private offset_;
@@ -52,7 +51,7 @@ export declare class SVGConverter extends ConverterBase<string> {
     private static colorToHtml;
     static GerberToSvg(content: string, isOutline?: boolean, layerColor?: number, scale?: number, margin?: number): string;
 }
-export declare class PolygonConverterResult {
+export interface PolygonConverterResult {
     readonly solids: PolygonSet;
     readonly thins: PolygonSet;
     readonly bounds: SimpleBounds;

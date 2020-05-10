@@ -60,9 +60,9 @@ export interface Point {
     y:number;
 }
 
-class PolyInfo {
-    public polygons:PolygonSet;
-    public si:StyleInfo;
+interface PolyInfo {
+    polygons:PolygonSet;
+    si:StyleInfo;
 }
 
 const svg_header:string[] = [
@@ -96,16 +96,13 @@ export class SVGBuilder {
         if (poly.length == 0) {
             return;
         }
-        let pi = new PolyInfo();
-        pi.polygons = poly;
-        pi.si = this.style.Clone();
-        this.PolyInfoList.push(pi);
+        this.PolyInfoList.push({polygons:poly, si:this.style.Clone()});
     }
 
     public SaveToSVG(file:fs.WriteStream, scale:number = 1.0, margin:number = 10):boolean {
         //calculate the bounding rect ...
         let i = 0;
-        let j:number;
+        let j = 0;
         while (i < this.PolyInfoList.length) {
             j = 0;
             while (j < this.PolyInfoList[i].polygons.length &&
@@ -229,5 +226,6 @@ export class SVGBuilder {
             }
         }
         file.write("</svg>\n");
+        return true;
     }
 }

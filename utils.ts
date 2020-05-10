@@ -33,7 +33,8 @@ export class FormatException {
     }
 }
 
-export function formatFixedNumber(value:number, precision:number, intPos:number, skip:CoordinateZeroFormat):string {
+export function formatFixedNumber(
+    value:number, precision:number, intPos:number, skip:CoordinateZeroFormat):string {
     let totalLen = intPos + precision;
     let sign = "";
     if (value < 0) {
@@ -70,6 +71,7 @@ export function formatFixedNumber(value:number, precision:number, intPos:number,
             strValue = strValue.substr(0, endTrim + 1);
             return sign + strValue;
     }
+    throw new FormatException(`Value ${value} can not be formatted.`);
 }
 
 export function parseCoordinate(

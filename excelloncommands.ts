@@ -28,7 +28,7 @@ import { parseCoordinate, formatFixedNumber } from "./utils";
  * Each command class would be able to construct a well formatted text representation of
  * the command suitable for output in a gerber file.
  * 
- * Note that in the input text the command separators are stipped by the command tokenizer.
+ * Note that in the input text the command separators are stripped by the command tokenizer.
  */
 
  /*
@@ -76,7 +76,7 @@ export class CommentCommand implements ExcellonCommand {
         let numIntPos = numberFormat[0] != '-' ? Number.parseInt(numberFormat[0]) : -1;
         let numDecPos = numberFormat[1] != '-' ? Number.parseInt(numberFormat[1]) : -1;
         let position:CoordinateMode = format[1] == 'absolute' ? CoordinateMode.ABSOLUTE : CoordinateMode.RELATIVE;
-        let units:Units = format[2] == 'inch' ? Units.INCHES : Units.MILIMETERS;
+        let units:Units = format[2] == 'inch' ? Units.INCHES : Units.MILLIMETERS;
         let zeroFormat:CoordinateZeroFormat = CoordinateZeroFormat.NONE;
         switch (format[3]) {
             case 'decimal':
@@ -206,7 +206,7 @@ export class CommaCommandBase implements ExcellonCommand {
     execute(ctx:ExcellonState) {
         switch(this.name) {
             case 'M71':
-                ctx.units = Units.MILIMETERS;
+                ctx.units = Units.MILLIMETERS;
                 if (ctx.header && !ctx.fmtSet) {
                     ctx.fmt = new CoordinateFormatSpec(3, 3, CoordinateZeroFormat.LEADING);
                     ctx.fmtSet = true;
@@ -264,7 +264,7 @@ export class UnitsCommand extends CommaCommandBase {
 
     execute(ctx:ExcellonState) {
         let zeroFormat:CoordinateZeroFormat = CoordinateZeroFormat.NONE;
-        let units = this.name == 'INCH' ? Units.INCHES : Units.MILIMETERS;
+        let units = this.name == 'INCH' ? Units.INCHES : Units.MILLIMETERS;
         if (this.values.length > 0) {
             switch (this.values[0]) {
                 case 'LZ':
@@ -299,8 +299,11 @@ export class ToolPost {
     constructor(readonly start:number, readonly end?:number) {
     }
 
-    isRange() {
-        return this.end && this.end != this.start;
+    isRange():boolean {
+        if (this.end) {
+            return this.end != this.start;
+        }
+        return false;
     }
 
     toString():string {
@@ -366,10 +369,12 @@ function parseMods(mods:string, fmt:CoordinateFormatSpec, allowedMods?:string):A
     return result;
 }
 
-function findModifier(code:string, mods:Array<Modifier>):number {
-    let mod = mods.find(m => m.code == code);
-    if (mod) {
-        return mod.value;
+function findModifier(code:string, mods:Array<Modifier>|undefined):number|undefined {
+    if (mods) {
+        let mod = mods.find(m => m.code == code);
+        if (mod) {
+            return mod.value;
+        }
     }
     return undefined;
 }
@@ -435,7 +440,7 @@ function formatMod(mod:Modifier, fmt:CoordinateFormatSpec):string {
 export class ToolDefinitionCommand implements ExcellonCommand {
     readonly name = 'T';
     readonly tool:ToolPost;
-    readonly modifiers:Array<Modifier>;
+    readonly modifiers?:Array<Modifier>;
 
     private static match = /^T(\d+(?:,\d+)?)((?:[CFSHBZ](?:[+\-])?(?:\d*)(?:\.\d*)?)+)$/;
     private static toolMatch = /^(\d+)(?:,(\d+))?$/;
@@ -459,17 +464,20 @@ export class ToolDefinitionCommand implements ExcellonCommand {
 
     formatOutput(fmt:CoordinateFormatSpec):string {
         let result = "T" + this.tool.toString();
-        this.modifiers.forEach(m => result += formatMod(m, fmt));
+        if (this.modifiers) {
+            this.modifiers.forEach(m => result += formatMod(m, fmt));
+        }
         return result;
     }
 
     execute(ctx:ExcellonState) {
-        if (this.tool.isRange()) {
+        let cMod = findModifier("C", this.modifiers);
+        if (this.tool.isRange() && this.tool.end && cMod) {
             for(let idx = this.tool.start; idx < this.tool.end; idx++) {
-                ctx.tools.set(idx, findModifier("C", this.modifiers));
+                ctx.tools.set(idx, cMod);
             }
-        } else {
-            ctx.tools.set(this.tool.start, findModifier("C", this.modifiers));
+        } else if (cMod) {
+            ctx.tools.set(this.tool.start, cMod);
         }
     }
 }
@@ -666,8 +674,8 @@ export class CoordinatesCommand implements ExcellonCommand {
     }
 
     execute(ctx:ExcellonState) {
-        let x:number = findModifier("X", this.modifiers);
-        let y:number = findModifier("Y", this.modifiers);
+        let x = findModifier("X", this.modifiers);
+        let y = findModifier("Y", this.modifiers);
         let isRelative = ctx.coordinateMode == CoordinateMode.RELATIVE;
         if (x === undefined) {
             x = isRelative ? 0 : ctx.xPos;

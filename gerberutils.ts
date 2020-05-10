@@ -29,7 +29,7 @@ export enum BoardFileType {
     Unsupported
 }
 
-class FileNameDescriptor {
+interface FileNameDescriptor {
     readonly fileString:string;
     readonly boardType: { side: BoardSide, layer: BoardLayer };
 }

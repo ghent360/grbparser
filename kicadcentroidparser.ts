@@ -33,11 +33,11 @@ export interface ComponentPosition {
     formatOutput():string;
 }
 
-class ComponentPositionImpl {
-    name:string;
+class ComponentPositionImpl implements ComponentPosition {
+    name:string = "";
     center:Point = new Point();
-    rotation:number;
-    layer:BoardSide;
+    rotation:number = 0;
+    layer:BoardSide = BoardSide.Unknown;
     attributes:Array<string> = [];
 
     public formatOutput(
@@ -102,13 +102,13 @@ export class KicadCentroidParser {
         skip_empty_lines: true
     });
 
-    private header:Array<string> = null;
+    private header?:Array<string> = undefined;
     private nameIdx = -1;
     private xPosIdx = -1;
     private rotationIdx = -1;
     private layerIdx = -1;
     private components:Array<ComponentPosition> = [];
-    private bounds:SimpleBounds;
+    private bounds?:SimpleBounds;
 
     constructor() {
         this.csvParser.on("readable", () => {
@@ -142,18 +142,22 @@ export class KicadCentroidParser {
                 break;
             }
         }
-        return {components:this.components, bounds:this.bounds, side:side};
+        let bounds = this.bounds;
+        if (!bounds) {
+            bounds = {minx:0, miny:0, maxx:0, maxy:0};
+        }
+        return {components:this.components, bounds:bounds, side:side};
     }
 
     private processRecord(record:any):void {
         if (!this.header) {
             this.header = record as Array<string>;
-            this.processHeader();
+            this.processHeader(this.header);
             return;
         }
         let cp = new ComponentPositionImpl();
-        record.forEach((elm, idx) => {
-            elm = elm.trim('\r');
+        record.forEach((elm:string, idx:number) => {
+            elm = elm.trim();
             switch(idx) {
                 case this.nameIdx: cp.name = elm; break;
                 case this.xPosIdx: cp.center.x = Number.parseFloat(elm); break;
@@ -174,15 +178,15 @@ export class KicadCentroidParser {
         return BoardSide.Unknown;
     }
 
-    private processHeader():void {
-        this.nameIdx = this.header.indexOf("Designator");
-        if (this.nameIdx < 0) this.nameIdx = this.header.indexOf("Ref");
-        this.xPosIdx = this.header.indexOf("MidX");
-        if (this.xPosIdx < 0) this.xPosIdx = this.header.indexOf("PosX");
-        this.rotationIdx = this.header.indexOf("Rotation");
-        if (this.rotationIdx < 0) this.rotationIdx = this.header.indexOf("Rot");
-        this.layerIdx = this.header.indexOf("Layer");
-        if (this.layerIdx < 0) this.layerIdx = this.header.indexOf("Side");
+    private processHeader(header:Array<string>):void {
+        this.nameIdx = header.indexOf("Designator");
+        if (this.nameIdx < 0) this.nameIdx = header.indexOf("Ref");
+        this.xPosIdx = header.indexOf("MidX");
+        if (this.xPosIdx < 0) this.xPosIdx = header.indexOf("PosX");
+        this.rotationIdx = header.indexOf("Rotation");
+        if (this.rotationIdx < 0) this.rotationIdx = header.indexOf("Rot");
+        this.layerIdx = header.indexOf("Layer");
+        if (this.layerIdx < 0) this.layerIdx = header.indexOf("Side");
     }
 
     private calcBounds() {

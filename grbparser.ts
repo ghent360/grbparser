@@ -27,7 +27,7 @@ export class CommandParser {
     private nextTokenSeparator = '*';
     private consumer:(cmd:string, line:number, isAdvanced:boolean) => void
         = CommandParser.emptyConsumer;
-    private commandLineStart:number;
+    private commandLineStart:number = 0;
     private command = "";
     private errorHandler:(line:number, buffer:string, idx:number) => void
         = CommandParser.consoleError;
@@ -176,6 +176,8 @@ class ParserCommand {
     }
 }
 
+type ParserCallback = (cmd:string, lineNo:number) => (GerberCommand | undefined);
+
 /**
  * The main gerber parser class.
  * 
@@ -183,12 +185,12 @@ class ParserCommand {
  */
 export class GerberParser {
     private commandParser:CommandParser = new CommandParser();
-    private fmt:CoordinateFormatSpec;
+    private fmt?:CoordinateFormatSpec;
     private lastDcmd:number = -1;
 
     // Order in this array is important, because some regex are more broad
     // and would detect previous commands.
-    private commandDispatcher:Array<[RegExp, (cmd:string, lineNo:number) => GerberCommand]> = [
+    private commandDispatcher:Array<[RegExp, ParserCallback | undefined]> = [
         [/^FS/, (cmd, lineNo:number) => new cmds.FSCommand(cmd, lineNo)],
         [/^MO/, (cmd, lineNo:number) => new cmds.MOCommand(cmd, lineNo)],
         [/^ADD/, (cmd, lineNo:number) => new cmds.ADCommand(cmd, lineNo)],
@@ -198,9 +200,17 @@ export class GerberParser {
         [/^G[0]*4$/, (cmd, lineNo:number) => new cmds.G04Command(cmd, lineNo)],
         [/D[0]*1$/, (cmd, lineNo:number) => {
             this.lastDcmd = 1;
+            if (!this.fmt) {
+                console.log("Format is not defined");
+                return undefined;
+            }
             return new cmds.D01Command(cmd, this.fmt, lineNo);
         }],
         [/^(?:[XYIJ][\+\-]?\d+){1,4}$/, (cmd, lineNo:number) => {
+            if (!this.fmt) {
+                console.log("Format is not defined");
+                return undefined;
+            }
             if (this.lastDcmd == 1) {
                 return new cmds.D01Command(cmd, this.fmt, lineNo);
             } else if (this.lastDcmd == 2) {
@@ -208,13 +218,21 @@ export class GerberParser {
             } else if (this.lastDcmd == 3) {
                 return new cmds.D03Command(cmd, this.fmt, lineNo);
             }
-            return null;
+            return undefined;
         }],
         [/D[0]*2$/, (cmd, lineNo:number) => {
+            if (!this.fmt) {
+                console.log("Format is not defined");
+                return undefined;
+            }
             this.lastDcmd = 2;
             return new cmds.D02Command(cmd, this.fmt, lineNo);
         }],
         [/D[0]*3$/, (cmd, lineNo:number) => {
+            if (!this.fmt) {
+                console.log("Format is not defined");
+                return undefined;
+            }
             this.lastDcmd = 3;
             return new cmds.D03Command(cmd, this.fmt, lineNo);
         }],
@@ -239,25 +257,25 @@ export class GerberParser {
         [/^LS/, (cmd, lineNo:number) => new cmds.LSCommand(cmd, lineNo)],
         [/^SR/, (cmd, lineNo:number) => new cmds.SRCommand(cmd, lineNo)],
         [/^M0*[02]/, (cmd, lineNo:number) => new cmds.M02Command(cmd, lineNo)],
-        [/^M0*1/, null],
+        [/^M0*1/, undefined],
         [/^T(A|F|O)/, (cmd, lineNo:number) => new cmds.TCommand(cmd, lineNo)],
         [/^TD/, (cmd, lineNo:number) => new cmds.TDCommand(cmd, lineNo)],
-        [/^IP(?:POS|NEG)\*$/, null],
-        [/^LN(?:.+)/, null],
-        [/^IN.*\*$/, null],
-        [/^ICAS\*$/, null],
-        [/^IJ(?:.+)/, null],
-        [/^IO(?:.+)/, null],
-        [/^IR(?:.+)/, null],
-        [/^AS(?:.+)/, null],
-        [/^KO(?:.+)/, null],
-        [/^MI(?:.+)/, null],
-        [/^OF(?:.+)/, null],
-        [/^RO(?:.+)/, null],
-        [/^SF(?:.+)/, null],
-        [/^G[0]*0$/, null], // Move
-        [/^G[0]*54$/, null], // Prepare tool
-        [/^G[0]*55$/, null]  // Prepare to flash
+        [/^IP(?:POS|NEG)\*$/, undefined],
+        [/^LN(?:.+)/, undefined],
+        [/^IN.*\*$/, undefined],
+        [/^ICAS\*$/, undefined],
+        [/^IJ(?:.+)/, undefined],
+        [/^IO(?:.+)/, undefined],
+        [/^IR(?:.+)/, undefined],
+        [/^AS(?:.+)/, undefined],
+        [/^KO(?:.+)/, undefined],
+        [/^MI(?:.+)/, undefined],
+        [/^OF(?:.+)/, undefined],
+        [/^RO(?:.+)/, undefined],
+        [/^SF(?:.+)/, undefined],
+        [/^G[0]*0$/, undefined], // Move
+        [/^G[0]*54$/, undefined], // Prepare tool
+        [/^G[0]*55$/, undefined]  // Prepare to flash
     ];
     private commands:Array<ParserCommand> = [];
 
@@ -278,19 +296,21 @@ export class GerberParser {
             if (dispatcher == undefined) {
                 throw new GerberParseException(`Invalid command ${cmd.substr(0, 100)}`);
             }
-            if (dispatcher[1] == null) {
+            if (dispatcher[1] == undefined) {
                 //console.log(`WARNING: ignoring ${cmd}`);
                 return;
             }
             let command = dispatcher[1](cmd, lineNo);
-            this.commands.push(new ParserCommand(command, lineNo));
-            if (command.name === "FS") {
-                let fsCmd = command as cmds.FSCommand;
-                if (this.fmt != undefined) {
-                    //throw new GerberParseException("Format is already defined");
-                    console.log("Format is already defined");
+            if (command) {
+                this.commands.push(new ParserCommand(command, lineNo));
+                if (command.name === "FS") {
+                    let fsCmd = command as cmds.FSCommand;
+                    if (this.fmt != undefined) {
+                        //throw new GerberParseException("Format is already defined");
+                        console.log("Format is already defined");
+                    }
+                    this.fmt = fsCmd.coordinateFormat;
                 }
-                this.fmt = fsCmd.coordinateFormat;
             }
         } catch (e) {
             console.log(`Error parsing gerber file at line ${lineNo}.`);
@@ -302,6 +322,10 @@ export class GerberParser {
 
     public output():string {
         let result = "";
+        if (!this.fmt) {
+            console.log("Format is not defined");
+            return "";
+        }
         for (let parseCommand of this.commands) {
             let cmd = parseCommand.cmd;
             let cmdString = cmd.formatOutput(this.fmt);

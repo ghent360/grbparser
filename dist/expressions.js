@@ -177,10 +177,12 @@ class ExpressionParser {
         return;
     }
     consume() {
-        this.expression_ = this.expression_.substr(this.token.len).trim();
+        if (this.token) {
+            this.expression_ = this.expression_.substr(this.token.len).trim();
+        }
     }
     accept(id) {
-        if (this.token.id == id) {
+        if (this.token && this.token.id == id) {
             this.nextToken();
             return true;
         }
@@ -193,10 +195,10 @@ class ExpressionParser {
         throw new Error(`Expected token ID ${TokenID[id]}`);
     }
     operand() {
-        if (this.accept(TokenID.VARIABLE)) {
+        if (this.accept(TokenID.VARIABLE) && this.prevToken) {
             return new Variable(Number.parseInt(this.prevToken.token));
         }
-        if (this.accept(TokenID.NUMBER)) {
+        if (this.accept(TokenID.NUMBER) && this.prevToken) {
             return new ConstantNumber(Number.parseFloat(this.prevToken.token));
         }
         if (this.accept(TokenID.OPEN_BRACKET)) {
@@ -222,7 +224,8 @@ class ExpressionParser {
     }
     term() {
         let factor1 = this.factor();
-        while (this.token.id == TokenID.TIMES || this.token.id == TokenID.DIVIDE) {
+        while (this.token &&
+            (this.token.id == TokenID.TIMES || this.token.id == TokenID.DIVIDE)) {
             let isTimes = this.token.id == TokenID.TIMES;
             this.nextToken();
             let factor2 = this.factor();
@@ -237,7 +240,8 @@ class ExpressionParser {
     }
     expression() {
         let term1 = this.term();
-        while (this.token.id == TokenID.PLUS || this.token.id == TokenID.MINUS) {
+        while (this.token &&
+            (this.token.id == TokenID.PLUS || this.token.id == TokenID.MINUS)) {
             let isPlus = this.token.id == TokenID.PLUS;
             this.nextToken();
             let term2 = this.term();

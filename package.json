@@ -2,7 +2,10 @@
   "name": "grbparser",
   "version": "0.0.1",
   "description": "A package to parse Gerber files.",
-  "main": "index.js",
+  "main": "converters.js",
+  "files": [
+    "lib/**/*"
+  ],
   "scripts": {
     "test": "mocha --require ts-node/register 'test/**/*.spec.ts'",
     "dist": "date -u +\"export const Build='%g%m%d.%H%M';\" >build.ts && tsc -p ./tsconfig.release.json --outDir dist/"

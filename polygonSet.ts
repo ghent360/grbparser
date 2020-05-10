@@ -27,8 +27,8 @@ export async function waitClipperLoad() {
 export type Polygon = Float64Array;
 export type PolygonSet = Array<Polygon>;
 export interface PolygonSetWithBounds {
-    readonly polygonSet:PolygonSet;
-    readonly bounds:SimpleBounds;
+    readonly polygonSet?:PolygonSet;
+    readonly bounds?:SimpleBounds;
 }
 
 export function copyPolygon(poly:Polygon):Polygon {

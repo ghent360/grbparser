@@ -223,9 +223,9 @@ export class BlockAperture implements ApertureBase {
 }
 
 export class ApertureDefinition implements ApertureBase {
-    private macro_:ApertureMacro = undefined;
+    private macro_?:ApertureMacro = undefined;
     private static standardTemplates = ["C", "R", "O", "P"];
-    private polygonSet_:PolygonSet = undefined;
+    private polygonSet_?:PolygonSet = undefined;
 
     constructor(
         readonly apertureId:number,
@@ -243,7 +243,8 @@ export class ApertureDefinition implements ApertureBase {
     }
 
     get macro():ApertureMacro {
-        return this.macro_;
+        if (this.macro_) return this.macro_;
+        throw "Aperture is not a macro";
     }
 
     execute(ctx:GerberState) {
@@ -941,7 +942,9 @@ export class ApertureMacro {
             }
         }
         if (negatives.length > 0) {
-            return subtractPolygonSet(positives, negatives).polygonSet;
+            let result = subtractPolygonSet(positives, negatives).polygonSet;
+            if (result) return result;
+            return [];
         }
         return positives;
     }
@@ -1003,14 +1006,14 @@ export interface GraphicsOperations {
 }
 
 export class GerberState {
-    private coordinateFormat_:CoordinateFormatSpec = undefined;
-    private coordinateUnits_:CoordinateUnits = undefined;
+    private coordinateFormat_?:CoordinateFormatSpec = undefined;
+    private coordinateUnits_?:CoordinateUnits = undefined;
     private currentPoint_:Point = new Point();
     //private currentCenterOffset_:Point = new Point();
-    private currentApertureId_:number = undefined;
+    private currentApertureId_:number = -1;
     public interpolationMode:InterpolationMode = InterpolationMode.LINEARx1;
     public coordinateMode:CoordinateMode = CoordinateMode.ABSOLUTE;
-    private quadrantMode_:QuadrantMode = undefined;
+    private quadrantMode_?:QuadrantMode = undefined;
     public objectPolarity:ObjectPolarity = ObjectPolarity.DARK;
     public objectMirroring:ObjectMirroring = ObjectMirroring.NONE;
     public objectRotation:number = 0;
@@ -1021,34 +1024,38 @@ export class GerberState {
     private savedGraphicsOperationsConsumer_:Array<GraphicsOperations> = [];
     private blockApertures_:Array<number> = [];
     private blockParams_:Array<BlockParams> = [];
-    private primitives_:Array<GraphicsPrimitive>;
+    private primitives_:Array<GraphicsPrimitive> = [];
     private isDone_:boolean = false;
     public isOutlineMode:boolean = false;
     
-    get coordinateFormatSpec():CoordinateFormatSpec {
-        if (this.coordinateFormat_ == undefined) {
+    get coordinateFormatSpec():CoordinateFormatSpec|undefined {
+        if (!this.coordinateFormat_) {
             this.error("File coordinate format is not set.");
         }
         return this.coordinateFormat_;
     }
 
-    set coordinateFormatSpec(value:CoordinateFormatSpec) {
+    set coordinateFormatSpec(value:CoordinateFormatSpec|undefined) {
         if (this.coordinateFormat_ != undefined) {
             this.warning("File coordinate format already set.");
         }
         this.coordinateFormat_ = value;
-        this.coordinateMode = 
-            value.coordType == CoordinateType.ABSOLUTE ? CoordinateMode.ABSOLUTE : CoordinateMode.RELATIVE;
+        if (value) {
+            this.coordinateMode = 
+                value.coordType == CoordinateType.ABSOLUTE ?
+                    CoordinateMode.ABSOLUTE :
+                    CoordinateMode.RELATIVE;
+        }
     }
 
-    get coordinateUnits():CoordinateUnits {
+    get coordinateUnits():CoordinateUnits|undefined {
         if (this.coordinateUnits_ == undefined) {
             this.error("Coordinate units are not set.");
         }
         return this.coordinateUnits_;
     }
 
-    set coordinateUnits(value:CoordinateUnits) {
+    set coordinateUnits(value:CoordinateUnits|undefined) {
         this.coordinateUnits_ = value;        
     }
 
@@ -1129,14 +1136,14 @@ export class GerberState {
         this.currentApertureId_ = value;        
     }
 
-    get quadrantMode():QuadrantMode {
+    get quadrantMode():QuadrantMode|undefined {
         if (this.quadrantMode_ == undefined) {
             this.error("Current quadrant mode is not set.");
         }
         return this.quadrantMode_;
     }
 
-    set quadrantMode(value:QuadrantMode) {
+    set quadrantMode(value:QuadrantMode|undefined) {
         this.quadrantMode_ = value;        
     }
 
@@ -1148,7 +1155,9 @@ export class GerberState {
         if (!this.isDone_) {
             this.warning("Parsing is not complete");
         }
-        return this.primitives_;
+        if (this.primitives_)
+            return this.primitives_;
+        return [];
     }
 
     getObjectState():ObjectState {
@@ -1276,7 +1285,12 @@ export class GerberState {
         if (this.savedGraphicsOperationsConsumer_.length == 0) {
             throw new GerberParseException("Invalid parsing state, can't restore operations consumer");
         }
-        this.graphicsOperationsConsumer_ = this.savedGraphicsOperationsConsumer_.pop();
+        let nextConsumer = this.savedGraphicsOperationsConsumer_.pop();
+        if (nextConsumer) {
+            this.graphicsOperationsConsumer_ = nextConsumer;
+        } else {
+            this.graphicsOperationsConsumer_ = new BaseGraphicsOperationsConsumer();
+        }
     }
 
     get graphicsOperations():GraphicsOperations {
@@ -1294,10 +1308,12 @@ export class GerberState {
             throw new GerberParseException('Closing aperture block without matching opening.');
         }
         let blockId = this.blockApertures_.pop();
-        let blockConsumer = this.graphicsOperationsConsumer_ as BlockGraphicsOperationsConsumer;
-        let aperture = new BlockAperture(blockId, blockConsumer.objects);
-        this.setAperture(aperture);
-        this.restoreGraphicsConsumer();
+        if (blockId != undefined) {
+            let blockConsumer = this.graphicsOperationsConsumer_ as BlockGraphicsOperationsConsumer;
+            let aperture = new BlockAperture(blockId, blockConsumer.objects);
+            this.setAperture(aperture);
+            this.restoreGraphicsConsumer();
+        }
     }
 
     startRepeat(params:BlockParams) {
@@ -1317,16 +1333,18 @@ export class GerberState {
             throw new GerberParseException('Closing repeat block without matching opening.');
         }
         let params = this.blockParams_.pop();
-        let blockConsumer = this.graphicsOperationsConsumer_ as BlockGraphicsOperationsConsumer;
-        let block = new Block(
-            params.xRepeat,
-            params.yRepeat,
-            this.unitToMM(params.xDelta),
-            this.unitToMM(params.yDelta),
-            blockConsumer.primitives,
-            blockConsumer.objects);
-        this.restoreGraphicsConsumer();
-        this.graphicsOperationsConsumer_.block(block, cmd, this);
+        if (params) {
+            let blockConsumer = this.graphicsOperationsConsumer_ as BlockGraphicsOperationsConsumer;
+            let block = new Block(
+                params.xRepeat,
+                params.yRepeat,
+                this.unitToMM(params.xDelta),
+                this.unitToMM(params.yDelta),
+                blockConsumer.primitives,
+                blockConsumer.objects);
+            this.restoreGraphicsConsumer();
+            this.graphicsOperationsConsumer_.block(block, cmd, this);
+        }
     }
 
     endFile(cmd:GerberCommand) {
@@ -1555,7 +1573,7 @@ class RegionGraphicsOperationsConsumer implements GraphicsOperations {
         this.contour_.push(new CircleSegment(center, radius, cmd));
     }
 
-    arc(center:Point, radius:number, start:Point, end:Point, isCCW, cmd:GerberCommand, ctx:GerberState) {
+    arc(center:Point, radius:number, start:Point, end:Point, isCCW:boolean, cmd:GerberCommand, ctx:GerberState) {
         this.contour_.push(new ArcSegment(center, radius, start, end, isCCW, cmd));
     }
 
@@ -1618,7 +1636,7 @@ export class ObjectState {
 }
 
 export class Line {
-    private objects_:GraphicsObjects;
+    private objects_?:GraphicsObjects;
     
     constructor(
         readonly from:Point,
@@ -1668,7 +1686,7 @@ export class Line {
 }
 
 export class Circle {
-    private objects_:GraphicsObjects;
+    private objects_?:GraphicsObjects;
     
     constructor(
         readonly center:Point,
@@ -1718,7 +1736,7 @@ export class Circle {
 }
 
 export class Arc {
-    private objects_:GraphicsObjects;
+    private objects_?:GraphicsObjects;
 
     constructor(
         readonly center:Point,
@@ -1775,7 +1793,7 @@ export class Arc {
 }
 
 export class Flash {
-    private objects_:GraphicsObjects;
+    private objects_?:GraphicsObjects;
 
     constructor(
         readonly center:Point,
@@ -1819,7 +1837,7 @@ export class Flash {
 }
 
 export class Region {
-    private objects_:GraphicsObjects;
+    private objects_?:GraphicsObjects;
     readonly contours:Array<RegionContour>;
 
     constructor(
@@ -1914,8 +1932,8 @@ export class Region {
 
     private static buildPolygon(contour:RegionContour):Polygon {
         let numPoints = 0;
-        let lastPt:Point = undefined;
-        let firstPt:Point = undefined;
+        let lastPt:Point|undefined;
+        let firstPt:Point|undefined;
         contour.forEach(
             segment => {
                 if (segment instanceof LineSegment) {
@@ -2012,10 +2030,14 @@ export class Region {
 }
 
 export class Repeat {
-    private objects_:GraphicsObjects;
-    private primitives_:Array<GraphicsPrimitive>;
+    private objects_?:GraphicsObjects;
+    private primitives_?:Array<GraphicsPrimitive>;
 
-    constructor(readonly block:Block, readonly xOffset:number, readonly yOffset, readonly cmd:GerberCommand) {
+    constructor(
+        readonly block:Block,
+        readonly xOffset:number,
+        readonly yOffset:number,
+        readonly cmd:GerberCommand) {
     }
 
     toString():string {
@@ -2024,7 +2046,7 @@ export class Repeat {
 
     get objects():GraphicsObjects {
         if (!this.objects_) {
-            this.buildObjects();
+            this.objects_ = this.buildObjects();
         }
         return this.objects_;
     }
@@ -2033,20 +2055,21 @@ export class Repeat {
         return objectsBounds(this.objects);
     }
 
-    private buildObjects() {
+    private buildObjects():GraphicsObjects {
         let xOffset = this.xOffset;
-        this.objects_ = [];
+        let result:GraphicsObjects = [];
         for (let xCnt = 0; xCnt < this.block.xRepeat; xCnt++) {
             let yOffset = this.yOffset;
             for (let yCnt = 0; yCnt < this.block.yRepeat; yCnt++) {
                 let translateVector = new Point(xOffset, yOffset);
                 let blockObjects = copyObjects(this.block.objects);
                 translateObjects(blockObjects, translateVector);
-                this.objects_.push(...blockObjects);
+                result.push(...blockObjects);
                 yOffset += this.block.yDelta;
             }
             xOffset += this.block.xDelta;
         }
+        return result;
     }
 
     private buildPrimitives() {
@@ -2201,7 +2224,10 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
                 if (clear.length > 0) {
                     // Check if we are creating from something
                     if (image.length > 0) {
-                        image = subtractPolygonSet(image, clear).polygonSet;
+                        let tmpImage = subtractPolygonSet(image, clear).polygonSet;
+                        if (tmpImage) {
+                            image = tmpImage;
+                        }
                     }
                     clear = [];
                 }
@@ -2217,7 +2243,10 @@ export function composeSolidImage(objects:GraphicsObjects, union:boolean = false
             if (!union) {
                 return subtractPolygonSet(image, clear);
             }
-            image = subtractPolygonSet(image, clear).polygonSet;
+            let tmpImage = subtractPolygonSet(image, clear).polygonSet;
+            if (tmpImage) {
+                image = tmpImage;
+            }
         }
     }
     if (union) {
