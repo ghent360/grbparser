@@ -2,8 +2,8 @@
 *.wasm
 build.ts
 dist/build.d.ts
+dist/*.js.map
+dist/test/*
 t/*
-test/*.js
-test/*.js.map
 test/Gerber_File_Format_Examples/*.svg
 node_modules/
