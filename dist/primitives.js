@@ -8,6 +8,7 @@
  * License: MIT License, see LICENSE.txt
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Epsilon = exports.composeSolidImage = exports.BlockGraphicsOperationsConsumer = exports.BaseGraphicsOperationsConsumer = exports.EmptyBounds = exports.Repeat = exports.Region = exports.Flash = exports.Arc = exports.Circle = exports.Line = exports.ObjectState = exports.ArcSegment = exports.CircleSegment = exports.LineSegment = exports.Bounds = exports.GerberState = exports.Block = exports.BlockParams = exports.Attribute = exports.ApertureMacro = exports.PrimitiveComment = exports.Primitive = exports.VariableDefinition = exports.ApertureDefinition = exports.BlockAperture = exports.GerberParseException = exports.CoordinateFormatSpec = exports.CoordinateType = exports.CoordinateZeroFormat = exports.AttributeType = exports.ObjectMirroring = exports.ObjectPolarity = exports.QuadrantMode = exports.CoordinateMode = exports.InterpolationMode = exports.CoordinateUnits = void 0;
 /**
  * This file contains some classes that abstract primitives in the Gerber
  * file format.

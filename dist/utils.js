@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.parseCoordinate = exports.formatFixedNumber = exports.FormatException = exports.formatFloat = void 0;
 const primitives_1 = require("./primitives");
 /**
  * Gerber Parsing Library

@@ -8,6 +8,7 @@
  * License: MIT License, see LICENSE.txt
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExpressionParser = exports.Memory = void 0;
 class Memory {
     constructor(modifiers) {
         this.variables = [];

@@ -8,6 +8,7 @@
  * License: MIT License, see LICENSE.txt
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GerberParser = exports.CommandParser = void 0;
 const primitives_1 = require("./primitives");
 const cmds = require("./gerbercommands");
 /**

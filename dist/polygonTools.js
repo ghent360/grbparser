@@ -8,6 +8,7 @@
  * License: MIT License, see LICENSE.txt
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.reversePolygon = exports.arcToPolygon = exports.obroundToPolygon = exports.rectangleToPolygon = exports.circleToPolygon = exports.NUMSTEPS = void 0;
 const PI2 = Math.PI * 2;
 exports.NUMSTEPS = 30;
 const NUMSTEPS2 = exports.NUMSTEPS / 2;

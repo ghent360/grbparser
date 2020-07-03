@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.connectWires = exports.distance2 = exports.subtractPolygonSet = exports.unionPolygonSet = exports.objectsBounds = exports.polySetBounds = exports.polygonBounds = exports.mirrorPolySet = exports.mirrorPolygon = exports.scalePolySet = exports.scalePolygon = exports.translateObjects = exports.translatePolySet = exports.translatePolygon = exports.rotatePolySet = exports.rotatePolygon = exports.copyObjects = exports.copyPolygonSet = exports.copyPolygon = exports.waitClipperLoad = void 0;
 /**
  * Gerber Parsing Library
  *

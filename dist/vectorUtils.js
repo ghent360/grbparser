@@ -8,6 +8,7 @@
  * License: MIT License, see LICENSE.txt
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.distanceVector2 = exports.negVector = exports.addVector = exports.unitVector = exports.scaleVector = exports.vectorLength = void 0;
 function vectorLength(v) {
     return Math.sqrt(v.x * v.x + v.y * v.y);
 }

@@ -24,20 +24,20 @@
   },
   "homepage": "https://github.com/ghent360/grbparser#readme",
   "dependencies": {
-    "csv-parse": "^4.9.0",
-    "jszip": "^3.4.0"
+    "csv-parse": "^4.10.1",
+    "jszip": "^3.5.0"
   },
   "devDependencies": {
     "@types/fs-extra-promise": "^1.0.9",
-    "@types/jszip": "^3.1.7",
+    "@types/jszip": "^3.4.1",
     "@types/mocha": "^7.0.2",
-    "@types/node": "^13.13.5",
+    "@types/node": "^14.0.14",
     "assert": "^2.0.0",
     "babel-core": "^6.26.3",
     "babel-preset-env": "^1.7.0",
     "fs-extra-promise": "^1.0.1",
-    "mocha": "^7.1.2",
-    "ts-node": "^8.10.1",
-    "typescript": "^3.8.3"
+    "mocha": "^8.0.1",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.6"
   }
 }

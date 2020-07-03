@@ -8,6 +8,7 @@
  * License: MIT License, see LICENSE.txt
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.KicadCentroidParser = exports.KicadCentroidParseException = void 0;
 const primitives_1 = require("./primitives");
 const point_1 = require("./point");
 const gerberutils_1 = require("./gerberutils");

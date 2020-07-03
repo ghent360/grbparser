@@ -8,6 +8,7 @@
  * License: MIT License, see LICENSE.txt
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SVGBuilder = exports.StyleInfo = void 0;
 function toString2(n) {
     return ((n >>> 4) & 0xf).toString(16) +
         (n & 0xf).toString(16);

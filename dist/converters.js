@@ -8,6 +8,7 @@
  * License: MIT License, see LICENSE.txt
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PrimitiveConverter = exports.GerberToPolygons = exports.SVGConverter = exports.WaitInit = exports.Init = exports.DebugConverter = exports.ConverterBase = void 0;
 /**
  * This file contains classes that convert graphics object primitives from the parser
  * to other formats for example - polygon sets, svg etc.

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GerberUtils = exports.BoardFileType = exports.BoardSide = exports.BoardLayer = void 0;
 var BoardLayer;
 (function (BoardLayer) {
     BoardLayer[BoardLayer["Copper"] = 0] = "Copper";
